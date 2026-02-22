@@ -1,7 +1,31 @@
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Clock, Tv, Target, Gamepad2, MonitorPlay } from "lucide-react";
+import { ArrowRight, Clock, Tv, Target, Gamepad2, MonitorPlay, ChevronLeft, ChevronRight } from "lucide-react";
+
+const testimonials = [
+  { text: "Wegen des Lockdowns finden wir es schade, dass wir nicht gemeinsam bei euch unsere Sonntagabende verbringen können. Es fehlt die Atmosphäre, das gute Essen und die Gespräche untereinander oder auch mit euch.", author: "Timo & die NFL-Jungs", role: "NFL-Stammtisch" },
+  { text: "Wir fühlen uns bei euch immer pudelwohl. Das liegt wahrscheinlich an dem immer top gepflegten Billardtisch.", author: "Niki, Serab, Michael", role: "Donnerstags-Stammtisch" },
+  { text: "Super freundliches Personal, sehr zuvorkommend. Essen und Trinken sind gut und preislich im Rahmen. Für einen entspannten Abend zu zweit oder als Location für eine Gruppe einfach der perfekte Ort.", author: "Dirk M.", role: "Bewertung über Quandoo" },
+  { text: "Die beste Sportsbar in der Region! Das Erlebnis auf dem 140-Zoll-Screen ist einzigartig. Man fühlt sich wie im Stadion!", author: "Marco S.", role: "Stammgast" },
+];
 
 const Index = () => {
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+
+  const nextTestimonial = useCallback(() => {
+    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+  }, []);
+
+  const prevTestimonial = useCallback(() => {
+    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  }, []);
+
+  // Auto-slide
+  useEffect(() => {
+    const interval = setInterval(nextTestimonial, 5000);
+    return () => clearInterval(interval);
+  }, [nextTestimonial]);
+
   return (
     <main>
       {/* Hero */}
@@ -121,24 +145,59 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Testimonials Slider */}
       <section className="py-20">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="font-display text-4xl md:text-5xl text-center mb-12">
             Was unsere <span className="text-primary">Kunden sagen</span>
           </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { text: "Wegen des Lockdowns finden wir es schade, dass wir nicht gemeinsam bei euch unsere Sonntagabende verbringen können. Es fehlt die Atmosphäre, das gute Essen und die Gespräche untereinander oder auch mit euch.", author: "Timo & die NFL-Jungs", role: "NFL-Stammtisch" },
-              { text: "Wir fühlen uns bei euch immer pudelwohl. Das liegt wahrscheinlich an dem immer top gepflegten Billardtisch.", author: "Niki, Serab, Michael", role: "Donnerstags-Stammtisch" },
-              { text: "Super freundliches Personal, sehr zuvorkommend. Essen und Trinken sind gut und preislich im Rahmen. Für einen entspannten Abend zu zweit oder als Location für eine Gruppe einfach der perfekte Ort.", author: "Dirk M.", role: "Bewertung über Quandoo" },
-            ].map((t, i) => (
-              <div key={i} className="bg-card border border-border rounded-lg p-6">
-                <p className="text-sm text-muted-foreground italic mb-4">"{t.text}"</p>
-                <p className="font-semibold text-sm">{t.author}</p>
-                <p className="text-xs text-primary">{t.role}</p>
+          <div className="relative">
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${currentTestimonial * 100}%)` }}
+              >
+                {testimonials.map((t, i) => (
+                  <div key={i} className="w-full flex-shrink-0 px-4">
+                    <div className="bg-card border border-border rounded-lg p-8 md:p-12 text-center max-w-2xl mx-auto">
+                      <p className="text-lg md:text-xl text-muted-foreground italic mb-6 leading-relaxed">"{t.text}"</p>
+                      <p className="font-semibold text-foreground">{t.author}</p>
+                      <p className="text-sm text-primary mt-1">{t.role}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Navigation arrows */}
+            <button
+              onClick={prevTestimonial}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-6 bg-card border border-border rounded-full p-2 text-foreground hover:text-primary hover:border-primary transition-colors"
+              aria-label="Vorheriges Testimonial"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              onClick={nextTestimonial}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-6 bg-card border border-border rounded-full p-2 text-foreground hover:text-primary hover:border-primary transition-colors"
+              aria-label="Nächstes Testimonial"
+            >
+              <ChevronRight size={24} />
+            </button>
+
+            {/* Dots */}
+            <div className="flex justify-center gap-2 mt-6">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentTestimonial(i)}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    i === currentTestimonial ? "bg-primary" : "bg-border hover:bg-muted-foreground"
+                  }`}
+                  aria-label={`Testimonial ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -192,24 +251,6 @@ const Index = () => {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* App CTA */}
-      <section className="py-16 bg-card">
-        <div className="container mx-auto px-4 text-center max-w-2xl">
-          <h2 className="font-display text-3xl md:text-4xl mb-4">Unsere <span className="text-primary">App</span></h2>
-          <p className="text-muted-foreground mb-6">
-            Alle Inhalte unserer Sportsbar mit Live-Übertragungen, Restaurant-Speisekarte, Aktivitäten uvm. findest du in unserer App.
-          </p>
-          <a
-            href="https://portal.gastfreund.net/rondo-sportsbar/340856"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 font-semibold uppercase tracking-wider hover:bg-primary/90 transition-colors"
-          >
-            Zur App / Web-Version <ArrowRight size={18} />
-          </a>
         </div>
       </section>
     </main>

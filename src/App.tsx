@@ -12,7 +12,7 @@ import Reservierung from "./pages/Reservierung";
 import Speisekarte from "./pages/Speisekarte";
 import PrivateFeiern from "./pages/PrivateFeiern";
 import Kontakt from "./pages/Kontakt";
-import Jobs from "./pages/Jobs";
+
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
@@ -35,7 +35,7 @@ const App = () => {
             <Route path="/speisekarte" element={<Speisekarte />} />
             <Route path="/private-feiern" element={<PrivateFeiern />} />
             <Route path="/kontakt" element={<Kontakt />} />
-            <Route path="/jobs" element={<Jobs />} />
+            
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="*" element={<NotFound />} />
