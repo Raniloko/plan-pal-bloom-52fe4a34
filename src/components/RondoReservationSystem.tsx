@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
@@ -61,6 +62,8 @@ const RondoReservationSystem = () => {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const canNext = () => {
     switch (step) {
@@ -73,8 +76,36 @@ const RondoReservationSystem = () => {
     }
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const { data: result, error } = await supabase.functions.invoke("create-reservation", {
+        body: {
+          date: data.date,
+          time: data.time,
+          guests: data.guests,
+          zone: data.zone,
+          anlass: data.anlass,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          message: data.message,
+          honeypot: "",
+        },
+      });
+      if (error) {
+        setSubmitError("Fehler beim Senden. Bitte versuche es erneut.");
+      } else if (result?.error) {
+        setSubmitError(result.error);
+      } else {
+        setSubmitted(true);
+      }
+    } catch {
+      setSubmitError("Verbindungsfehler. Bitte versuche es erneut.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -312,12 +343,16 @@ const RondoReservationSystem = () => {
             Weiter <ArrowRight size={16} />
           </button>
         ) : (
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-2 px-8 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-semibold"
-          >
-            Reservierung absenden <CheckCircle size={16} />
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            {submitError && <p className="text-destructive text-sm">{submitError}</p>}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex items-center gap-2 px-8 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50"
+            >
+              {submitting ? "Wird gesendet..." : "Reservierung absenden"} <CheckCircle size={16} />
+            </button>
+          </div>
         )}
       </div>
     </div>
