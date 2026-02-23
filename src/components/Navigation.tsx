@@ -69,7 +69,7 @@ const Navigation = () => {
 
       {/* Fullscreen Menu Overlay */}
       <div
-        className={`fixed inset-0 top-0 bg-background z-40 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
+        className={`fixed inset-0 bg-background z-40 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
           isOpen
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none -translate-y-4"
