@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Clock, Tv, Target, Gamepad2, MonitorPlay, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 
 const testimonials = [
   { text: "Wegen des Lockdowns finden wir es schade, dass wir nicht gemeinsam bei euch unsere Sonntagabende verbringen können. Es fehlt die Atmosphäre, das gute Essen und die Gespräche untereinander oder auch mit euch.", author: "Timo & die NFL-Jungs", role: "NFL-Stammtisch" },
@@ -71,31 +71,6 @@ const Index = () => {
           <p className="text-muted-foreground leading-relaxed mt-4">
             Wir übertragen nahezu alle Live-Spiele (Bundesliga, DFB-Pokal, Champions- & Europa-League, Serie A, uvm.), aber auch NFL, Tennis oder Handball. LIVE-SPORT wird bei uns groß geschrieben! Vor dem Eingang befinden sich zusätzlich 400 kostenfreie Parkplätze!
           </p>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-16 bg-card">
-        <div className="container mx-auto px-4">
-          <h2 className="font-display text-4xl md:text-5xl text-center mb-12">
-            Unsere <span className="text-primary">Highlights</span>
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: <Tv size={32} />, title: "140-Zoll-LED-TV", desc: "Einzigartiges Stadion-Feeling auf unserem riesigen Screen" },
-              { icon: <MonitorPlay size={32} />, title: "8 weitere TVs", desc: "Live-Sport auf allen Screens – keine Minute verpassen" },
-              { icon: <Target size={32} />, title: "8 Olio-Billardtische", desc: "Professionelle Billardtische für Amateure und Profis" },
-              { icon: <Gamepad2 size={32} />, title: "2 Leonhart-Tischkicker", desc: "Action-geladene Kicker-Duelle mit Freunden" },
-              { icon: <Target size={32} />, title: "2 Löwen-Elektronik Darts", desc: "Modernste Dart-Automaten für den perfekten Wurf" },
-              { icon: <Clock size={32} />, title: "400 Parkplätze", desc: "Kostenfreie Parkplätze direkt vor der Tür" },
-            ].map((f, i) => (
-              <div key={i} className="bg-muted p-6 rounded-lg border border-border hover:border-primary/50 transition-colors group">
-                <div className="text-primary mb-4 group-hover:scale-110 transition-transform">{f.icon}</div>
-                <h3 className="font-display text-2xl mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
