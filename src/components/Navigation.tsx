@@ -59,7 +59,7 @@ const Navigation = () => {
           </Link>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="relative z-50 text-foreground hover:text-primary transition-colors"
+            className="relative z-[60] text-foreground hover:text-primary transition-colors"
             aria-label={isOpen ? "Menü schließen" : "Menü öffnen"}
           >
             {isOpen ? <X size={28} /> : <Menu size={28} />}
@@ -68,47 +68,48 @@ const Navigation = () => {
       </div>
 
       {/* Fullscreen Menu Overlay */}
-      <div
-        className={`fixed inset-0 bg-background z-40 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
-          isOpen
-            ? "opacity-100 pointer-events-auto translate-y-0"
-            : "opacity-0 pointer-events-none -translate-y-4"
-        }`}
-      >
-        <div className="flex flex-col items-center gap-6">
-          {navLinks.map((link, index) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setIsOpen(false)}
-              className={`font-display text-4xl md:text-5xl uppercase tracking-wider transition-all duration-300 ${
-                location.pathname === link.to ? "text-primary" : "text-foreground hover:text-primary"
-              }`}
-              style={{
-                transitionDelay: isOpen ? `${index * 60}ms` : "0ms",
-                opacity: isOpen ? 1 : 0,
-                transform: isOpen ? "translateY(0)" : "translateY(20px)",
-              }}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
+      {isOpen && (
         <div
-          className="flex gap-6 mt-10 transition-all duration-300"
-          style={{
-            transitionDelay: isOpen ? `${navLinks.length * 60}ms` : "0ms",
-            opacity: isOpen ? 1 : 0,
-          }}
+          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-background z-50 flex flex-col items-center justify-center animate-fade-in"
+          style={{ minHeight: "100dvh" }}
         >
-          <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-            <Instagram size={28} />
-          </a>
-          <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-            <Facebook size={28} />
-          </a>
+          {/* Close button inside overlay */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="absolute top-5 right-5 z-[60] text-foreground hover:text-primary transition-colors"
+            aria-label="Menü schließen"
+          >
+            <X size={28} />
+          </button>
+
+          <div className="flex flex-col items-center gap-6">
+            {navLinks.map((link, index) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsOpen(false)}
+                className={`font-display text-4xl md:text-5xl uppercase tracking-wider transition-all duration-300 ${
+                  location.pathname === link.to ? "text-primary" : "text-foreground hover:text-primary"
+                }`}
+                style={{
+                  animationDelay: `${index * 60}ms`,
+                  animationFillMode: "both",
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex gap-6 mt-10">
+            <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+              <Instagram size={28} />
+            </a>
+            <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+              <Facebook size={28} />
+            </a>
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };
