@@ -67,49 +67,61 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Fullscreen Menu Overlay */}
-      {isOpen && (
-        <div
-          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-background z-50 flex flex-col items-center justify-center animate-fade-in"
-          style={{ minHeight: "100dvh" }}
-        >
-          {/* Close button inside overlay */}
+      {/* Slide-in Menu from Left */}
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/60 z-[55] transition-opacity duration-300 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsOpen(false)}
+      />
+
+      {/* Panel */}
+      <div
+        className={`fixed top-0 left-0 h-full w-[320px] max-w-[85vw] bg-primary z-[56] flex flex-col transition-transform duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ minHeight: "100dvh" }}
+      >
+        {/* Close button */}
+        <div className="flex justify-end p-5">
           <button
             onClick={() => setIsOpen(false)}
-            className="absolute top-5 right-5 z-[60] text-foreground hover:text-primary transition-colors"
+            className="text-primary-foreground hover:text-primary-foreground/70 transition-colors"
             aria-label="Menü schließen"
           >
             <X size={28} />
           </button>
-
-          <div className="flex flex-col items-center gap-6">
-            {navLinks.map((link, index) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setIsOpen(false)}
-                className={`font-display text-4xl md:text-5xl uppercase tracking-wider transition-all duration-300 ${
-                  location.pathname === link.to ? "text-primary" : "text-foreground hover:text-primary"
-                }`}
-                style={{
-                  animationDelay: `${index * 60}ms`,
-                  animationFillMode: "both",
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex gap-6 mt-10">
-            <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-              <Instagram size={28} />
-            </a>
-            <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-              <Facebook size={28} />
-            </a>
-          </div>
         </div>
-      )}
+
+        {/* Nav links */}
+        <div className="flex flex-col items-start gap-4 px-8 flex-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setIsOpen(false)}
+              className={`font-display text-3xl md:text-4xl uppercase tracking-wider transition-colors ${
+                location.pathname === link.to
+                  ? "text-background"
+                  : "text-primary-foreground hover:text-background"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Social icons */}
+        <div className="flex gap-6 px-8 pb-10">
+          <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-primary-foreground hover:text-background transition-colors">
+            <Instagram size={24} />
+          </a>
+          <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-primary-foreground hover:text-background transition-colors">
+            <Facebook size={24} />
+          </a>
+        </div>
+      </div>
     </nav>
   );
 };

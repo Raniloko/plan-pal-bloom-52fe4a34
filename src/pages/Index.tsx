@@ -179,28 +179,33 @@ const Index = () => {
 
       {/* Öffnungszeiten */}
       <section className="py-20 bg-card">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display text-4xl md:text-5xl mb-8">
-            Time for some <span className="text-primary">Action</span>
-          </h2>
-          <h3 className="font-display text-2xl mb-6">Unsere Öffnungszeiten</h3>
-          <div className="inline-block text-left">
-            {[
-              { day: "Mo – Do", time: "16:00 – 00:00 Uhr" },
-              { day: "Fr", time: "16:00 – 02:00 Uhr" },
-              { day: "Sa", time: "14:00 – 02:00 Uhr" },
-              { day: "So", time: "14:00 – 00:00 Uhr" },
-            ].map((o, i) => (
-              <div key={i} className="flex justify-between gap-12 py-2 border-b border-border last:border-0">
-                <span className="font-semibold">{o.day}</span>
-                <span className="text-primary">{o.time}</span>
-              </div>
-            ))}
+        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+          <div className="text-center md:text-left">
+            <h2 className="font-display text-4xl md:text-5xl mb-8">
+              Time for some <span className="text-primary">Action</span>
+            </h2>
+            <h3 className="font-display text-2xl mb-6">Unsere Öffnungszeiten</h3>
+            <div className="inline-block text-left">
+              {[
+                { day: "Mo – Do", time: "16:00 – 00:00 Uhr" },
+                { day: "Fr", time: "16:00 – 02:00 Uhr" },
+                { day: "Sa", time: "14:00 – 02:00 Uhr" },
+                { day: "So", time: "14:00 – 00:00 Uhr" },
+              ].map((o, i) => (
+                <div key={i} className="flex justify-between gap-12 py-2 border-b border-border last:border-0">
+                  <span className="font-semibold">{o.day}</span>
+                  <span className="text-primary">{o.time}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground mt-6">
+              Telefonisch erreichbar während der Öffnungszeiten.<br />
+              Kurzfristige Sonderöffnungszeiten werden über unseren Google Account gepflegt.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-6">
-            Telefonisch erreichbar während der Öffnungszeiten.<br />
-            Kurzfristige Sonderöffnungszeiten werden über unseren Google Account gepflegt.
-          </p>
+          <div className="flex justify-center">
+            <img src="/images/time-for-action.png" alt="Time for some Action" className="max-h-[500px] w-auto object-contain" loading="lazy" />
+          </div>
         </div>
       </section>
 
