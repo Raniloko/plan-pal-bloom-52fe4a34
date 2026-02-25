@@ -59,26 +59,26 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Welcome */}
-      <section className="py-20 md:py-28">
+      {/* Welcome - Light section */}
+      <section className="py-20 md:py-28 bg-section-light">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="font-display text-4xl md:text-6xl mb-6">
+          <h2 className="font-display text-4xl md:text-6xl mb-6 text-section-light-foreground">
             Welcome to <span className="text-primary">Rondo Sportsbar</span>
           </h2>
-          <p className="text-muted-foreground leading-relaxed text-lg">
+          <p className="text-section-light-foreground/70 leading-relaxed text-lg">
             Mit einem Besuch in unserer Bar garantieren wir dir leckeres Essen, gute Laune und ein unvergessliches Erlebnis für die ganze Familie. Bei 8 Olio-Billardtischen, 2 Leonhart-Tischkickern und 2 Löwen-Elektronik Dart's ist der Spaß vorprogrammiert! Durch unseren 140-Zoll-LED-TV, sowie den 8 weiteren TVs entsteht eine einzigartige Atmosphäre bei Live-Spielen, die schon fast an einen Stadionbesuch erinnert.
           </p>
-          <p className="text-muted-foreground leading-relaxed mt-4">
+          <p className="text-section-light-foreground/70 leading-relaxed mt-4">
             Wir übertragen nahezu alle Live-Spiele (Bundesliga, DFB-Pokal, Champions- & Europa-League, Serie A, uvm.), aber auch NFL, Tennis oder Handball. LIVE-SPORT wird bei uns groß geschrieben! Vor dem Eingang befinden sich zusätzlich 400 kostenfreie Parkplätze!
           </p>
         </div>
       </section>
 
-      {/* Reservierung CTA */}
-      <section className="py-20 relative">
+      {/* Reservierung CTA - Dark */}
+      <section className="py-20 relative bg-background">
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="font-display text-4xl md:text-5xl mb-4">
+            <h2 className="font-display text-4xl md:text-5xl mb-4 text-foreground">
               Reservierung <span className="text-primary">im Rondo</span>
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
@@ -97,17 +97,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Billard/Kicker */}
-      <section className="py-20 bg-card">
+      {/* Billard/Kicker - Gray section */}
+      <section className="py-20 bg-section-gray">
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
           <div className="order-2 md:order-1 rounded-lg overflow-hidden">
             <img src="/images/billard-area.jpg" alt="Billard Area" className="w-full h-auto" loading="lazy" />
           </div>
           <div className="order-1 md:order-2">
-            <h2 className="font-display text-4xl md:text-5xl mb-4">
+            <h2 className="font-display text-4xl md:text-5xl mb-4 text-section-gray-foreground">
               Billard, <span className="text-primary">Kicker oder Dart</span>
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">
+            <p className="text-section-gray-foreground/70 leading-relaxed mb-6">
               Auch für die sportliche Betätigung wird in der Rondo Sportsbar gesorgt. Buche dir und deinen Freunden einen Platz auf einem unserer 8 Olio-Billardtischen, 2 Leonhart-Tischkickern und 2 Löwen-Elektronik Dart's.
             </p>
             <Link
@@ -120,10 +120,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials Slider */}
-      <section className="py-20">
+      {/* Testimonials - Dark */}
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="font-display text-4xl md:text-5xl text-center mb-12">
+          <h2 className="font-display text-4xl md:text-5xl text-center mb-12 text-foreground">
             Was unsere <span className="text-primary">Kunden sagen</span>
           </h2>
           <div className="relative">
@@ -143,8 +143,6 @@ const Index = () => {
                 ))}
               </div>
             </div>
-
-            {/* Navigation arrows */}
             <button
               onClick={prevTestimonial}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-6 bg-card border border-border rounded-full p-2 text-foreground hover:text-primary hover:border-primary transition-colors"
@@ -159,8 +157,6 @@ const Index = () => {
             >
               <ChevronRight size={24} />
             </button>
-
-            {/* Dots */}
             <div className="flex justify-center gap-2 mt-6">
               {testimonials.map((_, i) => (
                 <button
@@ -177,14 +173,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Öffnungszeiten */}
-      <section className="py-20 bg-card">
+      {/* Öffnungszeiten - White/Light like reference */}
+      <section className="py-20 bg-section-light">
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
           <div className="text-center md:text-left">
-            <h2 className="font-display text-4xl md:text-5xl mb-8">
+            <h2 className="font-display text-4xl md:text-5xl mb-2 text-section-light-foreground">
               Time for some <span className="text-primary">Action</span>
             </h2>
-            <h3 className="font-display text-2xl mb-6">Unsere Öffnungszeiten</h3>
+            <div className="w-24 h-1 bg-primary mb-8 mx-auto md:mx-0" />
+            <h3 className="font-display text-2xl mb-6 text-section-light-foreground">Unsere Öffnungszeiten</h3>
             <div className="inline-block text-left">
               {[
                 { day: "Mo – Do", time: "16:00 – 00:00 Uhr" },
@@ -192,13 +189,13 @@ const Index = () => {
                 { day: "Sa", time: "14:00 – 02:00 Uhr" },
                 { day: "So", time: "14:00 – 00:00 Uhr" },
               ].map((o, i) => (
-                <div key={i} className="flex justify-between gap-12 py-2 border-b border-border last:border-0">
-                  <span className="font-semibold">{o.day}</span>
-                  <span className="text-primary">{o.time}</span>
+                <div key={i} className="flex items-center gap-4 py-2">
+                  <span className="text-primary text-lg">▶</span>
+                  <span className="font-display text-lg text-section-light-foreground">{o.day}: {o.time}</span>
                 </div>
               ))}
             </div>
-            <p className="text-sm text-muted-foreground mt-6">
+            <p className="text-sm text-section-light-foreground/60 mt-6">
               Telefonisch erreichbar während der Öffnungszeiten.<br />
               Kurzfristige Sonderöffnungszeiten werden über unseren Google Account gepflegt.
             </p>
@@ -209,10 +206,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Gallery */}
-      <section className="py-20">
+      {/* Gallery - Dark */}
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
-          <h2 className="font-display text-4xl md:text-5xl text-center mb-12">
+          <h2 className="font-display text-4xl md:text-5xl text-center mb-12 text-foreground">
             Come in – <span className="text-primary">Feel good</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -226,7 +223,7 @@ const Index = () => {
               <div key={i} className="relative group overflow-hidden rounded-lg">
                 <img src={img.src} alt={img.label} className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4">
-                  <span className="font-display text-xl">{img.label}</span>
+                  <span className="font-display text-xl text-foreground">{img.label}</span>
                 </div>
               </div>
             ))}

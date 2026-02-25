@@ -14,19 +14,11 @@ const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
-  // Prevent body scroll when menu is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-  // Close menu on route change
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
@@ -58,30 +50,28 @@ const Navigation = () => {
             Reservierung
           </Link>
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="relative z-[60] text-foreground hover:text-primary transition-colors"
-            aria-label={isOpen ? "Menü schließen" : "Menü öffnen"}
+            onClick={() => setIsOpen(true)}
+            className="text-foreground hover:text-primary transition-colors"
+            aria-label="Menü öffnen"
           >
-            {isOpen ? <X size={28} /> : <Menu size={28} />}
+            <Menu size={28} />
           </button>
         </div>
       </div>
 
-      {/* Slide-in Menu from Left */}
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/60 z-[55] transition-opacity duration-300 ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 bg-black/60 z-[55] transition-opacity duration-300 ease-in-out ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Panel */}
+      {/* Slide-in Panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-[320px] max-w-[85vw] bg-primary z-[56] flex flex-col transition-transform duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`fixed top-0 left-0 h-[100dvh] w-[320px] max-w-[85vw] bg-primary z-[56] flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ minHeight: "100dvh" }}
       >
         {/* Close button */}
         <div className="flex justify-end p-5">
