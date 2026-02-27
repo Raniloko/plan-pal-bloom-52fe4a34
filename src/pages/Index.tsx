@@ -59,16 +59,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Welcome - Light section */}
-      <section className="py-20 md:py-28 bg-section-light">
+      {/* Welcome */}
+      <section className="py-20 md:py-28 bg-background">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="font-display text-4xl md:text-6xl mb-6 text-section-light-foreground">
+          <h2 className="font-display text-4xl md:text-6xl mb-6 text-foreground">
             Welcome to <span className="text-primary">Rondo Sportsbar</span>
           </h2>
-          <p className="text-section-light-foreground/70 leading-relaxed text-lg">
+          <p className="text-muted-foreground leading-relaxed text-lg">
             Mit einem Besuch in unserer Bar garantieren wir dir leckeres Essen, gute Laune und ein unvergessliches Erlebnis für die ganze Familie. Bei 8 Olio-Billardtischen, 2 Leonhart-Tischkickern und 2 Löwen-Elektronik Dart's ist der Spaß vorprogrammiert! Durch unseren 140-Zoll-LED-TV, sowie den 8 weiteren TVs entsteht eine einzigartige Atmosphäre bei Live-Spielen, die schon fast an einen Stadionbesuch erinnert.
           </p>
-          <p className="text-section-light-foreground/70 leading-relaxed mt-4">
+          <p className="text-muted-foreground leading-relaxed mt-4">
             Wir übertragen nahezu alle Live-Spiele (Bundesliga, DFB-Pokal, Champions- & Europa-League, Serie A, uvm.), aber auch NFL, Tennis oder Handball. LIVE-SPORT wird bei uns groß geschrieben! Vor dem Eingang befinden sich zusätzlich 400 kostenfreie Parkplätze!
           </p>
         </div>
@@ -97,17 +97,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Billard/Kicker - Gray section */}
-      <section className="py-20 bg-section-gray">
+      {/* Billard/Kicker */}
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
           <div className="order-2 md:order-1 rounded-lg overflow-hidden">
             <img src="/images/billard-area.jpg" alt="Billard Area" className="w-full h-auto" loading="lazy" />
           </div>
           <div className="order-1 md:order-2">
-            <h2 className="font-display text-4xl md:text-5xl mb-4 text-section-gray-foreground">
+            <h2 className="font-display text-4xl md:text-5xl mb-4 text-foreground">
               Billard, <span className="text-primary">Kicker oder Dart</span>
             </h2>
-            <p className="text-section-gray-foreground/70 leading-relaxed mb-6">
+            <p className="text-muted-foreground leading-relaxed mb-6">
               Auch für die sportliche Betätigung wird in der Rondo Sportsbar gesorgt. Buche dir und deinen Freunden einen Platz auf einem unserer 8 Olio-Billardtischen, 2 Leonhart-Tischkickern und 2 Löwen-Elektronik Dart's.
             </p>
             <Link
@@ -173,36 +173,31 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Öffnungszeiten - White/Light like reference */}
-      <section className="py-20 bg-section-light">
-        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-          <div className="text-center md:text-left">
-            <h2 className="font-display text-4xl md:text-5xl mb-2 text-section-light-foreground">
-              Time for some <span className="text-primary">Action</span>
-            </h2>
-            <div className="w-24 h-1 bg-primary mb-8 mx-auto md:mx-0" />
-            <h3 className="font-display text-2xl mb-6 text-section-light-foreground">Unsere Öffnungszeiten</h3>
-            <div className="inline-block text-left">
-              {[
-                { day: "Mo – Do", time: "16:00 – 00:00 Uhr" },
-                { day: "Fr", time: "16:00 – 02:00 Uhr" },
-                { day: "Sa", time: "14:00 – 02:00 Uhr" },
-                { day: "So", time: "14:00 – 00:00 Uhr" },
-              ].map((o, i) => (
-                <div key={i} className="flex items-center gap-4 py-2">
-                  <span className="text-primary text-lg">▶</span>
-                  <span className="font-display text-lg text-section-light-foreground">{o.day}: {o.time}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-section-light-foreground/60 mt-6">
-              Telefonisch erreichbar während der Öffnungszeiten.<br />
-              Kurzfristige Sonderöffnungszeiten werden über unseren Google Account gepflegt.
-            </p>
+      {/* Öffnungszeiten */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-3xl text-center">
+          <h2 className="font-display text-4xl md:text-5xl mb-2 text-foreground">
+            Time for some <span className="text-primary">Action</span>
+          </h2>
+          <div className="w-24 h-1 bg-primary mb-8 mx-auto" />
+          <h3 className="font-display text-2xl mb-6 text-foreground">Unsere Öffnungszeiten</h3>
+          <div className="inline-block text-left">
+            {[
+              { day: "Mo – Do", time: "16:00 – 00:00 Uhr" },
+              { day: "Fr", time: "16:00 – 02:00 Uhr" },
+              { day: "Sa", time: "14:00 – 02:00 Uhr" },
+              { day: "So", time: "14:00 – 00:00 Uhr" },
+            ].map((o, i) => (
+              <div key={i} className="flex items-center gap-4 py-2">
+                <Clock size={18} className="text-primary" />
+                <span className="font-display text-lg text-foreground">{o.day}: {o.time}</span>
+              </div>
+            ))}
           </div>
-          <div className="flex justify-center">
-            <img src="/images/time-for-action.png" alt="Time for some Action" className="max-h-[500px] w-auto object-contain" loading="lazy" />
-          </div>
+          <p className="text-sm text-muted-foreground mt-6">
+            Telefonisch erreichbar während der Öffnungszeiten.<br />
+            Kurzfristige Sonderöffnungszeiten werden über unseren Google Account gepflegt.
+          </p>
         </div>
       </section>
 
