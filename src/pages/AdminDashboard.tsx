@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut, Search, Edit2, XCircle, CheckCircle, Calendar, Users, MapPin } from "lucide-react";
+import FloorPlan from "@/components/admin/FloorPlan";
 
 interface Reservation {
   id: string;
@@ -47,6 +48,7 @@ const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Reservation>>({});
+  const [floorPlanDate, setFloorPlanDate] = useState(() => new Date().toISOString().split("T")[0]);
   const navigate = useNavigate();
 
   const checkAdmin = useCallback(async () => {
@@ -180,6 +182,20 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground">Storniert</p>
             </div>
           </div>
+        </div>
+
+        {/* Floor Plan */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <label className="text-sm font-medium text-muted-foreground">Datum für Raumplan:</label>
+            <input
+              type="date"
+              value={floorPlanDate}
+              onChange={(e) => setFloorPlanDate(e.target.value)}
+              className="bg-muted border border-border rounded-md px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <FloorPlan reservations={reservations} selectedDate={floorPlanDate} />
         </div>
 
         {/* Filters */}
