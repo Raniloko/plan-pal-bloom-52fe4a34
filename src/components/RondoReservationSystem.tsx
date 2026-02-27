@@ -18,11 +18,11 @@ interface ReservationData {
 }
 
 const ZONES = [
-  { value: "hauptbereich", label: "Hauptbereich", desc: "Direkt vor dem 140-Zoll-Screen" },
-  { value: "billard", label: "Billard-Area", desc: "8 Olio-Billardtische" },
-  { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen" },
-  { value: "podest", label: "Podest", desc: "Für bis zu 33 Gäste" },
-  { value: "fenster", label: "Fensterbereich", desc: "Gemütliche Atmosphäre" },
+  { value: "hauptbereich", label: "Restaurantbereich am 140-Zoll Screen", desc: "Direkt vor dem großen 140-Zoll-LED-Screen" },
+  { value: "fenster", label: "Restaurantbereich am 75-Zoll Screen", desc: "Fensterbereich mit 75-Zoll Screens" },
+  { value: "billard", label: "Billard-Tisch", desc: "8 Olio-Billardtische · 0,23€/Min" },
+  { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen ab 11 Personen" },
+  { value: "podest", label: "Podest", desc: "Erhöhter Bereich für bis zu 33 Gäste" },
 ];
 
 const ANLAESSE = [
