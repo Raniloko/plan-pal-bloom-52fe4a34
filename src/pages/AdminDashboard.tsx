@@ -20,11 +20,11 @@ interface Reservation {
 }
 
 const ZONE_LABELS: Record<string, string> = {
-  hauptbereich: "Hauptbereich",
-  billard: "Billard-Area",
+  hauptbereich: "140-Zoll Screen",
+  fenster: "75-Zoll Screen",
+  billard: "Billard-Tisch",
   vip: "VIP-Raum",
   podest: "Podest",
-  fenster: "Fensterbereich",
 };
 
 const OCCASION_LABELS: Record<string, string> = {
