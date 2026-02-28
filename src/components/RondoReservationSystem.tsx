@@ -18,11 +18,16 @@ interface ReservationData {
 }
 
 const ZONES = [
-  { value: "hauptbereich", label: "Restaurantbereich am 140-Zoll Screen", desc: "Direkt vor dem großen 140-Zoll-LED-Screen" },
-  { value: "fenster", label: "Restaurantbereich am 75-Zoll Screen", desc: "Fensterbereich mit 75-Zoll Screens" },
-  { value: "billard", label: "Billard-Tisch", desc: "8 Olio-Billardtische · 0,23€/Min" },
-  { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen ab 11 Personen" },
-  { value: "podest", label: "Podest", desc: "Erhöhter Bereich für bis zu 33 Gäste" },
+  { value: "hauptbereich", label: "Restaurantbereich am 140-Zoll Screen", desc: "Direkt vor dem großen 140-Zoll-LED-Screen", info: "" },
+  { value: "fenster", label: "Restaurantbereich am 75-Zoll Screen", desc: "Fensterbereich mit 75-Zoll Screens", info: "" },
+  {
+    value: "billard",
+    label: "Billard-Tisch",
+    desc: "8 Olio-Billardtische · 0,23€/Min",
+    info: "⏱ Abrechnung: 0,23 €/Min pro Tisch (ca. 13,80 €/Std). Die Abrechnung startet ab Spielbeginn und wird vor Ort bezahlt. Reservierung sichert dir einen Tisch – keine Vorauszahlung nötig.",
+  },
+  { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen ab 11 Personen", info: "👥 Mindestens 11 Personen erforderlich. Der VIP-Raum ist ein abgetrennter, privater Bereich mit eigenem Service." },
+  { value: "podest", label: "Podest", desc: "Erhöhter Bereich für bis zu 33 Gäste", info: "🔺 Erhöhter Bereich mit Platz für bis zu 33 Gäste – ideal für größere Gruppen und Feiern." },
 ];
 
 const ANLAESSE = [
@@ -219,6 +224,19 @@ const RondoReservationSystem = () => {
         {step === 2 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Welchen Bereich bevorzugst du?</h3>
+
+            {/* Zone-specific info box - shown FIRST so customers see it immediately */}
+            {data.zone && ZONES.find(z => z.value === data.zone)?.info && (
+              <div className="mb-4 bg-primary/10 border border-primary/30 rounded-lg p-4 animate-fade-in">
+                <p className="text-sm font-medium text-primary mb-1">
+                  ℹ️ Wichtige Info zu: {ZONES.find(z => z.value === data.zone)?.label}
+                </p>
+                <p className="text-sm text-foreground">
+                  {ZONES.find(z => z.value === data.zone)?.info}
+                </p>
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 gap-3">
               {ZONES.map((z) => (
                 <button
