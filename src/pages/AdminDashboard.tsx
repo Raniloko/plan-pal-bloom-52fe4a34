@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, Search, Edit2, XCircle, CheckCircle, Calendar, Users, MapPin } from "lucide-react";
+import { LogOut, Search, Edit2, XCircle, CheckCircle, Calendar, Users } from "lucide-react";
 import FloorPlan from "@/components/admin/FloorPlan";
+import { useToast } from "@/hooks/use-toast";
 
 interface Reservation {
   id: string;
@@ -49,6 +50,7 @@ const AdminDashboard = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Reservation>>({});
   const [floorPlanDate, setFloorPlanDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const checkAdmin = useCallback(async () => {
@@ -88,6 +90,22 @@ const AdminDashboard = () => {
       if (ok) fetchReservations();
     });
   }, [checkAdmin, fetchReservations]);
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("reservations-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservations" },
+        () => {
+          fetchReservations();
+          toast({ title: "Aktualisiert", description: "Reservierungsdaten wurden aktualisiert." });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchReservations, toast]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -195,7 +213,7 @@ const AdminDashboard = () => {
               className="bg-muted border border-border rounded-md px-3 py-1.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <FloorPlan reservations={reservations} selectedDate={floorPlanDate} />
+          <FloorPlan reservations={reservations} selectedDate={floorPlanDate} onSelectReservation={(r) => startEdit(r as Reservation)} />
         </div>
 
         {/* Filters */}
