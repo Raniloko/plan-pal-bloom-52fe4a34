@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.setup-admin]
 verify_jwt = false
+
+[functions.send-reservation-email]
+verify_jwt = false
+
+[functions.cancel-reservation]
+verify_jwt = false

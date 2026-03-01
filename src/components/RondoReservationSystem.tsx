@@ -85,7 +85,7 @@ const RondoReservationSystem = () => {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const { data: result, error } = await supabase.functions.invoke("create-reservation", {
+      const response = await supabase.functions.invoke("create-reservation", {
         body: {
           date: data.date,
           time: data.time,
@@ -99,10 +99,17 @@ const RondoReservationSystem = () => {
           honeypot: "",
         },
       });
-      if (error) {
-        setSubmitError("Fehler beim Senden. Bitte versuche es erneut.");
-      } else if (result?.error) {
-        setSubmitError(result.error);
+
+      // supabase.functions.invoke returns { data, error }
+      // error is only set for network-level failures
+      // The edge function response body is in response.data
+      if (response.error) {
+        const msg = typeof response.error === "object" && "message" in response.error
+          ? response.error.message
+          : "Fehler beim Senden. Bitte versuche es erneut.";
+        setSubmitError(msg);
+      } else if (response.data?.error) {
+        setSubmitError(response.data.error);
       } else {
         setSubmitted(true);
       }
@@ -328,6 +335,19 @@ const RondoReservationSystem = () => {
         {step === 5 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Zusammenfassung</h3>
+
+            {/* Zone info prominently shown */}
+            {data.zone && ZONES.find(z => z.value === data.zone)?.info && (
+              <div className="mb-4 bg-primary/10 border border-primary/30 rounded-lg p-4">
+                <p className="text-sm font-medium text-primary mb-1">
+                  ℹ️ Wichtige Info: {ZONES.find(z => z.value === data.zone)?.label}
+                </p>
+                <p className="text-sm text-foreground">
+                  {ZONES.find(z => z.value === data.zone)?.info}
+                </p>
+              </div>
+            )}
+
             <div className="bg-card border border-border rounded-lg p-6 space-y-3 max-w-md">
               <p><strong>Datum:</strong> {data.date}</p>
               <p><strong>Uhrzeit:</strong> {data.time} Uhr</p>
@@ -339,6 +359,10 @@ const RondoReservationSystem = () => {
               <p><strong>Telefon:</strong> {data.phone}</p>
               {data.message && <p><strong>Nachricht:</strong> {data.message}</p>}
             </div>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Nach dem Absenden erhältst du eine Bestätigungs-E-Mail mit allen Details und einer Stornierungsmöglichkeit.
+            </p>
           </div>
         )}
       </div>
