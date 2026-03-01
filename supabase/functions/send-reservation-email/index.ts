@@ -41,6 +41,8 @@ function buildEmailHtml(reservation: {
   occasion: string;
   message?: string;
   cancel_url: string;
+  modify_url: string;
+  is_modification?: boolean;
 }): string {
   const zoneLabel = ZONE_LABELS[reservation.zone] || reservation.zone;
   const zoneInfo = ZONE_INFO[reservation.zone] || "";
@@ -63,10 +65,10 @@ function buildEmailHtml(reservation: {
 
         <!-- Confirmation Banner -->
         <tr><td style="background-color:#141414;padding:28px 40px;text-align:center;border-bottom:1px solid #222;">
-          <div style="display:inline-block;background-color:#1a3d1a;border:1px solid #2d5a2d;border-radius:8px;padding:12px 24px;">
-            <span style="color:#4ade80;font-size:18px;font-weight:700;">✓ Reservierung bestätigt</span>
+          <div style="display:inline-block;background-color:${reservation.is_modification ? '#1a2a3a' : '#1a3d1a'};border:1px solid ${reservation.is_modification ? '#2d4a6d' : '#2d5a2d'};border-radius:8px;padding:12px 24px;">
+            <span style="color:${reservation.is_modification ? '#60a5fa' : '#4ade80'};font-size:18px;font-weight:700;">${reservation.is_modification ? '✏️ Reservierung geändert' : '✓ Reservierung bestätigt'}</span>
           </div>
-          <p style="color:#999;font-size:14px;margin:12px 0 0;">Hallo <strong style="color:#e5e5e5;">${reservation.customer_name}</strong>, deine Reservierung ist eingegangen!</p>
+          <p style="color:#999;font-size:14px;margin:12px 0 0;">Hallo <strong style="color:#e5e5e5;">${reservation.customer_name}</strong>, ${reservation.is_modification ? 'deine Reservierung wurde aktualisiert!' : 'deine Reservierung ist eingegangen!'}</p>
         </td></tr>
 
         <!-- Details -->
@@ -143,11 +145,14 @@ function buildEmailHtml(reservation: {
         </td></tr>
         ` : ""}
 
-        <!-- Cancel Button -->
+        <!-- Action Buttons -->
         <tr><td style="background-color:#141414;padding:0 40px 32px;text-align:center;">
-          <p style="color:#666;font-size:13px;margin:0 0 16px;">Kannst du nicht kommen? Du kannst die Reservierung jederzeit stornieren:</p>
+          <p style="color:#666;font-size:13px;margin:0 0 16px;">Du möchtest etwas ändern?</p>
+          <a href="${reservation.modify_url}" style="display:inline-block;background-color:#1a2a3a;border:1px solid #2d4a6d;color:#60a5fa;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;margin-right:12px;">
+            ✏️ Reservierung ändern
+          </a>
           <a href="${reservation.cancel_url}" style="display:inline-block;background-color:#3a1a1a;border:1px solid #5a2d2d;color:#f87171;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">
-            Reservierung stornieren
+            ✕ Stornieren
           </a>
         </td></tr>
 
@@ -181,7 +186,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { reservation } = body;
+    const { reservation, is_modification } = body;
 
     if (!reservation || !reservation.customer_email) {
       return new Response(
@@ -192,12 +197,17 @@ Deno.serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const cancelUrl = `${SUPABASE_URL}/functions/v1/cancel-reservation?id=${reservation.id}`;
+    const modifyUrl = `${SUPABASE_URL}/functions/v1/modify-reservation?id=${reservation.id}`;
 
     const html = buildEmailHtml({
       ...reservation,
       cancel_url: cancelUrl,
+      modify_url: modifyUrl,
+      is_modification: !!is_modification,
     });
 
+    const subjectPrefix = is_modification ? "Reservierung geändert" : "Reservierung bestätigt";
+    
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -205,9 +215,9 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Rondo Sportsbar <onboarding@resend.dev>",
+        from: "Rondo Sportsbar <info@dev-lab24.de>",
         to: [reservation.customer_email],
-        subject: `Reservierung bestätigt – ${formatDate(reservation.reservation_date)} um ${reservation.reservation_time} Uhr`,
+        subject: `${subjectPrefix} – ${formatDate(reservation.reservation_date)} um ${reservation.reservation_time} Uhr`,
         html,
       }),
     });
