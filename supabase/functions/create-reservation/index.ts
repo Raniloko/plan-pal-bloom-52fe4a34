@@ -126,6 +126,34 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Send confirmation email (fire-and-forget, don't block reservation)
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+        },
+        body: JSON.stringify({
+          reservation: {
+            id: data.id,
+            customer_name: sanitize(name),
+            customer_email: sanitize(email),
+            reservation_date: date,
+            reservation_time: time,
+            guest_count: guests,
+            zone: zone,
+            occasion: anlass,
+            message: message ? sanitize(message).substring(0, 1000) : "",
+          },
+        }),
+      });
+    } catch (emailErr) {
+      console.error("Email sending failed (non-blocking):", emailErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true, reservation_id: data.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
