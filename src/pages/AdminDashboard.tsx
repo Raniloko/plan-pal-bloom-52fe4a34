@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LogOut, Search, Edit2, XCircle, CheckCircle, Calendar, Users, X,
   TrendingUp, Clock, MapPin, PartyPopper, Phone, Mail, MessageSquare,
-  ChevronDown, BarChart3, AlertTriangle
+  ChevronDown, BarChart3, AlertTriangle, Download
 } from "lucide-react";
 import FloorPlan from "@/components/admin/FloorPlan";
 import { useToast } from "@/hooks/use-toast";
@@ -185,6 +185,31 @@ const AdminDashboard = () => {
     return `${day}.${m}.${y}`;
   };
 
+  const exportCSV = () => {
+    const headers = ["Datum", "Uhrzeit", "Gäste", "Bereich", "Anlass", "Name", "E-Mail", "Telefon", "Nachricht", "Status"];
+    const rows = filtered.map(r => [
+      formatDate(r.reservation_date),
+      r.reservation_time,
+      r.guest_count,
+      ZONE_LABELS[r.zone] || r.zone,
+      OCCASION_LABELS[r.occasion] || r.occasion,
+      r.customer_name,
+      r.customer_email,
+      r.customer_phone,
+      (r.message || "").replace(/"/g, '""'),
+      STATUS_LABELS[r.status] || r.status,
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(v => `"${v}"`).join(";")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reservierungen_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV exportiert", description: `${filtered.length} Reservierung(en) exportiert.` });
+  };
+
   return (
     <main className="pt-20 md:pt-24 min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -345,7 +370,12 @@ const AdminDashboard = () => {
             </div>
 
             {/* Results count */}
-            <p className="text-sm text-muted-foreground">{filtered.length} Reservierung{filtered.length !== 1 ? "en" : ""} gefunden</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{filtered.length} Reservierung{filtered.length !== 1 ? "en" : ""} gefunden</p>
+              <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">
+                <Download size={14} /> CSV Export
+              </button>
+            </div>
 
             {/* Table */}
             {loading ? (
