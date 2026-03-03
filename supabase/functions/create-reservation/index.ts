@@ -14,6 +14,14 @@ const VALID_TIMES = [
   "22:00","22:30","23:00",
 ];
 
+const ZONE_CAPACITY: Record<string, number> = {
+  hauptbereich: 7,
+  fenster: 5,
+  billard: 8,
+  vip: 1,
+  podest: 1,
+};
+
 // Simple in-memory rate limiting (per function instance)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 5;
@@ -97,6 +105,31 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    const zoneCapacity = ZONE_CAPACITY[zone] ?? 1;
+
+    const { count: existingReservations, error: availabilityError } = await supabase
+      .from("reservations")
+      .select("id", { count: "exact", head: true })
+      .eq("reservation_date", date)
+      .eq("reservation_time", time)
+      .eq("zone", zone)
+      .neq("status", "cancelled");
+
+    if (availabilityError) {
+      console.error("Availability check error:", availabilityError.message);
+      return new Response(
+        JSON.stringify({ error: "Fehler bei der Verfügbarkeitsprüfung." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if ((existingReservations ?? 0) >= zoneCapacity) {
+      return new Response(
+        JSON.stringify({ error: "Dieser Bereich ist zur gewählten Uhrzeit bereits vollständig belegt." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const { data, error } = await supabase.from("reservations").insert({
       reservation_date: date,

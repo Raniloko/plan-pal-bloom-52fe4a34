@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges" | "";
@@ -44,6 +44,22 @@ const TIMES = [
   "22:00", "22:30", "23:00",
 ];
 
+type ActiveReservation = {
+  reservation_time: string;
+  zone: Exclude<ReservationZone, "">;
+};
+
+type ZoneKey = Exclude<ReservationZone, "">;
+type AvailabilityMap = Record<string, Partial<Record<ZoneKey, number>>>;
+
+const ZONE_CAPACITY: Record<ZoneKey, number> = {
+  hauptbereich: 7,
+  fenster: 5,
+  billard: 8,
+  vip: 1,
+  podest: 1,
+};
+
 const STEPS = [
   { icon: <CalendarDays size={20} />, label: "Datum & Uhrzeit" },
   { icon: <Users size={20} />, label: "Personenanzahl" },
@@ -70,6 +86,85 @@ const RondoReservationSystem = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  const [availability, setAvailability] = useState<AvailabilityMap>({});
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+
+  const zoneKeys = useMemo(() => Object.keys(ZONE_CAPACITY) as ZoneKey[], []);
+
+  const fetchAvailability = useCallback(async (date: string) => {
+    if (!date) {
+      setAvailability({});
+      return;
+    }
+
+    setAvailabilityLoading(true);
+    const { data: activeReservations, error } = await supabase
+      .from("reservations")
+      .select("reservation_time, zone")
+      .eq("reservation_date", date)
+      .neq("status", "cancelled")
+      .in("zone", zoneKeys);
+
+    if (error) {
+      setAvailabilityLoading(false);
+      return;
+    }
+
+    const grouped = (activeReservations as ActiveReservation[]).reduce<AvailabilityMap>((acc, reservation) => {
+      if (!acc[reservation.reservation_time]) {
+        acc[reservation.reservation_time] = {};
+      }
+      const current = acc[reservation.reservation_time][reservation.zone] ?? 0;
+      acc[reservation.reservation_time][reservation.zone] = current + 1;
+      return acc;
+    }, {});
+
+    setAvailability(grouped);
+    setAvailabilityLoading(false);
+  }, [zoneKeys]);
+
+  useEffect(() => {
+    void fetchAvailability(data.date);
+  }, [data.date, fetchAvailability]);
+
+  useEffect(() => {
+    if (!data.date) return;
+
+    const channel = supabase
+      .channel(`availability-${data.date}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reservations", filter: `reservation_date=eq.${data.date}` }, () => {
+        void fetchAvailability(data.date);
+      })
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [data.date, fetchAvailability]);
+
+  const getCountForZoneAtTime = useCallback((time: string, zone: ZoneKey) => {
+    return availability[time]?.[zone] ?? 0;
+  }, [availability]);
+
+  const isZoneFullyBooked = useCallback((zone: ZoneKey, time: string) => {
+    return getCountForZoneAtTime(time, zone) >= ZONE_CAPACITY[zone];
+  }, [getCountForZoneAtTime]);
+
+  const isTimeInPast = useCallback((date: string, time: string) => {
+    if (!date) return true;
+    const today = new Date().toISOString().split("T")[0];
+    if (date !== today) return false;
+
+    const [hour, minute] = time.split(":").map(Number);
+    const selectedDateTime = new Date();
+    selectedDateTime.setHours(hour, minute, 0, 0);
+    return selectedDateTime.getTime() <= Date.now();
+  }, []);
+
+  const isTimeFullyBooked = useCallback((time: string) => {
+    return zoneKeys.every((zone) => isZoneFullyBooked(zone, time));
+  }, [isZoneFullyBooked, zoneKeys]);
+
   const canNext = () => {
     switch (step) {
       case 0: return data.date && data.time;
@@ -84,7 +179,22 @@ const RondoReservationSystem = () => {
   const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError("");
+
     try {
+      await fetchAvailability(data.date);
+
+      if (isTimeInPast(data.date, data.time)) {
+        setSubmitError("Diese Uhrzeit liegt bereits in der Vergangenheit.");
+        setStep(0);
+        return;
+      }
+
+      if (data.zone && isZoneFullyBooked(data.zone as ZoneKey, data.time)) {
+        setSubmitError("Der gewählte Bereich ist zu dieser Uhrzeit bereits vollständig belegt. Bitte wähle eine andere Zeit oder einen anderen Bereich.");
+        setStep(2);
+        return;
+      }
+
       const response = await supabase.functions.invoke("create-reservation", {
         body: {
           date: data.date,
@@ -100,25 +210,47 @@ const RondoReservationSystem = () => {
         },
       });
 
-      // supabase.functions.invoke returns { data, error }
-      // error is only set for network-level failures
-      // The edge function response body is in response.data
       if (response.error) {
-        const msg = typeof response.error === "object" && "message" in response.error
-          ? response.error.message
-          : "Fehler beim Senden. Bitte versuche es erneut.";
-        setSubmitError(msg);
-      } else if (response.data?.error) {
-        setSubmitError(response.data.error);
-      } else {
-        setSubmitted(true);
+        const responseContext = (response.error as { context?: Response }).context;
+        let detailedError = "";
+
+        if (responseContext) {
+          const parsed = await responseContext.json().catch(() => null) as { error?: string } | null;
+          detailedError = parsed?.error ?? "";
+        }
+
+        setSubmitError(detailedError || "Reservierung konnte nicht gespeichert werden. Bitte prüfe Datum, Uhrzeit und Bereich.");
+        return;
       }
+
+      if (response.data?.error) {
+        setSubmitError(response.data.error);
+        return;
+      }
+
+      setSubmitted(true);
     } catch {
       setSubmitError("Verbindungsfehler. Bitte versuche es erneut.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const selectedTimeDisabled = Boolean(data.time) && (!data.date || isTimeInPast(data.date, data.time) || isTimeFullyBooked(data.time));
+
+  useEffect(() => {
+    if (!data.time) return;
+    if (selectedTimeDisabled) {
+      setData((prev) => ({ ...prev, time: "", zone: "" }));
+    }
+  }, [data.time, selectedTimeDisabled]);
+
+  useEffect(() => {
+    if (!data.zone || !data.time) return;
+    if (isZoneFullyBooked(data.zone as ZoneKey, data.time)) {
+      setData((prev) => ({ ...prev, zone: "" }));
+    }
+  }, [data.zone, data.time, isZoneFullyBooked]);
 
   if (submitted) {
     return (
@@ -178,27 +310,48 @@ const RondoReservationSystem = () => {
                   type="date"
                   value={data.date}
                   min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setData({ ...data, date: e.target.value })}
+                  onChange={(e) => setData({ ...data, date: e.target.value, time: "", zone: "" })}
                   className="w-full bg-muted border border-border rounded-md px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                <p className="text-xs text-muted-foreground mt-2">Belegte Zeiten werden automatisch gesperrt.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Uhrzeit</label>
-                <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                  {TIMES.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setData({ ...data, time: t })}
-                      className={`px-3 py-2 text-sm rounded-md border transition-colors ${
-                        data.time === t
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-muted border-border hover:border-primary/50"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
+                {!data.date ? (
+                  <div className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                    Bitte zuerst ein Datum wählen.
+                  </div>
+                ) : (
+                  <>
+                    {availabilityLoading && (
+                      <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                        <Loader2 size={14} className="animate-spin" /> Verfügbarkeit wird aktualisiert...
+                      </p>
+                    )}
+                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                      {TIMES.map((t) => {
+                        const disabled = isTimeInPast(data.date, t) || isTimeFullyBooked(t);
+                        return (
+                          <button
+                            key={t}
+                            disabled={disabled}
+                            onClick={() => setData({ ...data, time: t, zone: "" })}
+                            className={`px-3 py-2 text-sm rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                              data.time === t
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : disabled
+                                  ? "bg-muted border-border"
+                                  : "bg-muted border-border hover:border-primary/50"
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">Ausgegraute Uhrzeiten sind belegt oder bereits vorbei.</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -232,6 +385,12 @@ const RondoReservationSystem = () => {
           <div>
             <h3 className="font-display text-2xl mb-4">Welchen Bereich bevorzugst du?</h3>
 
+            {data.time && (
+              <div className="mb-4 bg-muted border border-border rounded-lg px-4 py-3 text-sm text-muted-foreground">
+                Verfügbarkeit für <span className="text-foreground font-semibold">{data.date}</span> um <span className="text-foreground font-semibold">{data.time} Uhr</span>
+              </div>
+            )}
+
             {/* Zone-specific info box - shown FIRST so customers see it immediately */}
             {data.zone && ZONES.find(z => z.value === data.zone)?.info && (
               <div className="mb-4 bg-primary/10 border border-primary/30 rounded-lg p-4 animate-fade-in">
@@ -245,21 +404,43 @@ const RondoReservationSystem = () => {
             )}
 
             <div className="grid sm:grid-cols-2 gap-3">
-              {ZONES.map((z) => (
-                <button
-                  key={z.value}
-                  onClick={() => setData({ ...data, zone: z.value as ReservationZone })}
-                  className={`text-left p-4 rounded-lg border transition-colors ${
-                    data.zone === z.value
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-muted hover:border-primary/50"
-                  }`}
-                >
-                  <p className="font-semibold">{z.label}</p>
-                  <p className="text-xs text-muted-foreground">{z.desc}</p>
-                </button>
-              ))}
+              {ZONES.map((z) => {
+                const zone = z.value as ZoneKey;
+                const booked = data.time ? getCountForZoneAtTime(data.time, zone) : 0;
+                const capacity = ZONE_CAPACITY[zone];
+                const isFull = Boolean(data.time) && booked >= capacity;
+
+                return (
+                  <button
+                    key={z.value}
+                    disabled={isFull}
+                    onClick={() => setData({ ...data, zone: z.value as ReservationZone })}
+                    className={`text-left p-4 rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                      data.zone === z.value
+                        ? "border-primary bg-primary/10"
+                        : isFull
+                          ? "border-border bg-muted"
+                          : "border-border bg-muted hover:border-primary/50"
+                    }`}
+                  >
+                    <p className="font-semibold">{z.label}</p>
+                    <p className="text-xs text-muted-foreground">{z.desc}</p>
+                    {data.time && (
+                      <p className={`text-xs mt-2 ${isFull ? "text-destructive" : "text-muted-foreground"}`}>
+                        {booked}/{capacity} belegt {isFull ? "· nicht verfügbar" : "· verfügbar"}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
+
+            {data.time && (
+              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-2">
+                <AlertTriangle size={14} className="text-primary" />
+                Voll belegte Bereiche sind deaktiviert und nicht auswählbar.
+              </p>
+            )}
           </div>
         )}
 
