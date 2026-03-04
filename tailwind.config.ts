@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        sans: ["DM Sans", "sans-serif"],
         display: ["Bebas Neue", "cursive"],
       },
       colors: {
@@ -58,6 +58,14 @@ export default {
         "section-gray": {
           DEFAULT: "hsl(var(--section-gray))",
           foreground: "hsl(var(--section-gray-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
