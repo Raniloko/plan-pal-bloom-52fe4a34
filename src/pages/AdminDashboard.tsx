@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LogOut, Search, Edit2, XCircle, CheckCircle, Calendar, Users, X,
   TrendingUp, Clock, MapPin, PartyPopper, Phone, Mail, MessageSquare,
-  ChevronDown, BarChart3, AlertTriangle, Download
+  ChevronDown, BarChart3, AlertTriangle, Download, Grid3X3
 } from "lucide-react";
 import FloorPlan from "@/components/admin/FloorPlan";
 import { useToast } from "@/hooks/use-toast";
@@ -83,7 +83,10 @@ const AdminDashboard = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Reservation>>({});
   const [floorPlanDate, setFloorPlanDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [activeTab, setActiveTab] = useState<"overview" | "reservations" | "floorplan">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "reservations" | "floorplan" | "availability">("overview");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [availabilityDate, setAvailabilityDate] = useState(() => new Date().toISOString().split("T")[0]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -122,11 +125,42 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/admin/login"); };
 
-  const handleCancel = async (id: string) => {
-    const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", id);
+  const handleCancel = (id: string) => {
+    setCancellingId(id);
+    setCancelReason("");
+  };
+
+  const confirmCancel = async () => {
+    if (!cancellingId || !cancelReason.trim()) return;
+    const reservation = reservations.find(r => r.id === cancellingId);
+    const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", cancellingId);
     if (!error) {
+      if (reservation) {
+        try {
+          await supabase.functions.invoke("send-reservation-email", {
+            body: {
+              reservation: {
+                id: reservation.id,
+                customer_name: reservation.customer_name,
+                customer_email: reservation.customer_email,
+                reservation_date: reservation.reservation_date,
+                reservation_time: reservation.reservation_time,
+                guest_count: reservation.guest_count,
+                zone: reservation.zone,
+                occasion: reservation.occasion,
+              },
+              is_cancellation: true,
+              cancel_reason: cancelReason.trim(),
+            },
+          });
+        } catch (e) {
+          console.error("Cancel email failed:", e);
+        }
+      }
+      setCancellingId(null);
+      setCancelReason("");
       fetchReservations();
-      toast({ title: "Storniert", description: "Reservierung wurde storniert." });
+      toast({ title: "Storniert", description: "Reservierung storniert. Stornierungsmail gesendet." });
     }
   };
 
@@ -231,6 +265,7 @@ const AdminDashboard = () => {
           {[
             { id: "overview" as const, label: "Übersicht", icon: BarChart3 },
             { id: "reservations" as const, label: "Reservierungen", icon: Calendar },
+            { id: "availability" as const, label: "Verfügbarkeit", icon: Grid3X3 },
             { id: "floorplan" as const, label: "Raumplan", icon: MapPin },
           ].map(tab => (
             <button
@@ -464,6 +499,92 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* AVAILABILITY TAB */}
+        {activeTab === "availability" && (() => {
+          const matrixReservations = reservations.filter(r => r.reservation_date === availabilityDate && r.status !== "cancelled");
+          const CAPACITY: Record<string, number> = { hauptbereich: 7, fenster: 5, billard: 8, vip: 1, podest: 1 };
+          const zoneKeys = Object.keys(ZONE_LABELS);
+          return (
+            <div className="space-y-6">
+              <div className="bg-card/50 backdrop-blur border border-border/50 rounded-2xl p-5">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Datum:</label>
+                  <input type="date" value={availabilityDate} onChange={(e) => setAvailabilityDate(e.target.value)}
+                    className="bg-muted/50 border border-border/50 rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                  <button onClick={() => setAvailabilityDate(today)}
+                    className="px-4 py-2.5 text-xs font-semibold bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">
+                    Heute
+                  </button>
+                  <span className="text-sm text-muted-foreground ml-auto">{matrixReservations.length} aktive Reservierung(en)</span>
+                </div>
+              </div>
+
+              <div className="bg-card/50 backdrop-blur border border-border/50 rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50 bg-muted/20">
+                        <th className="py-3 px-3 font-semibold text-left text-xs uppercase tracking-wider text-muted-foreground sticky left-0 bg-muted/20 z-10">Zeit</th>
+                        {zoneKeys.map(z => (
+                          <th key={z} className="py-3 px-3 font-semibold text-center text-xs uppercase tracking-wider text-muted-foreground min-w-[100px]">
+                            {ZONE_LABELS[z]}
+                            <div className="text-[10px] font-normal opacity-60">max {CAPACITY[z]}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {VALID_TIMES.map(time => {
+                        const counts: Record<string, number> = {};
+                        zoneKeys.forEach(z => {
+                          counts[z] = matrixReservations.filter(r => r.reservation_time === time && r.zone === z).length;
+                        });
+                        return (
+                          <tr key={time} className="border-b border-border/30 hover:bg-muted/10">
+                            <td className="py-3 px-3 font-mono font-semibold text-foreground sticky left-0 bg-card/50 z-10">{time}</td>
+                            {zoneKeys.map(z => {
+                              const count = counts[z];
+                              const cap = CAPACITY[z];
+                              const pct = cap > 0 ? count / cap : 0;
+                              let cellClass = "text-muted-foreground";
+                              let bgClass = "";
+                              if (count === 0) {
+                                bgClass = "bg-emerald-500/5";
+                                cellClass = "text-emerald-400";
+                              } else if (pct < 0.5) {
+                                bgClass = "bg-emerald-500/10";
+                                cellClass = "text-emerald-400 font-semibold";
+                              } else if (pct < 1) {
+                                bgClass = "bg-amber-500/15";
+                                cellClass = "text-amber-400 font-semibold";
+                              } else {
+                                bgClass = "bg-red-500/15";
+                                cellClass = "text-red-400 font-bold";
+                              }
+                              return (
+                                <td key={z} className={`py-3 px-3 text-center ${bgClass}`}>
+                                  <span className={cellClass}>{count}/{cap}</span>
+                                  {pct >= 1 && <div className="text-[10px] text-red-400 mt-0.5">VOLL</div>}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex gap-4 flex-wrap text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/30" /> Frei</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500/20 border border-amber-500/30" /> Teilweise belegt</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500/20 border border-red-500/30" /> Voll</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* FLOORPLAN TAB */}
         {activeTab === "floorplan" && (
           <div className="space-y-6">
@@ -580,6 +701,46 @@ const AdminDashboard = () => {
                   Speichern
                 </button>
                 <button onClick={() => setEditingId(null)}
+                  className="flex-1 border border-border/50 py-3 font-semibold rounded-xl hover:border-primary/30 hover:bg-muted/30 transition-all text-muted-foreground">
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Modal */}
+        {cancellingId && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setCancellingId(null)}>
+            <div className="bg-card border border-border/50 rounded-2xl p-0 w-full max-w-md shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-gradient-to-r from-red-500/10 to-transparent border-b border-border/50 px-6 py-5 flex items-center justify-between">
+                <h2 className="font-display text-2xl flex items-center gap-2">
+                  <XCircle size={20} className="text-red-400" />
+                  Stornieren
+                </h2>
+                <button onClick={() => setCancellingId(null)} className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Bitte gib einen Grund für die Stornierung an. Der Kunde wird per E-Mail benachrichtigt.
+                </p>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Grund der Stornierung..."
+                  rows={3}
+                  className="form-input-style resize-none"
+                  autoFocus
+                />
+              </div>
+              <div className="border-t border-border/50 px-6 py-4 flex gap-3 bg-muted/10">
+                <button onClick={confirmCancel} disabled={!cancelReason.trim()}
+                  className="flex-1 bg-red-500 text-white py-3 font-bold uppercase tracking-wider rounded-xl hover:bg-red-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                  Stornieren & Mail senden
+                </button>
+                <button onClick={() => setCancellingId(null)}
                   className="flex-1 border border-border/50 py-3 font-semibold rounded-xl hover:border-primary/30 hover:bg-muted/30 transition-all text-muted-foreground">
                   Abbrechen
                 </button>

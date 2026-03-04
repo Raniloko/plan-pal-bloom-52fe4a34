@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, password, setup_key } = await req.json();
+    const { email, password, setup_key, username } = await req.json();
 
     // Simple setup key to prevent unauthorized access
     if (setup_key !== "rondo-admin-setup-2024") {
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     // Assign admin role
     const { error: roleError } = await supabase
       .from("user_roles")
-      .insert({ user_id: userData.user.id, role: "admin" });
+      .insert({ user_id: userData.user.id, role: "admin", username: (username || "admin").trim().toLowerCase().replace(/[^a-z0-9_\-\.]/g, "") });
 
     if (roleError) {
       return new Response(
