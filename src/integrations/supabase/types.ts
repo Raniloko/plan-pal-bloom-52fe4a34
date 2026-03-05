@@ -14,8 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_logs: {
+        Row: {
+          email_type: string
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          reservation_id: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          email_type: string
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          reservation_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          email_type?: string
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          reservation_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          reservation_id: string | null
+          title: string
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          reservation_id?: string | null
+          title: string
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          reservation_id?: string | null
+          title?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
+          cancellation_reason: string | null
+          cancellation_token: string | null
           created_at: string
           customer_email: string
           customer_name: string
@@ -28,10 +106,13 @@ export type Database = {
           reservation_date: string
           reservation_time: string
           status: string
+          unit_id: string | null
           updated_at: string
           zone: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancellation_token?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
@@ -44,10 +125,13 @@ export type Database = {
           reservation_date: string
           reservation_time: string
           status?: string
+          unit_id?: string | null
           updated_at?: string
           zone: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancellation_token?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
@@ -60,8 +144,71 @@ export type Database = {
           reservation_date?: string
           reservation_time?: string
           status?: string
+          unit_id?: string | null
           updated_at?: string
           zone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      units: {
+        Row: {
+          area: string
+          capacity: number | null
+          created_at: string | null
+          id: string
+          name: string
+          occupied_until: string | null
+          position_index: number | null
+          status: string | null
+        }
+        Insert: {
+          area: string
+          capacity?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          occupied_until?: string | null
+          position_index?: number | null
+          status?: string | null
+        }
+        Update: {
+          area?: string
+          capacity?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          occupied_until?: string | null
+          position_index?: number | null
+          status?: string | null
         }
         Relationships: []
       }
