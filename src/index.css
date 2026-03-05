@@ -77,3 +77,28 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-yellow-300;
   }
 }
+
+/* Admin Panel Theme - Red accent */
+.admin-theme {
+  --primary: 0 84% 51%;
+  --primary-foreground: 0 0% 100%;
+  --background: 240 7% 4%;
+  --foreground: 0 0% 94%;
+  --card: 240 8% 7%;
+  --card-foreground: 0 0% 94%;
+  --popover: 240 8% 9%;
+  --popover-foreground: 0 0% 94%;
+  --muted: 240 5% 12%;
+  --muted-foreground: 240 6% 45%;
+  --accent: 0 84% 51%;
+  --accent-foreground: 0 0% 100%;
+  --border: 0 0% 100% / 0.07;
+  --input: 0 0% 100% / 0.07;
+  --ring: 0 84% 51%;
+  --success: 148 82% 52%;
+  --success-foreground: 0 0% 4%;
+  --warning: 28 82% 51%;
+  --warning-foreground: 0 0% 4%;
+  --destructive: 0 84% 51%;
+  --destructive-foreground: 0 0% 100%;
+}
