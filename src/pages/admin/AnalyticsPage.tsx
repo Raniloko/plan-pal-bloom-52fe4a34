@@ -4,7 +4,7 @@ import { format, startOfWeek, addDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 
-const AREA_COLORS: Record<string, string> = { billard: "#1fe87a", kicker: "#3b82f6", dart: "#a855f7", restaurant: "#e8831f", vip: "#e81f1f" };
+const AREA_COLORS: Record<string, string> = { billard: "#c9a84c", kicker: "#d4892a", dart: "#a47fe8", restaurant: "#2a9d5c", vip: "#e81f1f" };
 
 const AnalyticsPage = () => {
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
@@ -60,55 +60,56 @@ const AnalyticsPage = () => {
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 14));
   const dayOrder = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const tooltipStyle = { backgroundColor: "rgba(17,17,24,0.9)", border: "1px solid rgba(201,168,76,0.15)", borderRadius: "8px", backdropFilter: "blur(16px)" };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-3xl tracking-wider">📊 Auslastung</h2>
-        <div className="bg-card border border-border rounded-xl px-4 py-3">
+        <div className="glass-card rounded-xl px-4 py-3">
           <span className="text-xs text-muted-foreground">Diesen Monat</span>
-          <span className="block text-2xl font-display">{totalMonth}</span>
+          <span className="block text-2xl font-display text-primary">{totalMonth}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card border border-border rounded-xl p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-stagger">
+        <div className="glass-card rounded-xl p-5">
           <h3 className="font-display text-lg tracking-wider mb-4">Wochenübersicht</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="day" stroke="#6b6b7a" fontSize={12} /><YAxis stroke="#6b6b7a" fontSize={12} />
-              <Tooltip contentStyle={{ backgroundColor: "#18181d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px" }} />
-              <Bar dataKey="count" fill="hsl(0, 84%, 51%)" radius={[4, 4, 0, 0]} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Bar dataKey="count" fill="hsl(43, 52%, 54%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5">
           <h3 className="font-display text-lg tracking-wider mb-4">Verteilung nach Bereich</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={areaData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" nameKey="name">
                 {areaData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
-              <Tooltip contentStyle={{ backgroundColor: "#18181d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px" }} />
+              <Tooltip contentStyle={tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5">
           <h3 className="font-display text-lg tracking-wider mb-4">Monatlicher Trend</h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="month" stroke="#6b6b7a" fontSize={12} /><YAxis stroke="#6b6b7a" fontSize={12} />
-              <Tooltip contentStyle={{ backgroundColor: "#18181d", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px" }} />
-              <Line type="monotone" dataKey="count" stroke="hsl(0, 84%, 51%)" strokeWidth={2} dot={{ fill: "hsl(0, 84%, 51%)" }} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Line type="monotone" dataKey="count" stroke="hsl(43, 52%, 54%)" strokeWidth={2} dot={{ fill: "hsl(43, 52%, 54%)" }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5">
           <h3 className="font-display text-lg tracking-wider mb-4">Beliebte Zeitfenster</h3>
           <div className="overflow-x-auto">
             <div className="grid gap-1" style={{ gridTemplateColumns: `60px repeat(${hours.length}, 1fr)` }}>
@@ -122,7 +123,7 @@ const AnalyticsPage = () => {
                     const intensity = Math.min(1, val / 5);
                     return (
                       <div key={`${day}-${h}`} className="aspect-square rounded"
-                        style={{ backgroundColor: val > 0 ? `rgba(232, 31, 31, ${0.15 + intensity * 0.7})` : "rgba(255,255,255,0.03)" }}
+                        style={{ backgroundColor: val > 0 ? `rgba(201, 168, 76, ${0.1 + intensity * 0.6})` : "rgba(255,255,255,0.02)" }}
                         title={`${day} ${h}:00 – ${val} Buchungen`} />
                     );
                   })}

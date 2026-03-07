@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           email_type: string
@@ -186,6 +213,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          notes: string | null
           occupied_until: string | null
           position_index: number | null
           status: string | null
@@ -196,6 +224,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
+          notes?: string | null
           occupied_until?: string | null
           position_index?: number | null
           status?: string | null
@@ -206,6 +235,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          notes?: string | null
           occupied_until?: string | null
           position_index?: number | null
           status?: string | null
@@ -230,6 +260,45 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      waitlist: {
+        Row: {
+          area: string
+          created_at: string | null
+          desired_date: string
+          desired_time: string
+          guest_email: string
+          guest_name: string
+          guest_phone: string
+          id: string
+          notified_at: string | null
+          status: string | null
+        }
+        Insert: {
+          area: string
+          created_at?: string | null
+          desired_date: string
+          desired_time: string
+          guest_email: string
+          guest_name: string
+          guest_phone: string
+          id?: string
+          notified_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          area?: string
+          created_at?: string | null
+          desired_date?: string
+          desired_time?: string
+          guest_email?: string
+          guest_name?: string
+          guest_phone?: string
+          id?: string
+          notified_at?: string | null
+          status?: string | null
         }
         Relationships: []
       }

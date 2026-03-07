@@ -2,16 +2,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/contexts/SettingsContext";
 
-interface Props { open: boolean; onClose: () => void; }
+interface Props { open: boolean; onClose: () => void; prefill?: { date?: string; time?: string; zone?: string; unit_id?: string } }
 
-const areas = [
-  { value: "billard", label: "Billard" }, { value: "kicker", label: "Tischkicker" },
-  { value: "dart", label: "Dart" }, { value: "restaurant", label: "Restaurant" }, { value: "vip", label: "VIP" },
-];
-
-const NewReservationModal = ({ open, onClose }: Props) => {
+const NewReservationModal = ({ open, onClose, prefill }: Props) => {
   const { toast } = useToast();
+  const { settings } = useSettings();
   const [loading, setLoading] = useState(false);
   const [units, setUnits] = useState<any[]>([]);
   const [form, setForm] = useState({
@@ -21,11 +18,29 @@ const NewReservationModal = ({ open, onClose }: Props) => {
   });
 
   useEffect(() => {
+    if (prefill && open) {
+      setForm(prev => ({
+        ...prev,
+        reservation_date: prefill.date || prev.reservation_date,
+        reservation_time: prefill.time || prev.reservation_time,
+        zone: prefill.zone || prev.zone,
+        unit_id: prefill.unit_id || prev.unit_id,
+      }));
+    }
+  }, [prefill, open]);
+
+  useEffect(() => {
     if (form.zone) {
       supabase.from("units").select("*").eq("area", form.zone).eq("status", "free").order("position_index")
         .then(({ data }) => setUnits(data || []));
     } else { setUnits([]); }
   }, [form.zone]);
+
+  // Filter areas based on settings
+  const enabledAreas = [
+    { value: "billard", label: "Billard" }, { value: "kicker", label: "Tischkicker" },
+    { value: "dart", label: "Dart" }, { value: "restaurant", label: "Restaurant" }, { value: "vip", label: "VIP" },
+  ].filter(a => settings.areas_enabled[a.value] !== false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +54,15 @@ const NewReservationModal = ({ open, onClose }: Props) => {
         occasion: form.occasion, message: form.message, status: "confirmed", honeypot: "",
       } as any);
       if (error) throw error;
-      toast({ title: "Reservierung erstellt" });
+
+      // Log activity
+      await (supabase as any).from("activity_log").insert({
+        action: "reservation_created",
+        details: `${form.customer_name} – ${form.zone} – ${form.reservation_date} ${form.reservation_time}`,
+        entity_type: "reservation",
+      });
+
+      toast({ title: "✅ Reservierung erstellt" });
       onClose();
       setForm({ customer_name: "", customer_email: "", customer_phone: "", reservation_date: "", reservation_time: "", zone: "", unit_id: "", guest_count: 2, occasion: "sonstiges", message: "" });
     } catch (err: any) {
@@ -47,11 +70,11 @@ const NewReservationModal = ({ open, onClose }: Props) => {
     } finally { setLoading(false); }
   };
 
-  const ic = "w-full bg-muted/50 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50";
+  const ic = "w-full bg-muted/30 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all";
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="admin-theme bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="admin-theme glass-card border-border max-w-lg max-h-[90vh] overflow-y-auto" style={{ cursor: 'auto' }}>
         <DialogHeader><DialogTitle className="font-display text-2xl tracking-wider">Neue Reservierung</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-3">
@@ -72,7 +95,7 @@ const NewReservationModal = ({ open, onClose }: Props) => {
             <div><label className="text-xs text-muted-foreground mb-1 block">Bereich *</label>
               <select required value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value, unit_id: "" })} className={ic}>
                 <option value="">Auswählen...</option>
-                {areas.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+                {enabledAreas.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
               </select></div>
             <div><label className="text-xs text-muted-foreground mb-1 block">Einheit</label>
               <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className={ic}>
@@ -87,13 +110,14 @@ const NewReservationModal = ({ open, onClose }: Props) => {
               <select value={form.occasion} onChange={(e) => setForm({ ...form, occasion: e.target.value })} className={ic}>
                 <option value="sonstiges">Sonstiges</option><option value="sport">Sport</option>
                 <option value="feier">Feier</option><option value="essen">Essen</option><option value="billard">Billard</option>
+                <option value="kicker">Kicker</option><option value="dart">Dart</option><option value="vip">VIP</option>
               </select></div>
           </div>
           <div><label className="text-xs text-muted-foreground mb-1 block">Notizen</label>
             <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className={`${ic} h-20 resize-none`} /></div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm border border-border rounded-lg hover:bg-muted/50">Abbrechen</button>
-            <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm border border-border rounded-lg hover:bg-muted/30">Abbrechen</button>
+            <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 shadow-lg shadow-primary/20">
               {loading ? "Speichern..." : "Reservierung erstellen"}
             </button>
           </div>

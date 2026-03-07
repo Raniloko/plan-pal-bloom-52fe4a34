@@ -20,10 +20,17 @@ const KickerPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  const freeCount = units.filter(u => u.status === "free").length;
+
   return (
     <div className="space-y-6">
-      <h2 className="font-display text-3xl tracking-wider">⚽ Tischkicker</h2>
-      <div className="grid grid-cols-2 gap-6 max-w-2xl">
+      <div className="flex items-center gap-4">
+        <h2 className="font-display text-3xl tracking-wider">⚽ Tischkicker</h2>
+        <div className="glass-card rounded-lg px-3 py-1.5">
+          <span className="flex items-center gap-1 text-xs"><span className="w-2 h-2 rounded-full bg-success" />{freeCount} Frei</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-6 max-w-2xl animate-stagger">
         {units.map((unit) => <UnitCard key={unit.id} unit={unit} onClick={() => setSelectedUnit(unit)} />)}
       </div>
       <UnitDetailPanel unit={selectedUnit} open={!!selectedUnit} onClose={() => setSelectedUnit(null)} onStatusChange={fetchUnits} />
