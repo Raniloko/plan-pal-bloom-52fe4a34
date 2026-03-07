@@ -8,34 +8,24 @@
   :root {
     --background: 0 0% 4%;
     --foreground: 34 33% 94%;
-
     --card: 0 0% 7%;
     --card-foreground: 34 33% 94%;
-
     --popover: 0 0% 9%;
     --popover-foreground: 34 33% 94%;
-
     --primary: 43 52% 54%;
     --primary-foreground: 0 0% 4%;
-
     --secondary: 0 0% 9%;
     --secondary-foreground: 34 33% 94%;
-
     --muted: 0 0% 9%;
     --muted-foreground: 0 0% 42%;
-
     --accent: 43 52% 54%;
     --accent-foreground: 0 0% 4%;
-
     --destructive: 0 71% 47%;
     --destructive-foreground: 34 33% 94%;
-
     --border: 0 0% 100% / 0.07;
     --input: 0 0% 100% / 0.07;
     --ring: 43 52% 54%;
-
     --radius: 0.5rem;
-
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 34 33% 94%;
     --sidebar-primary: 43 52% 54%;
@@ -44,12 +34,10 @@
     --sidebar-accent-foreground: 34 33% 94%;
     --sidebar-border: 0 0% 100% / 0.07;
     --sidebar-ring: 43 52% 54%;
-
     --section-light: 0 0% 95%;
     --section-light-foreground: 0 0% 10%;
     --section-gray: 0 0% 88%;
     --section-gray-foreground: 0 0% 10%;
-
     --success: 152 57% 39%;
     --success-foreground: 34 33% 94%;
     --warning: 28 67% 50%;
@@ -61,11 +49,9 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Bebas Neue', cursive;
     letter-spacing: 0.05em;
@@ -78,10 +64,10 @@
   }
 }
 
-/* Admin Panel Theme - Red accent */
+/* Admin Panel Theme - Gold accent, premium dark */
 .admin-theme {
-  --primary: 0 84% 51%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 43 52% 54%;
+  --primary-foreground: 0 0% 4%;
   --background: 240 7% 4%;
   --foreground: 0 0% 94%;
   --card: 240 8% 7%;
@@ -89,16 +75,109 @@
   --popover: 240 8% 9%;
   --popover-foreground: 0 0% 94%;
   --muted: 240 5% 12%;
-  --muted-foreground: 240 6% 45%;
-  --accent: 0 84% 51%;
-  --accent-foreground: 0 0% 100%;
+  --muted-foreground: 240 6% 48%;
+  --accent: 43 52% 54%;
+  --accent-foreground: 0 0% 4%;
   --border: 0 0% 100% / 0.07;
   --input: 0 0% 100% / 0.07;
-  --ring: 0 84% 51%;
+  --ring: 43 52% 54%;
   --success: 148 82% 52%;
   --success-foreground: 0 0% 4%;
-  --warning: 28 82% 51%;
+  --warning: 28 74% 52%;
   --warning-foreground: 0 0% 4%;
   --destructive: 0 84% 51%;
   --destructive-foreground: 0 0% 100%;
+  cursor: none;
+}
+
+/* Glassmorphism utility */
+.glass-card {
+  background: rgba(17, 17, 24, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(201, 168, 76, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(201, 168, 76, 0.04);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card-hover:hover {
+  border-color: rgba(201, 168, 76, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(201, 168, 76, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Gold glow backgrounds */
+.gold-glow {
+  background: radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.06) 0%, transparent 70%);
+}
+
+/* Noise/grain texture overlay */
+.admin-theme .grain-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Custom scrollbar */
+.admin-theme ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.admin-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-theme ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+.admin-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.2);
+}
+
+/* Staggered entrance animations */
+.animate-stagger > * {
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease-out forwards;
+}
+.animate-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.animate-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.animate-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.animate-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(201, 168, 76, 0.15); }
+}
+
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 31, 31, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(232, 31, 31, 0.2); }
+}
+
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31, 232, 122, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(31, 232, 122, 0.15); }
+}
+
+/* Button press animation */
+.admin-theme button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.admin-theme button {
+  transition: all 0.15s ease;
 }

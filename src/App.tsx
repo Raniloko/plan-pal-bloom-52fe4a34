@@ -21,12 +21,16 @@ import DartPage from "./pages/admin/DartPage";
 import RestaurantPage from "./pages/admin/RestaurantPage";
 import VipEventsPage from "./pages/admin/VipEventsPage";
 import ReservationsPage from "./pages/admin/ReservationsPage";
+import CalendarPage from "./pages/admin/CalendarPage";
 import EmailCenterPage from "./pages/admin/EmailCenterPage";
+import ActivityLogPage from "./pages/admin/ActivityLogPage";
+import WaitlistPage from "./pages/admin/WaitlistPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
+import Jobs from "./pages/Jobs";
 
 const queryClient = new QueryClient();
 
@@ -44,10 +48,12 @@ const AppContent = () => {
         <Route path="/speisekarte" element={<Speisekarte />} />
         <Route path="/private-feiern" element={<PrivateFeiern />} />
         <Route path="/kontakt" element={<Kontakt />} />
+        <Route path="/jobs" element={<Jobs />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<DashboardHome />} />
           <Route path="reservierungen" element={<ReservationsPage />} />
+          <Route path="kalender" element={<CalendarPage />} />
           <Route path="auslastung" element={<AnalyticsPage />} />
           <Route path="billard" element={<BillardPage />} />
           <Route path="kicker" element={<KickerPage />} />
@@ -55,6 +61,8 @@ const AppContent = () => {
           <Route path="restaurant" element={<RestaurantPage />} />
           <Route path="vip" element={<VipEventsPage />} />
           <Route path="email" element={<EmailCenterPage />} />
+          <Route path="aktivitaet" element={<ActivityLogPage />} />
+          <Route path="warteliste" element={<WaitlistPage />} />
           <Route path="einstellungen" element={<SettingsPage />} />
         </Route>
         <Route path="/impressum" element={<Impressum />} />

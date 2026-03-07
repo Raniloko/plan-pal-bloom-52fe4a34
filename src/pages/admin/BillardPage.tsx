@@ -27,12 +27,12 @@ const BillardPage = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <h2 className="font-display text-3xl tracking-wider">🎱 Billard – 8 Tische</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 glass-card rounded-lg px-3 py-1.5">
           <span className="flex items-center gap-1 text-xs"><span className="w-2 h-2 rounded-full bg-success" />{freeCount} Frei</span>
-          <span className="flex items-center gap-1 text-xs"><span className="w-2 h-2 rounded-full bg-primary" />{occupiedCount} Belegt</span>
+          <span className="flex items-center gap-1 text-xs"><span className="w-2 h-2 rounded-full bg-destructive" />{occupiedCount} Belegt</span>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-stagger">
         {units.map((unit) => <UnitCard key={unit.id} unit={unit} onClick={() => setSelectedUnit(unit)} />)}
       </div>
       <UnitDetailPanel unit={selectedUnit} open={!!selectedUnit} onClose={() => setSelectedUnit(null)} onStatusChange={fetchUnits} />

@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
 const zones = [
-  { key: "podest", label: "Podest", subtitle: "bis 33 Gäste · VIP Zone", capacity: 33 },
-  { key: "fenster", label: "Fensterbereich", subtitle: "Fensterplätze", capacity: 20 },
-  { key: "hauptbereich", label: "Hauptraum", subtitle: "Hauptbereich", capacity: 40 },
+  { key: "podest", label: "Podest", subtitle: "bis 33 Gäste · VIP Zone", capacity: 33, color: "text-primary", borderColor: "border-primary/20" },
+  { key: "fenster", label: "Fensterbereich", subtitle: "Fensterplätze", capacity: 20, color: "text-blue-400", borderColor: "border-blue-400/20" },
+  { key: "hauptbereich", label: "Hauptraum", subtitle: "Hauptbereich", capacity: 40, color: "text-foreground", borderColor: "border-border" },
 ];
 
 const RestaurantPage = () => {
@@ -20,19 +20,19 @@ const RestaurantPage = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="font-display text-3xl tracking-wider">🍽️ Restaurant – Tischübersicht</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <h2 className="font-display text-3xl tracking-wider">🍽️ Restaurant – Sitzplan</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-stagger">
         {zones.map((zone) => {
           const zoneRes = reservations.filter(r => r.zone === zone.key);
           const guestCount = zoneRes.reduce((sum, r) => sum + r.guest_count, 0);
           const pct = Math.min(100, Math.round((guestCount / zone.capacity) * 100));
-          const color = pct >= 90 ? "bg-primary" : pct >= 50 ? "bg-warning" : "bg-success";
+          const barColor = pct >= 90 ? "bg-destructive" : pct >= 50 ? "bg-warning" : "bg-success";
           return (
-            <div key={zone.key} className="bg-card border border-border rounded-xl p-5">
-              <h3 className="font-display text-xl tracking-wider">{zone.label}</h3>
+            <div key={zone.key} className={`glass-card glass-card-hover rounded-xl p-5 ${zone.borderColor} border`}>
+              <h3 className={`font-display text-xl tracking-wider ${zone.color}`}>{zone.label}</h3>
               <p className="text-xs text-muted-foreground mb-4">{zone.subtitle}</p>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
-                <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+              <div className="w-full h-2 bg-muted/30 rounded-full overflow-hidden mb-2">
+                <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{guestCount} / {zone.capacity} Gäste</span>
@@ -41,7 +41,7 @@ const RestaurantPage = () => {
               {zoneRes.length > 0 && (
                 <div className="mt-3 space-y-1">
                   {zoneRes.map(r => (
-                    <div key={r.id} className="flex justify-between text-xs bg-muted/30 rounded px-2 py-1.5">
+                    <div key={r.id} className="flex justify-between text-xs bg-muted/20 rounded px-2 py-1.5 hover:bg-muted/30 transition-colors">
                       <span>{r.customer_name}</span>
                       <span className="text-muted-foreground">{r.reservation_time} · {r.guest_count}P</span>
                     </div>

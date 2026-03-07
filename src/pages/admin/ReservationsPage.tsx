@@ -5,7 +5,7 @@ import { Search, Download, Mail, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const zoneLabels: Record<string, string> = { billard: "Billard", kicker: "Kicker", dart: "Dart", restaurant: "Restaurant", vip: "VIP", hauptbereich: "Hauptbereich", fenster: "Fenster", podest: "Podest" };
-const zoneColors: Record<string, string> = { billard: "bg-green-900/30 text-green-400", kicker: "bg-blue-900/30 text-blue-400", dart: "bg-purple-900/30 text-purple-400", restaurant: "bg-amber-900/30 text-amber-400", vip: "bg-primary/20 text-primary" };
+const zoneColors: Record<string, string> = { billard: "bg-primary/15 text-primary", kicker: "bg-warning/15 text-warning", dart: "bg-purple-500/15 text-purple-400", restaurant: "bg-success/15 text-success", vip: "bg-destructive/15 text-destructive" };
 
 const ReservationsPage = () => {
   const { toast } = useToast();
@@ -32,6 +32,7 @@ const ReservationsPage = () => {
   const handleCancel = async (id: string) => {
     if (!cancelReason.trim()) { toast({ title: "Fehler", description: "Bitte Stornierungsgrund angeben.", variant: "destructive" }); return; }
     await supabase.from("reservations").update({ status: "cancelled", cancellation_reason: cancelReason } as any).eq("id", id);
+    await (supabase as any).from("activity_log").insert({ action: "reservation_cancelled", details: `Reservierung ${id.slice(0, 8)} storniert: ${cancelReason}`, entity_type: "reservation", entity_id: id });
     toast({ title: "Storniert" });
     setCancelId(null); setCancelReason("");
     fetchReservations();
@@ -52,7 +53,7 @@ const ReservationsPage = () => {
     return <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${map[status] || ""}`}>{labels[status] || status}</span>;
   };
 
-  const ic = "bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50";
+  const ic = "bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all";
 
   return (
     <div className="space-y-6">
@@ -70,13 +71,13 @@ const ReservationsPage = () => {
           <option value="">Alle Status</option>
           <option value="confirmed">Bestätigt</option><option value="pending">Ausstehend</option><option value="cancelled">Storniert</option>
         </select>
-        <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 text-xs border border-border rounded-lg hover:bg-muted/50"><Download size={14} /> CSV</button>
+        <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 text-xs border border-border rounded-lg hover:bg-muted/30 transition-all"><Download size={14} /> CSV</button>
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-border bg-muted/20 text-muted-foreground text-xs">
+            <thead><tr className="border-b border-border bg-muted/10 text-muted-foreground text-xs">
               <th className="text-left py-3 px-4">Gast</th><th className="text-left py-3 px-4">Bereich</th>
               <th className="text-left py-3 px-4">Datum</th><th className="text-left py-3 px-4">Uhrzeit</th>
               <th className="text-left py-3 px-4">Personen</th><th className="text-left py-3 px-4">Status</th>
@@ -86,12 +87,12 @@ const ReservationsPage = () => {
               {loading ? (
                 <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Laden...</td></tr>
               ) : reservations.length === 0 ? (
-                <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Keine Reservierungen gefunden.</td></tr>
+                <tr><td colSpan={7} className="py-8 text-center text-muted-foreground italic">Keine Reservierungen gefunden.</td></tr>
               ) : reservations.map((r) => (
-                <tr key={r.id} className="border-b border-border/50 hover:bg-muted/10">
+                <tr key={r.id} className="border-b border-border/50 hover:bg-muted/10 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">{r.customer_name?.charAt(0)?.toUpperCase()}</div>
+                      <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-bold text-primary">{r.customer_name?.charAt(0)?.toUpperCase()}</div>
                       <div><div className="font-medium">{r.customer_name}</div><div className="text-[10px] text-muted-foreground">{r.customer_email}</div></div>
                     </div>
                   </td>
@@ -102,9 +103,9 @@ const ReservationsPage = () => {
                   <td className="py-3 px-4">{statusPill(r.status)}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1">
-                      <button className="p-1.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground" title="E-Mail senden"><Mail size={14} /></button>
+                      <button className="p-1.5 rounded hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors" title="E-Mail senden"><Mail size={14} /></button>
                       {r.status !== "cancelled" && (
-                        <button onClick={() => setCancelId(r.id)} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary" title="Stornieren"><XCircle size={14} /></button>
+                        <button onClick={() => setCancelId(r.id)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Stornieren"><XCircle size={14} /></button>
                       )}
                     </div>
                   </td>
@@ -116,14 +117,14 @@ const ReservationsPage = () => {
       </div>
 
       {cancelId && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setCancelId(null)}>
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setCancelId(null)}>
+          <div className="glass-card rounded-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()} style={{ cursor: 'auto' }}>
             <h3 className="font-display text-xl tracking-wider mb-4">Reservierung stornieren</h3>
             <textarea placeholder="Stornierungsgrund..." value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-              className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2.5 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2.5 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
             <div className="flex gap-3 mt-4">
-              <button onClick={() => { setCancelId(null); setCancelReason(""); }} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted/50">Abbrechen</button>
-              <button onClick={() => handleCancel(cancelId)} className="flex-1 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">Stornieren</button>
+              <button onClick={() => { setCancelId(null); setCancelReason(""); }} className="flex-1 px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted/30">Abbrechen</button>
+              <button onClick={() => handleCancel(cancelId)} className="flex-1 px-4 py-2 text-sm font-semibold bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90">Stornieren</button>
             </div>
           </div>
         </div>
