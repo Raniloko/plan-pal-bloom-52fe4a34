@@ -196,6 +196,34 @@ Deno.serve(async (req) => {
         return ok({ updated: true });
       }
 
+      case "get_settings": {
+        const { data } = await supabase.from("settings").select("key, value");
+        const settings: Record<string, unknown> = {};
+        (data || []).forEach((s: { key: string; value: unknown }) => { settings[s.key] = s.value; });
+        return ok({ settings });
+      }
+
+      case "save_settings": {
+        const { settings } = body;
+        if (!settings) return error("settings required", 400);
+        for (const [key, value] of Object.entries(settings)) {
+          await supabase.from("settings").upsert({ key, value: value as Record<string, unknown> }, { onConflict: "key" });
+        }
+        return ok({ saved: true });
+      }
+
+      case "fetch_notifications": {
+        const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50);
+        return ok({ notifications: data || [] });
+      }
+
+      case "mark_notification_read": {
+        const { notification_id } = body;
+        if (!notification_id) return error("notification_id required", 400);
+        await supabase.from("notifications").update({ read: true }).eq("id", notification_id);
+        return ok({ done: true });
+      }
+
       default:
         return error(`Unknown action: ${action}`, 400);
     }
