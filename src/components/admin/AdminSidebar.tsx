@@ -34,6 +34,7 @@ const navSections = [
       { to: "/admin/aktivitaet", label: "Aktivitäts-Log", icon: ScrollText },
       { to: "/admin/warteliste", label: "Warteliste", icon: ClipboardList },
       { to: "/admin/einstellungen", label: "Einstellungen", icon: Settings },
+      { to: "/admin/betrieb", label: "Betriebsansicht", icon: MonitorSmartphone },
     ],
   },
 ];
