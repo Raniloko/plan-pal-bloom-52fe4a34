@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { TableData, STATUS_FILLS } from "./types";
 
 interface BillardTableProps {
@@ -11,9 +12,12 @@ interface BillardTableProps {
   rotation?: { angle: number; cx: number; cy: number };
   strokeColor?: string;
   strokeWidth?: number;
+  dimmed?: boolean;
+  showLabels?: boolean;
 }
 
-const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "#7a4e1a", strokeWidth = 5 }: BillardTableProps) => {
+const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "#7a4e1a", strokeWidth = 5, dimmed = false, showLabels = true }: BillardTableProps) => {
+  const [hovered, setHovered] = useState(false);
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
   const sc = isReserved ? "#3a6adb" : isPresent ? "#1e8a38" : strokeColor;
@@ -22,7 +26,6 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
   const cx = x + w / 2;
   const cy = y + h / 2;
 
-  // Pocket positions: 4 corners + 2 midpoints on long sides
   const pockets = [
     { px: x + 4, py: y + 4 },
     { px: x + w - 4, py: y + 4 },
@@ -44,38 +47,70 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
 
   const labelY = y - 8;
   const label = data.title.toUpperCase();
+  const groupOpacity = dimmed ? 0.2 : 1;
+  const scale = hovered && !dimmed ? 1.03 : 1;
+  const hasInfo = data.guest || data.startTime || data.pax;
 
   return (
     <g
       id={id}
       transform={rotation ? `rotate(${rotation.angle}, ${rotation.cx}, ${rotation.cy})` : undefined}
       onClick={onClick}
-      style={{ cursor: "pointer" }}
-      className="hover:brightness-110"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        cursor: dimmed ? "default" : "pointer",
+        opacity: groupOpacity,
+        transition: "opacity 0.4s ease",
+      }}
     >
-      {/* Outer frame */}
-      <rect x={x} y={y} width={w} height={h} rx={6} fill="#1c6e2a" stroke={sc} strokeWidth={sw} />
+      {/* Shadow underneath */}
+      {hovered && !dimmed && (
+        <ellipse cx={cx} cy={y + h + 6} rx={w / 2 - 10} ry={8}
+          fill="rgba(0,0,0,0.3)" />
+      )}
+
+      {/* Outer frame with wood grain effect */}
+      <rect x={x} y={y} width={w} height={h} rx={6}
+        fill="#1c6e2a" stroke={hovered && !dimmed ? "rgba(255,255,255,0.4)" : sc}
+        strokeWidth={hovered && !dimmed ? sw + 1 : sw}
+        filter={hovered && !dimmed ? "url(#tableGlow)" : undefined}
+      />
+      {/* Wood border inner highlight */}
+      <rect x={x + 2} y={y + 2} width={w - 4} height={4} rx={2}
+        fill="rgba(255,255,255,0.06)" />
+
       {/* Felt */}
       <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={4} fill="#1e7830" opacity={0.6} />
-      {/* Blue tint overlay for reserved */}
       {isReserved && <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={4} fill="rgba(58,106,219,0.06)" />}
+
       {/* Pockets */}
       {pockets.map((p, i) => (
-        <circle key={i} cx={p.px} cy={p.py} r={7} fill="#0a0a0a" />
+        <g key={i}>
+          <circle cx={p.px} cy={p.py} r={7} fill="#0a0a0a" />
+          <circle cx={p.px - 1} cy={p.py - 1} r={3} fill="rgba(255,255,255,0.04)" />
+        </g>
       ))}
+
       {/* Center line */}
       <line x1={cx} y1={y + 5} x2={cx} y2={y + h - 4} stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
-      {/* Balls */}
+
+      {/* Balls with subtle highlights */}
       {balls.map((b, i) => (
-        <circle key={i} cx={b.bx} cy={b.by} r={b.r} fill={b.color} opacity={b.op} />
+        <g key={i}>
+          <circle cx={b.bx} cy={b.by} r={b.r} fill={b.color} opacity={b.op} />
+          <circle cx={b.bx - 1} cy={b.by - 2} r={b.r * 0.35} fill="rgba(255,255,255,0.3)" opacity={b.op} />
+        </g>
       ))}
+
       {/* Glow */}
       <ellipse cx={cx} cy={cy} rx={30} ry={18} fill="rgba(255,200,80,0.06)" />
+
       {/* Label */}
       <text x={cx} y={labelY} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.1)" fontFamily="'DM Sans', sans-serif">{label}</text>
 
       {/* Name tag for reserved/present */}
-      {data.guest && (isReserved || isPresent) && (
+      {showLabels && data.guest && (isReserved || isPresent) && (
         <>
           {isPresent && data.startTime && (
             <>
@@ -96,6 +131,24 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
             </>
           )}
         </>
+      )}
+
+      {/* Hover tooltip */}
+      {hovered && !dimmed && hasInfo && (
+        <g>
+          <rect x={cx - 60} y={y - 48} width={120} height={38} rx={6}
+            fill="rgba(0,0,0,0.88)" stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
+          <polygon points={`${cx - 5},${y - 10} ${cx + 5},${y - 10} ${cx},${y - 4}`}
+            fill="rgba(0,0,0,0.88)" />
+          <text x={cx} y={y - 34} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff"
+            fontFamily="'DM Sans', sans-serif">
+            {data.guest || data.title}
+          </text>
+          <text x={cx} y={y - 20} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.7)"
+            fontFamily="'DM Sans', sans-serif">
+            {[data.startTime, data.pax ? `${data.pax} Gäste` : ""].filter(Boolean).join(" · ") || data.status}
+          </text>
+        </g>
       )}
     </g>
   );
