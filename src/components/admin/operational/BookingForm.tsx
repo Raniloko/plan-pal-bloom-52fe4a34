@@ -79,7 +79,7 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
           anlass: occasion.includes("sonstiges") && sonstigesText.trim()
             ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim()}`].join(", ")
             : occasion.join(", "),
-          message: note.trim() || "",
+          message: (isBillard ? `Billard: ${billardMinutes} Min (ca. ${billardCost} €). ` : "") + (note.trim() || ""),
           honeypot: "",
         },
       });
