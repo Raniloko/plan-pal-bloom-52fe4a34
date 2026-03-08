@@ -147,7 +147,7 @@ const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
         <div>
           <label style={labelStyle}>Uhrzeit</label>
           <select value={startTime} onChange={e => setStartTime(e.target.value)} style={inputStyle}>
-            {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+            {getTimesForDate(date).map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>

@@ -327,7 +327,7 @@ const RondoReservationSystem = () => {
                       </p>
                     )}
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                      {TIMES.map((t) => {
+                      {getTimesForDate(data.date).map((t) => {
                         const disabled = isTimeInPast(data.date, t) || isTimeFullyBooked(t);
                         return (
                           <button
