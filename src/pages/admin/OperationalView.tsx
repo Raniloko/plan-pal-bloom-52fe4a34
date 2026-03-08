@@ -12,6 +12,7 @@ import {
   SettingsDialog,
   StatsPanel,
   NotificationsPanel,
+  ActivityLogPanel,
 } from "@/components/admin/operational";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
@@ -72,6 +73,7 @@ const OperationalView = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [activityLogOpen, setActivityLogOpen] = useState(false);
 
   const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
@@ -310,6 +312,7 @@ const OperationalView = () => {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenStats={() => setStatsOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
+        onOpenActivityLog={() => setActivityLogOpen(true)}
       />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -357,6 +360,7 @@ const OperationalView = () => {
         checkedInCount={checkedInCount} cancelledCount={cancelledCount}
       />
       <NotificationsPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <ActivityLogPanel open={activityLogOpen} onClose={() => setActivityLogOpen(false)} />
     </div>
   );
 };

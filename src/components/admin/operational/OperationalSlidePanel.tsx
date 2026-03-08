@@ -412,7 +412,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 </div>
 
                 {/* Live billard timer for checked-in billard guests */}
-                {checkedIn && isBillardUnit && (
+                {checkedIn && isBillardUnit && data?.unitId && (
                   <BillardLiveTimer startTime={data.startTime} />
                 )}
 

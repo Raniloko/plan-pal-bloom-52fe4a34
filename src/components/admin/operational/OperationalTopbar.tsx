@@ -3,7 +3,7 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight, BarChart2,
-  Users, Settings, Bell, LogOut, Menu,
+  Users, Settings, Bell, LogOut, Menu, Activity,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,6 +19,7 @@ interface Props {
   onOpenSettings: () => void;
   onOpenStats: () => void;
   onOpenNotifications: () => void;
+  onOpenActivityLog: () => void;
 }
 
 const Div = () => <div style={{ width: 1, alignSelf: "stretch", background: "#2a2a2a" }} />;
@@ -40,7 +41,7 @@ const MEALS = ["Mittagessen", "Abendessen", "Spätabend"];
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenSettings, onOpenStats, onOpenNotifications,
+  onOpenSettings, onOpenStats, onOpenNotifications, onOpenActivityLog,
 }: Props) => {
   const [time, setTime] = useState("");
   const [mealIndex, setMealIndex] = useState(1);
@@ -133,6 +134,7 @@ export const OperationalTopbar = ({
       {/* F – Right icons */}
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", height: "100%" }}>
         <IcoBtn borderL onClick={onOpenStats}><BarChart2 size={16} /></IcoBtn>
+        <IcoBtn borderL onClick={onOpenActivityLog}><Activity size={16} /></IcoBtn>
         <IcoBtn borderL onClick={onOpenNotifications}><Bell size={16} /></IcoBtn>
         <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
           <Users size={14} style={{ color: "#666", marginRight: 6 }} />
