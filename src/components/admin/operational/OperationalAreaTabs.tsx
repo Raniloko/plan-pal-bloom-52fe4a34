@@ -23,6 +23,8 @@ interface Props {
   onZoomChange?: (zoom: number) => void;
   colorMode?: ColorMode;
   onColorModeChange?: (mode: ColorMode) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 export const OperationalAreaTabs = ({
