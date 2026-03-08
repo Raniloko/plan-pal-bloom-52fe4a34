@@ -73,6 +73,7 @@ const OperationalView = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [activityLogOpen, setActivityLogOpen] = useState(false);
 
   const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
