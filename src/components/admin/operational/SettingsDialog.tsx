@@ -31,7 +31,8 @@ const DEFAULT_MEALS: MealSlot[] = [
   { name: "Spätabend", start: "22:00", end: "02:00" },
 ];
 
-const DEFAULT_DURATION = 120; // minutes
+const DEFAULT_DURATION = 120;
+const DEFAULT_AUTO_CANCEL = 15;
 
 const inputStyle: React.CSSProperties = {
   background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, padding: "6px 10px",
