@@ -64,6 +64,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppContent />
+          <SessionWarningModal />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
