@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { RondoFloorPlan } from "@/components/admin/floorplan";
-import type { TableData } from "@/components/admin/floorplan";
+import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
   OperationalAreaTabs,
@@ -52,7 +52,8 @@ interface WaitlistEntry {
 }
 
 const OperationalView = () => {
-  const [activeArea, setActiveArea] = useState("billard");
+  const [activeArea, setActiveArea] = useState<FloorArea>("all");
+  const [showLabels, setShowLabels] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelData, setPanelData] = useState<PanelData | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -240,9 +241,9 @@ const OperationalView = () => {
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <OperationalAreaTabs activeArea={activeArea} onAreaChange={setActiveArea} />
+          <OperationalAreaTabs activeArea={activeArea} onAreaChange={setActiveArea} showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)} />
           <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-            <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} />
+            <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} />
           </div>
         </div>
       </div>

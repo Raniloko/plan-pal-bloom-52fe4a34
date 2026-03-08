@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FloorPlanProps, TableData } from "./types";
+import { FloorPlanProps, TableData, TABLE_AREA_MAP } from "./types";
 import BillardTable from "./BillardTable";
 import RestaurantTable from "./RestaurantTable";
 
@@ -24,9 +24,14 @@ const DEFAULT_TABLES: Record<string, TableData> = {
   b3:  { id: "b3",  title: "Billard 3", status: "free" },
 };
 
-const RondoFloorPlan = ({ tables: tablesProp, onTableClick }: FloorPlanProps) => {
+const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabels = true }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
+
+  const isDimmed = (id: string) => {
+    if (!activeArea || activeArea === "all") return false;
+    return TABLE_AREA_MAP[id] !== activeArea;
+  };
 
   return (
     <div className="relative w-full h-full min-h-[400px]" style={{
@@ -38,85 +43,115 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick }: FloorPlanProps) =>
         className="absolute inset-0 w-full h-full"
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
+        <defs>
+          <filter id="tableGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feFlood floodColor="rgba(255,255,255,0.15)" result="color" />
+            <feComposite in="color" in2="blur" operator="in" result="glow" />
+            <feMerge>
+              <feMergeNode in="glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
         {/* Room border */}
         <rect x={6} y={6} width={988} height={708} rx={5} fill="none" stroke="#222" strokeWidth={1.5} />
 
         {/* Subtle ambient glow */}
         <ellipse cx={500} cy={200} rx={120} ry={60} fill="rgba(255,180,60,0.04)" />
 
-        {/* ─── TABLE 10 (top left, small 4-seater) ─── */}
+        {/* ─── TABLE 10 ─── */}
         <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")}
           cx={80} cy={65} tw={44} th={44}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t10")} showLabels={showLabels} />
 
         {/* ─── BILLARD 1 ─── */}
         <BillardTable id="b1" data={tables.b1} onClick={() => click("b1")}
-          x={260} y={25} w={215} h={140} />
+          x={260} y={25} w={215} h={140}
+          dimmed={isDimmed("b1")} showLabels={showLabels} />
 
         {/* ─── BILLARD 2 ─── */}
         <BillardTable id="b2" data={tables.b2} onClick={() => click("b2")}
-          x={500} y={25} w={215} h={140} strokeColor="#3a6adb" strokeWidth={4} />
+          x={500} y={25} w={215} h={140} strokeColor="#3a6adb" strokeWidth={4}
+          dimmed={isDimmed("b2")} showLabels={showLabels} />
 
-        {/* ─── BILLARD 3 (rotated) ─── */}
+        {/* ─── BILLARD 3 ─── */}
         <BillardTable id="b3" data={tables.b3} onClick={() => click("b3")}
           x={750} y={80} w={220} h={130}
-          rotation={{ angle: -30, cx: 860, cy: 145 }} />
+          rotation={{ angle: -30, cx: 860, cy: 145 }}
+          dimmed={isDimmed("b3")} showLabels={showLabels} />
 
         {/* ═══ MIDDLE ROW 1: 52, 53, 54 ═══ */}
         <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")}
           cx={180} cy={290} tw={50} th={34}
-          seats={{ top: 2, right: 1, bottom: 2, left: 1 }} />
+          seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
+          dimmed={isDimmed("t52")} showLabels={showLabels} />
         <RestaurantTable id="t53" data={tables.t53} onClick={() => click("t53")}
           cx={330} cy={290} tw={66} th={34}
-          seats={{ top: 2, right: 1, bottom: 2, left: 1 }} />
+          seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
+          dimmed={isDimmed("t53")} showLabels={showLabels} />
         <RestaurantTable id="t54" data={tables.t54} onClick={() => click("t54")}
           cx={520} cy={290} tw={90} th={40}
-          seats={{ top: 3, right: 2, bottom: 3, left: 2 }} />
+          seats={{ top: 3, right: 2, bottom: 3, left: 2 }}
+          dimmed={isDimmed("t54")} showLabels={showLabels} />
 
         {/* ═══ MIDDLE ROW 2: 50, 59 ═══ */}
         <RestaurantTable id="t50" data={tables.t50} onClick={() => click("t50")}
           cx={330} cy={400} tw={50} th={34}
-          seats={{ top: 2, right: 1, bottom: 2, left: 1 }} />
+          seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
+          dimmed={isDimmed("t50")} showLabels={showLabels} />
         <RestaurantTable id="t59" data={tables.t59} onClick={() => click("t59")}
           cx={740} cy={400} tw={44} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t59")} showLabels={showLabels} />
 
-        {/* ─── TABLE 30 (left side) ─── */}
+        {/* ─── TABLE 30 ─── */}
         <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")}
           cx={80} cy={475} tw={44} th={44}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t30")} showLabels={showLabels} />
 
         {/* ─── ENCLOSED RESTAURANT BOX ─── */}
         <rect x={320} y={475} width={650} height={230} rx={6}
               fill="rgba(12,12,14,0.9)" stroke="#2a2a2a" strokeWidth={1.5} />
 
-        {/* BOX ROW 1: 61, 60, 67, 66 */}
+        {/* BOX ROW 1 */}
         <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")}
           cx={385} cy={525} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t61")} showLabels={showLabels} />
         <RestaurantTable id="t60" data={tables.t60} onClick={() => click("t60")}
           cx={530} cy={525} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t60")} showLabels={showLabels} />
         <RestaurantTable id="t67" data={tables.t67} onClick={() => click("t67")}
           cx={680} cy={525} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t67")} showLabels={showLabels} />
         <RestaurantTable id="t66" data={tables.t66} onClick={() => click("t66")}
           cx={840} cy={525} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t66")} showLabels={showLabels} />
 
-        {/* BOX ROW 2: 62, 63, 64, 65 */}
+        {/* BOX ROW 2 */}
         <RestaurantTable id="t62" data={tables.t62} onClick={() => click("t62")}
           cx={385} cy={645} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t62")} showLabels={showLabels} />
         <RestaurantTable id="t63" data={tables.t63} onClick={() => click("t63")}
           cx={530} cy={645} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t63")} showLabels={showLabels} />
         <RestaurantTable id="t64" data={tables.t64} onClick={() => click("t64")}
           cx={680} cy={645} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t64")} showLabels={showLabels} />
         <RestaurantTable id="t65" data={tables.t65} onClick={() => click("t65")}
           cx={840} cy={645} tw={50} th={34}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }} />
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          dimmed={isDimmed("t65")} showLabels={showLabels} />
 
         {/* ─── RONDO LOGO BOX ─── */}
         <rect x={14} y={540} width={230} height={140} rx={6}
