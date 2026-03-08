@@ -6,66 +6,87 @@ interface RestaurantTableProps {
   onClick: () => void;
   cx: number;
   cy: number;
-  tw: number;
-  th: number;
+  tw: number;  // total width including chairs
+  th: number;  // total height including chairs
   seats: { top: number; right: number; bottom: number; left: number };
 }
 
+/**
+ * Cross-shaped table matching the ResDiary/Quandoo reference design.
+ * The table body is a rounded rect, with rectangular chair stubs protruding from each edge.
+ */
 const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats }: RestaurantTableProps) => {
   const s = STATUS_FILLS[data.status] || STATUS_FILLS.free;
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
   const isBlocked = data.status === "blocked";
 
-  const halfW = tw / 2;
-  const halfH = th / 2;
-  const chairR = 5;
-  const chairGap = 8;
+  // Chair stub dimensions
+  const cW = 12; // chair width (along table edge)
+  const cD = 8;  // chair depth (how far it sticks out)
+  const cGap = 4; // gap between chair and table edge
+  const cR = 3;  // border radius of chair
 
-  const makeSeats = (count: number, side: "top" | "bottom" | "left" | "right") => {
-    const result: { sx: number; sy: number }[] = [];
-    if (count === 0) return result;
+  // Core table dimensions (inner rect)
+  const tableW = tw;
+  const tableH = th;
+  const halfW = tableW / 2;
+  const halfH = tableH / 2;
+
+  // Generate chair stubs for each side
+  const makeChairs = (count: number, side: "top" | "bottom" | "left" | "right") => {
+    const chairs: { x: number; y: number; w: number; h: number }[] = [];
+    if (count === 0) return chairs;
 
     if (side === "top" || side === "bottom") {
-      const spacing = tw / (count + 1);
-      const baseY = side === "top" ? cy - halfH - chairGap : cy + halfH + chairGap;
+      const totalChairWidth = count * cW + (count - 1) * 3;
+      const startX = cx - totalChairWidth / 2;
       for (let i = 0; i < count; i++) {
-        result.push({ sx: cx - halfW + spacing * (i + 1), sy: baseY });
+        const x = startX + i * (cW + 3);
+        const y = side === "top" ? cy - halfH - cGap - cD : cy + halfH + cGap;
+        chairs.push({ x, y, w: cW, h: cD });
       }
     } else {
-      const spacing = th / (count + 1);
-      const baseX = side === "left" ? cx - halfW - chairGap : cx + halfW + chairGap;
+      const totalChairHeight = count * cW + (count - 1) * 3;
+      const startY = cy - totalChairHeight / 2;
       for (let i = 0; i < count; i++) {
-        result.push({ sx: baseX, sy: cy - halfH + spacing * (i + 1) });
+        const x = side === "left" ? cx - halfW - cGap - cD : cx + halfW + cGap;
+        const y = startY + i * (cW + 3);
+        chairs.push({ x, y, w: cD, h: cW });
       }
     }
-    return result;
+    return chairs;
   };
 
   const allChairs = [
-    ...makeSeats(seats.top, "top"),
-    ...makeSeats(seats.right, "right"),
-    ...makeSeats(seats.bottom, "bottom"),
-    ...makeSeats(seats.left, "left"),
+    ...makeChairs(seats.top, "top"),
+    ...makeChairs(seats.right, "right"),
+    ...makeChairs(seats.bottom, "bottom"),
+    ...makeChairs(seats.left, "left"),
   ];
 
-  const tagY = cy + halfH + chairGap + chairR + 4;
+  // Name tag position below the table + chairs
+  const bottomEdge = cy + halfH + (seats.bottom > 0 ? cGap + cD : 0);
+  const tagY = bottomEdge + 4;
   const num = data.title.replace("Tisch ", "");
+
+  const strokeCol = isReserved ? "#2a62b8" : isPresent ? "#166a2a" : isBlocked ? "#991111" : "rgba(160,160,180,0.4)";
 
   return (
     <g id={id} onClick={onClick} style={{ cursor: "pointer" }}>
-      {/* Chair circles */}
+      {/* Chair stubs */}
       {allChairs.map((c, i) => (
-        <circle key={i} cx={c.sx} cy={c.sy} r={chairR}
-          fill={s.fill} opacity={s.chairOpacity} />
+        <rect key={i} x={c.x} y={c.y} width={c.w} height={c.h} rx={cR}
+          fill={s.fill} opacity={s.chairOpacity}
+          stroke={strokeCol} strokeWidth={0.5}
+        />
       ))}
 
-      {/* Table surface - rounded rectangle */}
+      {/* Table body - single rounded rect */}
       <rect
-        x={cx - halfW} y={cy - halfH} width={tw} height={th} rx={8}
+        x={cx - halfW} y={cy - halfH} width={tableW} height={tableH} rx={5}
         fill={s.fill} opacity={s.opacity}
-        stroke={isReserved ? "#2a62b8" : isPresent ? "#166a2a" : isBlocked ? "#991111" : "#b0b0c0"}
-        strokeWidth={1.5}
+        stroke={strokeCol} strokeWidth={1.2}
       />
 
       {/* Table number */}
@@ -78,8 +99,8 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats }: Restauran
       {/* Present: time badge */}
       {isPresent && data.startTime && (
         <>
-          <rect x={cx - 24} y={tagY - 2} width={48} height={14} rx={3} fill="rgba(0,0,0,0.6)" />
-          <text x={cx} y={tagY + 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#5de88a"
+          <rect x={cx - 24} y={tagY} width={48} height={14} rx={3} fill="rgba(0,0,0,0.65)" />
+          <text x={cx} y={tagY + 10} textAnchor="middle" fontSize={9} fontWeight={700} fill="#5de88a"
             fontFamily="'DM Sans', sans-serif">{data.startTime}</text>
         </>
       )}
@@ -87,13 +108,13 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats }: Restauran
       {/* Name tag for reserved/present */}
       {data.guest && (isReserved || isPresent) && (
         <>
-          <rect x={cx - tw / 2 - 4} y={tagY + (isPresent && data.startTime ? 14 : 0)}
-            width={tw + 8} height={15} rx={3}
+          <rect x={cx - halfW - 6} y={tagY + (isPresent && data.startTime ? 16 : 0)}
+            width={tableW + 12} height={16} rx={3}
             fill={isPresent ? "#1e8a38" : "#3a7bd5"} />
-          <text x={cx} y={tagY + (isPresent && data.startTime ? 25 : 11)}
+          <text x={cx} y={tagY + (isPresent && data.startTime ? 28 : 12)}
             textAnchor="middle" fontSize={9} fontWeight={700} fill="#fff"
             fontFamily="'DM Sans', sans-serif">
-            {data.pax ? `${data.pax}P | ` : ""}{data.guest}
+            {data.pax ? `${data.pax} · ` : ""}{data.guest}
           </text>
         </>
       )}

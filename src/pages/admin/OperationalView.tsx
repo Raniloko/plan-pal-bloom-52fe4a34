@@ -10,8 +10,8 @@ import {
   OperationalSlidePanel,
 } from "@/components/admin/operational";
 import type { ResRow, PanelData } from "@/components/admin/operational";
+import { Toaster } from "sonner";
 
-/* Seed data for initial display */
 const SEED_ROWS: ResRow[] = [
   { id: "s1", time: "19:00", offset: "01:00", guests: 4, name: ". Jana", tableRef: "1. / 3", icon: "ob", highlighted: false },
   { id: "s2", time: "19:15", offset: "01:15", guests: 4, name: "Michelik", tableRef: "1. / 2", icon: "none", highlighted: false },
@@ -150,22 +150,28 @@ const OperationalView = () => {
 
   const handleTableClick = (_id: string, data: TableData) => {
     const unit = units.find(u => u.name.toLowerCase() === data.title.toLowerCase());
+    const reservation = data.reservationId ? reservations.find(r => r.id === data.reservationId) : undefined;
     setPanelData({
       tableLabel: data.title,
       guest: data.guest, startTime: data.startTime, endTime: data.endTime,
       pax: data.pax, reservationId: data.reservationId,
       status: data.status, unitId: unit?.id, unitNotes: unit?.notes || "",
+      customerEmail: reservation?.customer_email,
+      customerPhone: reservation?.customer_phone,
     });
     setSelectedRowId(null);
     setPanelOpen(true);
   };
 
   const handleRowClick = (row: ResRow) => {
+    const reservation = reservations.find(r => r.id === row.id);
     setPanelData({
       tableLabel: row.tableRef,
       guest: row.name, startTime: row.time, pax: row.guests,
       status: row.highlighted ? "present" : "reserved",
       reservationId: row.id,
+      customerEmail: reservation?.customer_email,
+      customerPhone: reservation?.customer_phone,
     });
     setSelectedRowId(row.id);
     setPanelOpen(true);
