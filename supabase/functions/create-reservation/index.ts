@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     const errors: string[] = [];
 
     if (!date || !isValidDate(date)) errors.push("Ungültiges Datum.");
-    if (!time || !VALID_TIMES.includes(time)) errors.push("Ungültige Uhrzeit.");
+    if (!time || !isValidTime(time)) errors.push("Ungültige Uhrzeit.");
     if (!guests || guests < 1 || guests > 50) errors.push("Personenanzahl muss zwischen 1 und 50 liegen.");
     if (!zone || !VALID_ZONES.includes(zone)) errors.push("Ungültiger Bereich.");
     if (!anlass || !VALID_OCCASIONS.includes(anlass)) errors.push("Ungültiger Anlass.");
