@@ -267,6 +267,7 @@ const OperationalView = () => {
 
   const handleRowClick = (row: ResRow) => {
     const reservation = reservations.find(r => r.id === row.id);
+    const unit = reservation?.unit_id ? units.find(u => u.id === reservation.unit_id) : undefined;
     setPanelData({
       tableLabel: row.tableRef,
       guest: row.name, startTime: row.time, pax: row.guests,
@@ -275,6 +276,8 @@ const OperationalView = () => {
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
       zone: reservation?.zone,
+      unitId: unit?.id,
+      unitNotes: unit?.notes || "",
     });
     setSelectedRowId(row.id);
     setPanelOpen(true);
