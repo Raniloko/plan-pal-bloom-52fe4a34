@@ -180,8 +180,25 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
                   </span>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
-                <p style={{ marginBottom: 12 }}>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Automatische Stornierung</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <select
+                    value={autoCancelMin}
+                    onChange={e => setAutoCancelMin(Number(e.target.value))}
+                    style={{ ...inputStyle, width: 160 }}
+                  >
+                    {[0, 5, 10, 15, 20, 30, 45, 60].map(m => (
+                      <option key={m} value={m}>{m === 0 ? "Deaktiviert" : `${m} Minuten`}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: "#777" }}>
+                    Reservierungen werden automatisch storniert, wenn der Gast nicht eincheckt
+                  </span>
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6, marginTop: 12 }}>
+                <p>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
               </div>
             </div>
           )}
