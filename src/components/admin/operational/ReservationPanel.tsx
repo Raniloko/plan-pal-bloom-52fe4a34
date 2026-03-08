@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface ResRow {
   id: string;
@@ -10,6 +12,19 @@ export interface ResRow {
   tableRef: string;
   icon: "ob" | "double" | "single" | "chkps" | "none";
   highlighted: boolean;
+}
+
+interface WaitlistEntry {
+  id: string;
+  guest_name: string;
+  guest_email: string;
+  guest_phone: string;
+  desired_date: string;
+  desired_time: string;
+  area: string;
+  status: string | null;
+  created_at: string | null;
+  notified_at: string | null;
 }
 
 interface Props {
@@ -25,6 +40,52 @@ type SubTab = "platziert" | "bevorstehend" | "achtung";
 export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [loadingWait, setLoadingWait] = useState(false);
+  const [notifying, setNotifying] = useState<string | null>(null);
+
+  const loadWaitlist = useCallback(async () => {
+    setLoadingWait(true);
+    const { data } = await supabase
+      .from("waitlist")
+      .select("*")
+      .in("status", ["waiting", "notified"])
+      .order("desired_date")
+      .order("desired_time");
+    setWaitlist((data as WaitlistEntry[]) || []);
+    setLoadingWait(false);
+  }, []);
+
+  useEffect(() => {
+    if (resTab === "wait") loadWaitlist();
+  }, [resTab, loadWaitlist]);
+
+  // Realtime for waitlist
+  useEffect(() => {
+    const ch = supabase
+      .channel("waitlist-panel")
+      .on("postgres_changes", { event: "*", schema: "public", table: "waitlist" }, () => {
+        if (resTab === "wait") loadWaitlist();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [resTab, loadWaitlist]);
+
+  const handleNotify = async (entry: WaitlistEntry) => {
+    setNotifying(entry.id);
+    try {
+      const res = await supabase.functions.invoke("admin-actions", {
+        body: { action: "notify_waitlist", waitlist_id: entry.id },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`Benachrichtigung an ${entry.guest_name} gesendet`);
+      loadWaitlist();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler beim Benachrichtigen");
+    }
+    setNotifying(null);
+  };
 
   const platziert = useMemo(() => rows.filter(r => ["double", "single", "chkps"].includes(r.icon)), [rows]);
   const bevorstehend = useMemo(() => rows.filter(r => ["none", "ob"].includes(r.icon)), [rows]);
@@ -48,6 +109,11 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
     }
   };
 
+  const areaLabel = (area: string) => {
+    const map: Record<string, string> = { billard: "Billard", restaurant: "Restaurant", vip: "VIP", hauptbereich: "Hauptbereich", podest: "Podest", fenster: "Fenster" };
+    return map[area] || area;
+  };
+
   return (
     <div style={{
       width: 390, minWidth: 390, background: "#f2f2f2", borderRight: "1px solid #ddd",
@@ -62,91 +128,174 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           color: resTab === "res" ? "#fff" : "#666",
         }}>
           <span style={{ background: "#3a8c3a", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}>{rows.length}</span>
-          Reservierungsliste
+          Reservierungen
         </button>
         <button onClick={() => setResTab("wait")} style={{
           padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 6,
           background: resTab === "wait" ? "rgba(255,255,255,0.12)" : "transparent",
           color: resTab === "wait" ? "#fff" : "#666",
-        }}>Warteliste</button>
+        }}>
+          <span style={{ background: "#e07820", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}>{waitlist.length}</span>
+          Warteliste
+        </button>
         <button onClick={onNewClick} style={{
           marginLeft: "auto", padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
           background: "#c9a84c", color: "#111", border: "none", cursor: "pointer",
         }}>+ Neu</button>
       </div>
 
-      {/* Sub-tabs */}
-      <div style={{ display: "flex", alignItems: "center", background: "#f2f2f2", borderBottom: "2px solid #ddd", padding: "0 12px" }}>
-        {subTabs.map(t => (
-          <button key={t.key} onClick={() => setSubTab(t.key)} style={{
-            display: "flex", alignItems: "center", gap: 4, padding: "10px 12px",
-            fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer",
-            background: "transparent",
-            color: subTab === t.key ? "#111" : "#888",
-            borderBottom: subTab === t.key ? "2px solid #111" : "2px solid transparent",
-            marginBottom: -2,
-          }}>
-            <span style={{
-              fontSize: 9, fontWeight: 700, color: "#fff", padding: "1px 6px", borderRadius: 10,
-              background: subTab === t.key ? "#333" : t.color,
-              display: "flex", alignItems: "center", gap: 2,
-            }}>
-              {t.icon} {t.count}
-            </span>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Column header */}
-      <div style={{ display: "grid", gridTemplateColumns: "70px 28px 1fr 36px", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>UHRZEIT</span>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444", textAlign: "center" }}>P</span>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>NAME / TISCH</span>
-        <span style={{ display: "flex", justifyContent: "center" }}><Bell size={12} color="#888" /></span>
-      </div>
-
-      {/* Meal label */}
-      <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #e0e0e0", gap: 8 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ABENDESSEN</span>
-        <span style={{ fontSize: 10, color: "#777" }}>Gesamt {filtered.length}</span>
-        <span style={{ fontSize: 10, color: "#777", display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
-      </div>
-
-      {/* Rows */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        {filtered.map(r => {
-          const sel = r.id === selectedRowId;
-          const borderL = r.highlighted ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
-          const bg = sel ? "#eaeaea" : r.highlighted ? "#edf4ed" : "#fff";
-          return (
-            <div key={r.id} onClick={() => onRowClick(r)} style={{
-              display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
-              minHeight: 58, borderBottom: "1px solid #e0e0e0",
-              borderLeft: `3px solid ${borderL}`, background: bg,
-              padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
-            }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{r.time}</div>
-                <div style={{ fontSize: 10, color: "#999" }}>{r.offset}</div>
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#111", textAlign: "center" }}>{r.guests}</div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "#111" }}>{r.name}</div>
-                <div style={{ fontSize: 10, color: "#999" }}>{r.tableRef}</div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {renderIcon(r.icon)}
-              </div>
-            </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
-            <span style={{ fontSize: 14 }}>Keine Einträge</span>
+      {resTab === "res" ? (
+        <>
+          {/* Sub-tabs */}
+          <div style={{ display: "flex", alignItems: "center", background: "#f2f2f2", borderBottom: "2px solid #ddd", padding: "0 12px" }}>
+            {subTabs.map(t => (
+              <button key={t.key} onClick={() => setSubTab(t.key)} style={{
+                display: "flex", alignItems: "center", gap: 4, padding: "10px 12px",
+                fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer",
+                background: "transparent",
+                color: subTab === t.key ? "#111" : "#888",
+                borderBottom: subTab === t.key ? "2px solid #111" : "2px solid transparent",
+                marginBottom: -2,
+              }}>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: "#fff", padding: "1px 6px", borderRadius: 10,
+                  background: subTab === t.key ? "#333" : t.color,
+                  display: "flex", alignItems: "center", gap: 2,
+                }}>
+                  {t.icon} {t.count}
+                </span>
+                {t.label}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+
+          {/* Column header */}
+          <div style={{ display: "grid", gridTemplateColumns: "70px 28px 1fr 36px", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>UHRZEIT</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444", textAlign: "center" }}>P</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>NAME / TISCH</span>
+            <span style={{ display: "flex", justifyContent: "center" }}><Bell size={12} color="#888" /></span>
+          </div>
+
+          {/* Meal label */}
+          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #e0e0e0", gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ABENDESSEN</span>
+            <span style={{ fontSize: 10, color: "#777" }}>Gesamt {filtered.length}</span>
+            <span style={{ fontSize: 10, color: "#777", display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
+          </div>
+
+          {/* Rows */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {filtered.map(r => {
+              const sel = r.id === selectedRowId;
+              const borderL = r.highlighted ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
+              const bg = sel ? "#eaeaea" : r.highlighted ? "#edf4ed" : "#fff";
+              return (
+                <div key={r.id} onClick={() => onRowClick(r)} style={{
+                  display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
+                  minHeight: 58, borderBottom: "1px solid #e0e0e0",
+                  borderLeft: `3px solid ${borderL}`, background: bg,
+                  padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{r.time}</div>
+                    <div style={{ fontSize: 10, color: "#999" }}>{r.offset}</div>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#111", textAlign: "center" }}>{r.guests}</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: "#111" }}>{r.name}</div>
+                    <div style={{ fontSize: 10, color: "#999" }}>{r.tableRef}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {renderIcon(r.icon)}
+                  </div>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
+                <span style={{ fontSize: 14 }}>Keine Einträge</span>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Waitlist header */}
+          <div style={{ display: "flex", alignItems: "center", padding: "8px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2", gap: 8 }}>
+            <Clock size={12} color="#e07820" />
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#333" }}>WARTELISTE</span>
+            <span style={{ fontSize: 10, color: "#777" }}>{waitlist.length} Einträge</span>
+          </div>
+
+          {/* Column header */}
+          <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 60px 36px", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>ZEIT</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>NAME / BEREICH</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>STATUS</span>
+            <span />
+          </div>
+
+          {/* Waitlist rows */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {loadingWait ? (
+              <div style={{ padding: "48px 0", textAlign: "center", color: "#999", fontSize: 13 }}>Laden...</div>
+            ) : waitlist.length === 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
+                <Clock size={32} color="#ddd" style={{ marginBottom: 8 }} />
+                <span style={{ fontSize: 14 }}>Warteliste ist leer</span>
+                <span style={{ fontSize: 11, color: "#bbb", marginTop: 4 }}>Gäste werden hier angezeigt wenn alle Plätze belegt sind</span>
+              </div>
+            ) : (
+              waitlist.map(w => {
+                const isNotified = w.status === "notified";
+                return (
+                  <div key={w.id} style={{
+                    display: "grid", gridTemplateColumns: "70px 1fr 60px 36px",
+                    minHeight: 58, borderBottom: "1px solid #e0e0e0",
+                    borderLeft: `3px solid ${isNotified ? "#3a8c3a" : "#e07820"}`,
+                    background: isNotified ? "#edf4ed" : "#fff",
+                    padding: "0 14px 0 11px", alignItems: "center",
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{w.desired_time?.slice(0, 5)}</div>
+                      <div style={{ fontSize: 10, color: "#999" }}>{w.desired_date}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: "#111" }}>{w.guest_name}</div>
+                      <div style={{ fontSize: 10, color: "#999" }}>{areaLabel(w.area)} · {w.guest_phone}</div>
+                    </div>
+                    <div>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 10, color: "#fff",
+                        background: isNotified ? "#3a8c3a" : "#e07820",
+                      }}>
+                        {isNotified ? "Benachr." : "Wartet"}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      {!isNotified && (
+                        <button
+                          onClick={() => handleNotify(w)}
+                          disabled={notifying === w.id}
+                          title="Gast benachrichtigen"
+                          style={{
+                            width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+                            background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+                          }}
+                        >
+                          <Send size={11} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };
