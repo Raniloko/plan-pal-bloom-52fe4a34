@@ -27,6 +27,7 @@ import ActivityLogPage from "./pages/admin/ActivityLogPage";
 import WaitlistPage from "./pages/admin/WaitlistPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import OperationalView from "./pages/admin/OperationalView";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
@@ -64,6 +65,7 @@ const AppContent = () => {
           <Route path="aktivitaet" element={<ActivityLogPage />} />
           <Route path="warteliste" element={<WaitlistPage />} />
           <Route path="einstellungen" element={<SettingsPage />} />
+          <Route path="betrieb" element={<OperationalView />} />
         </Route>
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />

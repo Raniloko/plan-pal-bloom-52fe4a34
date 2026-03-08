@@ -59,6 +59,10 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(201,168,76,0)" },
           "50%": { boxShadow: "0 0 16px 4px rgba(201,168,76,0.12)" },
         },
+        "slide-in-right": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -67,6 +71,7 @@ export default {
         "fade-slide-up": "fade-slide-up 0.5s ease-out forwards",
         "count-up": "count-up 0.4s ease-out forwards",
         "pulse-gold": "pulse-gold 2s ease-in-out infinite",
+        "slide-in-right": "slide-in-right 0.3s cubic-bezier(0.25,0.46,0.45,0.94) forwards",
       },
     },
   },
