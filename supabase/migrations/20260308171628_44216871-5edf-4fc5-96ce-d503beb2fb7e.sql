@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS settings_key_unique ON public.settings (key);
