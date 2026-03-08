@@ -95,6 +95,48 @@ Deno.serve(async (req) => {
         return ok({ assigned: true });
       }
 
+      case "notify_waitlist": {
+        const { waitlist_id } = body;
+        if (!waitlist_id) return error("waitlist_id required", 400);
+        // Get waitlist entry
+        const { data: wEntry, error: wErr } = await supabase
+          .from("waitlist")
+          .select("*")
+          .eq("id", waitlist_id)
+          .single();
+        if (wErr || !wEntry) return error("Waitlist entry not found", 404);
+
+        // Update status to notified
+        const { error: updErr } = await supabase
+          .from("waitlist")
+          .update({ status: "notified", notified_at: new Date().toISOString() })
+          .eq("id", waitlist_id);
+        if (updErr) return error(updErr.message, 500);
+
+        // Try to send notification email
+        try {
+          const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+          const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+          if (RESEND_API_KEY) {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+              body: JSON.stringify({
+                from: "Rondo <info@dev-lab24.de>",
+                to: [wEntry.guest_email],
+                subject: "Platz verfügbar – Rondo",
+                html: `<p>Hallo ${wEntry.guest_name},</p><p>Es ist ein Platz für Sie verfügbar geworden! Bitte melden Sie sich zeitnah bei uns, um Ihre Reservierung zu bestätigen.</p><p>Gewünschtes Datum: ${wEntry.desired_date}<br>Gewünschte Uhrzeit: ${wEntry.desired_time}<br>Bereich: ${wEntry.area}</p><p>Mit freundlichen Grüßen,<br>Ihr Rondo Team</p>`,
+              }),
+            });
+          }
+        } catch (e) {
+          console.error("Waitlist email error (non-blocking):", e);
+        }
+
+        return ok({ status: "notified" });
+      }
+
       case "update_reservation": {
         const { reservation_id, updates } = body;
         if (!reservation_id || !updates) return error("reservation_id and updates required", 400);

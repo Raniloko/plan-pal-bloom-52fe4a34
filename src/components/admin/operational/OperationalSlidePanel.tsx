@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Pencil, Ban, Check, UserPlus } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
@@ -19,6 +19,12 @@ export interface PanelData {
   unitNotes?: string;
   customerEmail?: string;
   customerPhone?: string;
+}
+
+interface UnitOption {
+  id: string;
+  name: string;
+  area: string;
 }
 
 interface Props {
@@ -48,6 +54,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [checkedIn, setCheckedIn] = useState(false);
   const [mode, setMode] = useState<"view" | "book">("view");
   const [saving, setSaving] = useState(false);
+  const [units, setUnits] = useState<UnitOption[]>([]);
+  const [assignedUnitId, setAssignedUnitId] = useState<string>("");
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
 
   useEffect(() => {
@@ -55,8 +63,17 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       setNotes(data?.unitNotes || "");
       setCheckedIn(data?.status === "present");
       setMode("view");
+      setAssignedUnitId(data?.unitId || "");
     }
   }, [open, data]);
+
+  // Load available units for assignment dropdown
+  useEffect(() => {
+    if (!open) return;
+    supabase.from("units").select("id, name, area").order("position_index").then(({ data: u }) => {
+      setUnits((u as UnitOption[]) || []);
+    });
+  }, [open]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -128,6 +145,20 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     setSaving(false);
   };
 
+  const handleAssignUnit = async (unitId: string) => {
+    if (!data?.reservationId) return;
+    setAssignedUnitId(unitId);
+    setSaving(true);
+    try {
+      await adminAction({ action: "assign_unit", reservation_id: data.reservationId, unit_id: unitId || null });
+      toast.success(unitId ? "Tisch zugewiesen" : "Tischzuweisung entfernt");
+      onRefresh();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler bei Tischzuweisung");
+    }
+    setSaving(false);
+  };
+
   const statusText = () => {
     if (!data) return "Frei";
     if (data.status === "present") return "Anwesend";
@@ -142,6 +173,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     background: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
   };
+
+  // Group units by area for dropdown
+  const groupedUnits = units.reduce<Record<string, UnitOption[]>>((acc, u) => {
+    (acc[u.area] = acc[u.area] || []).push(u);
+    return acc;
+  }, {});
 
   return (
     <>
@@ -212,6 +249,41 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                   </button>
                 </div>
               </div>
+
+              {/* Table assignment dropdown */}
+              {data.reservationId && (
+                <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14, marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <MapPin size={13} color="#555" />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>Tischzuweisung</span>
+                  </div>
+                  <select
+                    value={assignedUnitId}
+                    onChange={(e) => handleAssignUnit(e.target.value)}
+                    disabled={saving}
+                    style={{
+                      width: "100%", padding: "8px 10px", fontSize: 12, borderRadius: 6,
+                      border: "1px solid #ddd", background: "#fff", cursor: "pointer",
+                      fontFamily: "'DM Sans', sans-serif", outline: "none",
+                      color: assignedUnitId ? "#111" : "#999",
+                    }}
+                  >
+                    <option value="">— Kein Tisch zugewiesen —</option>
+                    {Object.entries(groupedUnits).map(([area, areaUnits]) => (
+                      <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
+                        {areaUnits.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  {assignedUnitId && (
+                    <div style={{ fontSize: 10, color: "#999", marginTop: 4 }}>
+                      Zugewiesen: {units.find(u => u.id === assignedUnitId)?.name}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Quick actions */}
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
