@@ -12,6 +12,7 @@ import {
   SettingsDialog,
   StatsPanel,
   NotificationsPanel,
+  ActivityLogPanel,
 } from "@/components/admin/operational";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
