@@ -310,7 +310,7 @@ const OperationalView = () => {
         onClose={closePanel}
         onBookNew={handleNewReservation}
         onRefresh={load}
-        reservations={reservations.map(r => ({ id: r.id, unit_id: r.unit_id, status: r.status }))}
+        reservations={reservations.map(r => ({ id: r.id, unit_id: r.unit_id, status: r.status, customer_name: r.customer_name, reservation_time: r.reservation_time, guest_count: r.guest_count }))}
       />
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
