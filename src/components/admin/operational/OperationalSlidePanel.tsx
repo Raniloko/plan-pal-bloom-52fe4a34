@@ -26,6 +26,7 @@ interface UnitOption {
   id: string;
   name: string;
   area: string;
+  status: string | null;
 }
 
 interface Props {
