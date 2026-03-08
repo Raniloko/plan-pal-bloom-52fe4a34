@@ -72,8 +72,13 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   // Load available units for assignment dropdown
   useEffect(() => {
     if (!open) return;
-    supabase.from("units").select("id, name, area").order("position_index").then(({ data: u }) => {
-      setUnits((u as UnitOption[]) || []);
+    supabase.from("units").select("id, name, area, status").order("position_index").then(({ data: u }) => {
+      // Filter out kicker and dart units
+      const filtered = ((u as UnitOption[]) || []).filter(unit => {
+        const lower = unit.name.toLowerCase();
+        return !lower.startsWith("kicker") && !lower.startsWith("dart");
+      });
+      setUnits(filtered);
     });
   }, [open]);
 
