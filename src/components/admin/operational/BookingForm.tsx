@@ -7,6 +7,7 @@ import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 interface Props {
   tableLabel?: string;
+  initialZone?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
