@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
           .update({ status: newStatus })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, checked_in ? "check_out" : "check_in", "reservation", reservation_id);
         return ok({ status: newStatus });
       }
 
