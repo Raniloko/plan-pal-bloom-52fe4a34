@@ -63,7 +63,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
     setNotifying(null);
   };
 
-  const DURATION_MIN = 120; // 2h default
+  const DURATION_MIN = propDuration || 120;
   const platziert = useMemo(() => rows.filter(r => r.status === "checked_in"), [rows]);
   const bevorstehend = useMemo(() => rows.filter(r => (r.status === "confirmed" || r.status === "pending") && !r.overdue), [rows]);
   const achtung = useMemo(() => rows.filter(r => r.overdue), [rows]);

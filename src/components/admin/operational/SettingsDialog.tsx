@@ -159,9 +159,27 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           )}
 
           {tab === "capacity" && (
-            <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
-              <p style={{ marginBottom: 12 }}>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
-              <p style={{ color: "#555" }}>Geplant: Bereichs-übergreifende Kapazitätslimits und automatische Overbooking-Regeln.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Standard-Reservierungsdauer</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <select
+                    value={duration}
+                    onChange={e => setDuration(Number(e.target.value))}
+                    style={{ ...inputStyle, width: 160 }}
+                  >
+                    {[60, 90, 120, 150, 180, 240].map(m => (
+                      <option key={m} value={m}>{m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}min` : ""}` : `${m} Min`}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: "#777" }}>
+                    Gilt für alle Bereiche außer Billard (Abrechnung vor Ort nach Minuten)
+                  </span>
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
+                <p style={{ marginBottom: 12 }}>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
+              </div>
             </div>
           )}
         </div>

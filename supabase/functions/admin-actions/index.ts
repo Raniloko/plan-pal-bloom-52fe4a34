@@ -111,6 +111,57 @@ Deno.serve(async (req) => {
       case "assign_unit": {
         const { reservation_id, unit_id } = body;
         if (!reservation_id) return error("reservation_id required", 400);
+
+        // Check for double-booking: is this unit already assigned to another active reservation at the same time?
+        if (unit_id) {
+          // Get the reservation being assigned
+          const { data: thisRes } = await supabase
+            .from("reservations")
+            .select("reservation_date, reservation_time")
+            .eq("id", reservation_id)
+            .single();
+
+          if (thisRes) {
+            const { data: conflicts } = await supabase
+              .from("reservations")
+              .select("id, customer_name, reservation_time")
+              .eq("unit_id", unit_id)
+              .eq("reservation_date", thisRes.reservation_date)
+              .neq("id", reservation_id)
+              .not("status", "in", '("cancelled","checked_out")');
+
+            // Check time overlap (within 2h window)
+            if (conflicts && conflicts.length > 0) {
+              // Load duration setting
+              const { data: settingsData } = await supabase
+                .from("settings")
+                .select("value")
+                .eq("key", "reservation_duration")
+                .single();
+              const durMin = settingsData?.value ? Number(settingsData.value) : 120;
+
+              const [th, tm] = thisRes.reservation_time.split(":").map(Number);
+              const thisStart = th * 60 + tm;
+              const thisEnd = thisStart + durMin;
+
+              const overlapping = conflicts.filter(c => {
+                const [ch, cm] = c.reservation_time.split(":").map(Number);
+                const cStart = ch * 60 + cm;
+                const cEnd = cStart + durMin;
+                return thisStart < cEnd && thisEnd > cStart;
+              });
+
+              if (overlapping.length > 0) {
+                const c = overlapping[0];
+                return error(
+                  `Dieser Tisch ist bereits um ${c.reservation_time.slice(0, 5)} an ${c.customer_name} vergeben.`,
+                  409
+                );
+              }
+            }
+          }
+        }
+
         const { error: err } = await supabase
           .from("reservations")
           .update({ unit_id: unit_id || null })

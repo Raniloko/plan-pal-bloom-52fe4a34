@@ -320,6 +320,7 @@ const OperationalView = () => {
           onNewClick={handleNewReservation}
           waitlist={waitlist}
           onRefreshWaitlist={load}
+          durationMin={durationMin}
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
