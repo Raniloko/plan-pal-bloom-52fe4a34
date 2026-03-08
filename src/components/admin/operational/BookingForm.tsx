@@ -30,8 +30,6 @@ const OCCASIONS = [
   { value: "sonstiges", label: "Sonstiges" },
 ];
 
-const BILLARD_PRICE_PER_MIN = 0.23;
-
 const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
   const [guest, setGuest] = useState("");
@@ -44,12 +42,10 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
   const [sonstigesText, setSonstigesText] = useState("");
   const [note, setNote] = useState("");
-  const [billardMinutes, setBillardMinutes] = useState(60);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const isBillard = zone === "billard";
-  const billardCost = (billardMinutes * BILLARD_PRICE_PER_MIN).toFixed(2);
 
   const handleSubmit = async () => {
     if (!guest.trim() || !email.trim() || !phone.trim()) {
