@@ -199,9 +199,10 @@ const OperationalView = () => {
       if (u.status !== "blocked") return;
       const name = u.name.toLowerCase();
       let fpId = "";
-      if (name.startsWith("tisch") && u.area === "billard") fpId = "bt" + name.replace("tisch ", "").trim();
+      if (name.startsWith("billard") && u.area === "hauptbereich") fpId = "b" + name.replace("billard ", "").trim();
+      else if (name.startsWith("billard") && u.area === "billard") fpId = "bt" + name.replace("billard ", "").trim();
+      else if (name.startsWith("tisch f")) fpId = "f" + name.replace("tisch f", "").trim();
       else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
-      else if (name.startsWith("billard")) fpId = "b" + name.replace("billard ", "").trim();
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
     return map;

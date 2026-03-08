@@ -5,7 +5,7 @@ import type { FloorArea } from "@/components/admin/floorplan/types";
 const AREA_TABS: { id: FloorArea; label: string }[] = [
   { id: "hauptbereich", label: "Restaurant 140 Zoll" },
   { id: "fenster", label: "Restaurant 75 Zoll" },
-  { id: "billard", label: "Billard / Kicker / Dart" },
+  { id: "billard", label: "Billard" },
   { id: "vip", label: "VIP-Raum" },
   { id: "podest", label: "Podest" },
 ];
