@@ -213,6 +213,7 @@ const OperationalView = () => {
       reservationId: row.id,
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
+      zone: reservation?.zone,
     });
     setSelectedRowId(row.id);
     setPanelOpen(true);
