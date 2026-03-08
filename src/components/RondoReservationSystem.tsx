@@ -265,7 +265,11 @@ const RondoReservationSystem = () => {
         </p>
         <div className="bg-card border border-border rounded-lg p-6 inline-block text-left max-w-sm">
           <p className="text-sm"><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
-          <p className="text-sm"><strong>Anlass:</strong> {ANLAESSE.find(a => a.value === data.anlass)?.label}</p>
+              <p className="text-sm"><strong>Anlass:</strong> {data.anlass.map(a => {
+                const found = ANLAESSE.find(x => x.value === a);
+                if (a === "sonstiges" && data.sonstigesText.trim()) return `Sonstiges: ${data.sonstigesText.trim()}`;
+                return found?.label ?? a;
+              }).join(", ")}</p>
           <p className="text-sm"><strong>E-Mail:</strong> {data.email}</p>
           <p className="text-sm"><strong>Telefon:</strong> {data.phone}</p>
           {data.message && <p className="text-sm"><strong>Nachricht:</strong> {data.message}</p>}
