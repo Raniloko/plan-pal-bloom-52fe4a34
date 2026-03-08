@@ -170,7 +170,7 @@ const RondoReservationSystem = () => {
       case 0: return data.date && data.time;
       case 1: return data.guests >= 1;
       case 2: return data.zone !== "";
-      case 3: return data.anlass !== "";
+      case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
       case 4: return data.name.trim() && data.email.trim() && data.phone.trim();
       default: return true;
     }
