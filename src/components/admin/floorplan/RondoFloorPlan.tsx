@@ -53,6 +53,11 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
     return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
+  // Billard/Kicker/Dart area has its own SVG floor plan
+  if (activeArea === "billard") {
+    return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+  }
+
   // Show placeholder for areas that don't have SVG floor plans yet
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
   

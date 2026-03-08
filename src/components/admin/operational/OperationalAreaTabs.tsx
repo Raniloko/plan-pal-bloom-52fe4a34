@@ -30,6 +30,7 @@ interface Props {
 export const OperationalAreaTabs = ({
   activeArea, onAreaChange, showLabels = true, onToggleLabels,
   zoom = 1, onZoomChange, colorMode = "status", onColorModeChange,
+  viewMode = "floorplan", onViewModeChange,
 }: Props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
