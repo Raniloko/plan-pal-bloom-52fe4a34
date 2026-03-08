@@ -5,6 +5,7 @@ import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOu
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
+import { TableTimeline } from "./TableTimeline";
 
 export interface PanelData {
   tableLabel: string;
