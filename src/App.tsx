@@ -20,6 +20,7 @@ import OperationalView from "./pages/admin/OperationalView";
 import AdminLogin from "./pages/admin/AdminLogin";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { SessionWarningModal } from "@/components/admin/SessionWarningModal";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppContent />
+          <SessionWarningModal />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
