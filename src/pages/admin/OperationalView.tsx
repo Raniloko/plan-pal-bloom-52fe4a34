@@ -52,7 +52,8 @@ interface WaitlistEntry {
 }
 
 const OperationalView = () => {
-  const [activeArea, setActiveArea] = useState("billard");
+  const [activeArea, setActiveArea] = useState<FloorArea>("all");
+  const [showLabels, setShowLabels] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelData, setPanelData] = useState<PanelData | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
