@@ -73,6 +73,7 @@ const OperationalView = () => {
   const [statsOpen, setStatsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
   const load = useCallback(async () => {
@@ -86,6 +87,14 @@ const OperationalView = () => {
       setReservations((d.reservations as Reservation[]) || []);
       setUnits((d.units as Unit[]) || []);
       setWaitlist((d.waitlist as WaitlistEntry[]) || []);
+
+      // Load duration setting
+      const settingsRes = await supabase.functions.invoke("admin-actions", {
+        body: { action: "get_settings" },
+      });
+      if (settingsRes.data?.settings?.reservation_duration) {
+        setDurationMin(Number(settingsRes.data.settings.reservation_duration) || 120);
+      }
     } catch (err) {
       console.error("Failed to load dashboard:", err);
     }
