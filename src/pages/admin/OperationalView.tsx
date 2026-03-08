@@ -8,6 +8,9 @@ import {
   OperationalAreaTabs,
   ReservationPanel,
   OperationalSlidePanel,
+  SettingsDialog,
+  StatsPanel,
+  NotificationsPanel,
 } from "@/components/admin/operational";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { Toaster } from "sonner";
@@ -58,12 +61,18 @@ const OperationalView = () => {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const today = format(new Date(), "yyyy-MM-dd");
+  // New state for topbar features
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const dateStr = format(selectedDate, "yyyy-MM-dd");
 
   const load = useCallback(async () => {
     try {
       const res = await supabase.functions.invoke("admin-actions", {
-        body: { action: "fetch_dashboard", date: today },
+        body: { action: "fetch_dashboard", date: dateStr },
       });
       if (res.error) throw res.error;
       const d = res.data;
@@ -75,7 +84,7 @@ const OperationalView = () => {
       console.error("Failed to load dashboard:", err);
     }
     setLoading(false);
-  }, [today]);
+  }, [dateStr]);
 
   useEffect(() => {
     load();
@@ -96,7 +105,7 @@ const OperationalView = () => {
         const unit = r.unit_id ? units.find(u => u.id === r.unit_id) : undefined;
         const now = new Date();
         const [h, m] = r.reservation_time.split(":").map(Number);
-        const start = new Date(today); start.setHours(h, m);
+        const start = new Date(dateStr); start.setHours(h, m);
         const isPresent = r.status === "checked_in" || (r.status === "confirmed" && now >= start);
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
@@ -114,9 +123,15 @@ const OperationalView = () => {
           highlighted: isPresent,
         };
       });
-  }, [reservations, units, today]);
+  }, [reservations, units, dateStr]);
 
   const totalGuests = rows.reduce((s, r) => s + r.guests, 0);
+
+  // Stats counts
+  const confirmedCount = reservations.filter(r => r.status === "confirmed").length;
+  const pendingCount = reservations.filter(r => r.status === "pending").length;
+  const checkedInCount = reservations.filter(r => r.status === "checked_in").length;
+  const cancelledCount = reservations.filter(r => r.status === "cancelled").length;
 
   const floorTables = useMemo(() => {
     const map: Record<string, TableData> = {};
@@ -131,7 +146,7 @@ const OperationalView = () => {
       if (!fpId) return;
       const now = new Date();
       const [h, m] = r.reservation_time.split(":").map(Number);
-      const start = new Date(today); start.setHours(h, m);
+      const start = new Date(dateStr); start.setHours(h, m);
       const isPresent = r.status === "checked_in" || (r.status === "confirmed" && now >= start);
       map[fpId] = {
         id: fpId, title: unit.name,
@@ -149,7 +164,7 @@ const OperationalView = () => {
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
     return map;
-  }, [reservations, units, today]);
+  }, [reservations, units, dateStr]);
 
   const handleTableClick = (_id: string, data: TableData) => {
     const unit = units.find(u => u.name.toLowerCase() === data.title.toLowerCase());
@@ -204,7 +219,15 @@ const OperationalView = () => {
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
     }}>
-      <OperationalTopbar totalReservations={rows.length} totalGuests={totalGuests} />
+      <OperationalTopbar
+        totalReservations={rows.length}
+        totalGuests={totalGuests}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenStats={() => setStatsOpen(true)}
+        onOpenNotifications={() => setNotificationsOpen(true)}
+      />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <ReservationPanel
@@ -230,6 +253,15 @@ const OperationalView = () => {
         onBookNew={handleNewReservation}
         onRefresh={load}
       />
+
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <StatsPanel
+        open={statsOpen} onClose={() => setStatsOpen(false)}
+        totalReservations={rows.length} totalGuests={totalGuests}
+        confirmedCount={confirmedCount} pendingCount={pendingCount}
+        checkedInCount={checkedInCount} cancelledCount={cancelledCount}
+      />
+      <NotificationsPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </div>
   );
 };
