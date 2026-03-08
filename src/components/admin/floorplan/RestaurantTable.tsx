@@ -1,69 +1,85 @@
 import { TableData, STATUS_FILLS } from "./types";
 
-interface ChairRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 interface RestaurantTableProps {
   id: string;
   data: TableData;
   onClick: () => void;
-  vRect: { x: number; y: number; w: number; h: number };
-  hRect: { x: number; y: number; w: number; h: number };
-  chairs: {
-    left: ChairRect[];
-    right: ChairRect[];
-    top: ChairRect[];
-    bottom: ChairRect[];
-  };
-  numPos: { x: number; y: number };
+  cx: number;
+  cy: number;
+  tw: number;
+  th: number;
+  seats: { top: number; right: number; bottom: number; left: number };
 }
 
-const RestaurantTable = ({ id, data, onClick, vRect, hRect, chairs, numPos }: RestaurantTableProps) => {
+const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats }: RestaurantTableProps) => {
   const s = STATUS_FILLS[data.status] || STATUS_FILLS.free;
-
-  const allChairs = [
-    ...chairs.left.map(c => ({ ...c, side: "left" })),
-    ...chairs.right.map(c => ({ ...c, side: "right" })),
-    ...chairs.top.map(c => ({ ...c, side: "top" })),
-    ...chairs.bottom.map(c => ({ ...c, side: "bottom" })),
-  ];
-
-  // Name tag position below the table
-  const tagY = Math.max(vRect.y + vRect.h, hRect.y + hRect.h) + 6;
-  const tagX = hRect.x;
-  const tagW = hRect.w;
-  const tagCx = tagX + tagW / 2;
-
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
+  const isBlocked = data.status === "blocked";
+
+  const halfW = tw / 2;
+  const halfH = th / 2;
+  const chairR = 5;
+  const chairGap = 8;
+
+  const makeSeats = (count: number, side: "top" | "bottom" | "left" | "right") => {
+    const result: { sx: number; sy: number }[] = [];
+    if (count === 0) return result;
+
+    if (side === "top" || side === "bottom") {
+      const spacing = tw / (count + 1);
+      const baseY = side === "top" ? cy - halfH - chairGap : cy + halfH + chairGap;
+      for (let i = 0; i < count; i++) {
+        result.push({ sx: cx - halfW + spacing * (i + 1), sy: baseY });
+      }
+    } else {
+      const spacing = th / (count + 1);
+      const baseX = side === "left" ? cx - halfW - chairGap : cx + halfW + chairGap;
+      for (let i = 0; i < count; i++) {
+        result.push({ sx: baseX, sy: cy - halfH + spacing * (i + 1) });
+      }
+    }
+    return result;
+  };
+
+  const allChairs = [
+    ...makeSeats(seats.top, "top"),
+    ...makeSeats(seats.right, "right"),
+    ...makeSeats(seats.bottom, "bottom"),
+    ...makeSeats(seats.left, "left"),
+  ];
+
+  const tagY = cy + halfH + chairGap + chairR + 4;
+  const num = data.title.replace("Tisch ", "");
 
   return (
-    <g id={id} onClick={onClick} style={{ cursor: "pointer" }} className="hover:brightness-110">
-      {/* Chair stubs */}
+    <g id={id} onClick={onClick} style={{ cursor: "pointer" }}>
+      {/* Chair circles */}
       {allChairs.map((c, i) => (
-        <rect key={i} x={c.x} y={c.y} width={c.w} height={c.h} rx={3}
+        <circle key={i} cx={c.sx} cy={c.sy} r={chairR}
           fill={s.fill} opacity={s.chairOpacity} />
       ))}
-      {/* Cross-shape table */}
-      <rect x={vRect.x} y={vRect.y} width={vRect.w} height={vRect.h} rx={5}
-        fill={s.fill} opacity={s.opacity} />
-      <rect x={hRect.x} y={hRect.y} width={hRect.w} height={hRect.h} rx={5}
-        fill={s.fill} opacity={s.opacity} />
+
+      {/* Table surface - rounded rectangle */}
+      <rect
+        x={cx - halfW} y={cy - halfH} width={tw} height={th} rx={8}
+        fill={s.fill} opacity={s.opacity}
+        stroke={isReserved ? "#2a62b8" : isPresent ? "#166a2a" : isBlocked ? "#991111" : "#b0b0c0"}
+        strokeWidth={1.5}
+      />
+
       {/* Table number */}
-      <text x={numPos.x} y={numPos.y} textAnchor="middle" fontSize={13} fontWeight={700}
-        fill={s.numColor} fontFamily="'DM Sans', sans-serif">
-        {data.title.replace("Tisch ", "")}
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central"
+        fontSize={12} fontWeight={700} fill={s.numColor}
+        fontFamily="'DM Sans', sans-serif">
+        {num}
       </text>
 
-      {/* Present: time badge above */}
+      {/* Present: time badge */}
       {isPresent && data.startTime && (
         <>
-          <rect x={tagCx - 23} y={tagY - 20} width={46} height={13} rx={3} fill="rgba(0,0,0,0.6)" />
-          <text x={tagCx} y={tagY - 10} textAnchor="middle" fontSize={9} fontWeight={700} fill="#5de88a"
+          <rect x={cx - 24} y={tagY - 2} width={48} height={14} rx={3} fill="rgba(0,0,0,0.6)" />
+          <text x={cx} y={tagY + 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#5de88a"
             fontFamily="'DM Sans', sans-serif">{data.startTime}</text>
         </>
       )}
@@ -71,11 +87,13 @@ const RestaurantTable = ({ id, data, onClick, vRect, hRect, chairs, numPos }: Re
       {/* Name tag for reserved/present */}
       {data.guest && (isReserved || isPresent) && (
         <>
-          <rect x={tagX} y={tagY} width={tagW} height={15} rx={3}
+          <rect x={cx - tw / 2 - 4} y={tagY + (isPresent && data.startTime ? 14 : 0)}
+            width={tw + 8} height={15} rx={3}
             fill={isPresent ? "#1e8a38" : "#3a7bd5"} />
-          <text x={tagCx} y={tagY + 11} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff"
+          <text x={cx} y={tagY + (isPresent && data.startTime ? 25 : 11)}
+            textAnchor="middle" fontSize={9} fontWeight={700} fill="#fff"
             fontFamily="'DM Sans', sans-serif">
-            {data.pax ? `${data.pax} | ` : ""}{data.guest}
+            {data.pax ? `${data.pax}P | ` : ""}{data.guest}
           </text>
         </>
       )}

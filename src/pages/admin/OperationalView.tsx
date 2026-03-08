@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { RondoFloorPlan } from "@/components/admin/floorplan";
@@ -11,7 +11,7 @@ import {
 } from "@/components/admin/operational";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 
-/* Seed data for initial display (matches spec exactly) */
+/* Seed data for initial display */
 const SEED_ROWS: ResRow[] = [
   { id: "s1", time: "19:00", offset: "01:00", guests: 4, name: ". Jana", tableRef: "1. / 3", icon: "ob", highlighted: false },
   { id: "s2", time: "19:15", offset: "01:15", guests: 4, name: "Michelik", tableRef: "1. / 2", icon: "none", highlighted: false },
@@ -22,7 +22,6 @@ const SEED_ROWS: ResRow[] = [
   { id: "s7", time: "20:00", offset: "02:00", guests: 4, name: "Kewelo", tableRef: "1. / 8", icon: "none", highlighted: false },
 ];
 
-/* Seed floor plan data */
 const SEED_TABLES: Record<string, TableData> = {
   b2: { id: "b2", title: "Billard 2", status: "reserved", guest: "Michelik", startTime: "19:15", endTime: "21:15", pax: 4 },
   t61: { id: "t61", title: "Tisch 61", status: "reserved", guest: "Guido", startTime: "01:30", endTime: "03:00", pax: 2 },
@@ -65,16 +64,16 @@ const OperationalView = () => {
 
   const today = format(new Date(), "yyyy-MM-dd");
 
-  // Fetch live data
+  const load = useCallback(async () => {
+    const [r, u] = await Promise.all([
+      supabase.from("reservations").select("*").eq("reservation_date", today).neq("status", "cancelled"),
+      supabase.from("units").select("*").order("position_index"),
+    ]);
+    setReservations((r.data as Reservation[]) || []);
+    setUnits((u.data as Unit[]) || []);
+  }, [today]);
+
   useEffect(() => {
-    const load = async () => {
-      const [r, u] = await Promise.all([
-        supabase.from("reservations").select("*").eq("reservation_date", today).neq("status", "cancelled"),
-        supabase.from("units").select("*").order("position_index"),
-      ]);
-      setReservations((r.data as Reservation[]) || []);
-      setUnits((u.data as Unit[]) || []);
-    };
     load();
     const ch = supabase
       .channel("op-view")
@@ -82,9 +81,8 @@ const OperationalView = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "units" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [today]);
+  }, [load]);
 
-  // Build rows from DB + seed fallback
   const rows: ResRow[] = useMemo(() => {
     if (reservations.length === 0) return SEED_ROWS;
     return reservations
@@ -95,14 +93,15 @@ const OperationalView = () => {
         const now = new Date();
         const [h, m] = r.reservation_time.split(":").map(Number);
         const start = new Date(today); start.setHours(h, m);
-        const isPresent = r.status === "confirmed" && now >= start;
+        const isPresent = r.status === "checked_in" || (r.status === "confirmed" && now >= start);
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
+        else if (r.status === "checked_in") icon = "double";
         else if (isPresent) icon = "double";
         else if (r.status === "confirmed") icon = "single";
         return {
           id: r.id,
-          time: r.reservation_time,
+          time: r.reservation_time.slice(0, 5),
           offset: "",
           guests: r.guest_count,
           name: r.customer_name,
@@ -115,7 +114,6 @@ const OperationalView = () => {
 
   const totalGuests = rows.reduce((s, r) => s + r.guests, 0);
 
-  // Build floor plan tables from DB + seed fallback
   const floorTables = useMemo(() => {
     if (reservations.length === 0) return SEED_TABLES;
     const map: Record<string, TableData> = {};
@@ -131,11 +129,11 @@ const OperationalView = () => {
       const now = new Date();
       const [h, m] = r.reservation_time.split(":").map(Number);
       const start = new Date(today); start.setHours(h, m);
-      const isPresent = r.status === "confirmed" && now >= start;
+      const isPresent = r.status === "checked_in" || (r.status === "confirmed" && now >= start);
       map[fpId] = {
         id: fpId, title: unit.name,
         status: isPresent ? "present" : "reserved",
-        guest: r.customer_name, startTime: r.reservation_time,
+        guest: r.customer_name, startTime: r.reservation_time.slice(0, 5),
         pax: r.guest_count, reservationId: r.id,
       };
     });
@@ -166,10 +164,16 @@ const OperationalView = () => {
     setPanelData({
       tableLabel: row.tableRef,
       guest: row.name, startTime: row.time, pax: row.guests,
-      status: row.highlighted ? "present" : row.icon === "ob" ? "reserved" : "reserved",
+      status: row.highlighted ? "present" : "reserved",
       reservationId: row.id,
     });
     setSelectedRowId(row.id);
+    setPanelOpen(true);
+  };
+
+  const handleNewReservation = () => {
+    setPanelData({ tableLabel: "Neue Reservierung", status: "free" });
+    setSelectedRowId(null);
     setPanelOpen(true);
   };
 
@@ -187,7 +191,7 @@ const OperationalView = () => {
           rows={rows} totalGuests={totalGuests}
           selectedRowId={selectedRowId}
           onRowClick={handleRowClick}
-          onNewClick={() => {}}
+          onNewClick={handleNewReservation}
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -200,7 +204,9 @@ const OperationalView = () => {
 
       <OperationalSlidePanel
         open={panelOpen} data={panelData}
-        onClose={closePanel} onBookNew={() => {}}
+        onClose={closePanel}
+        onBookNew={handleNewReservation}
+        onRefresh={load}
       />
     </div>
   );

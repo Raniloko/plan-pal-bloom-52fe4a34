@@ -13,8 +13,8 @@ interface Props {
 
 const Div = () => <div style={{ width: 1, alignSelf: "stretch", background: "#2a2a2a" }} />;
 
-const IcoBtn = ({ children, borderL }: { children: React.ReactNode; borderL?: boolean }) => (
-  <button style={{
+const IcoBtn = ({ children, borderL, onClick }: { children: React.ReactNode; borderL?: boolean; onClick?: () => void }) => (
+  <button onClick={onClick} style={{
     width: 38, height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
     color: "#666", background: "transparent", border: "none",
     borderLeft: borderL ? "1px solid #2a2a2a" : undefined, cursor: "pointer",
@@ -36,7 +36,7 @@ export const OperationalTopbar = ({ totalReservations, totalGuests }: Props) => 
       setTime(`${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`);
     };
     tick();
-    const id = setInterval(tick, 60_000);
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -46,16 +46,14 @@ export const OperationalTopbar = ({ totalReservations, totalGuests }: Props) => 
       background: "#111111", borderBottom: "1px solid #2a2a2a",
       fontFamily: "'DM Sans', sans-serif",
     }}>
-      {/* A – Hamburger + Q logo */}
+      {/* A – Hamburger + Logo */}
       <button style={{ width: 36, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", background: "transparent", border: "none", cursor: "pointer" }}>
         <Menu size={18} />
       </button>
       <Div />
-      <div style={{
-        width: 32, height: 32, margin: "0 8px", borderRadius: 6,
-        background: "#f5a623", display: "flex", alignItems: "center", justifyContent: "center",
-        color: "#fff", fontWeight: 700, fontSize: 18, cursor: "pointer",
-      }}>Q</div>
+      <div style={{ padding: "0 10px", display: "flex", alignItems: "center", height: "100%" }}>
+        <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 28, filter: "brightness(0) invert(1)", opacity: 0.85 }} />
+      </div>
       <Div />
 
       {/* B – Jetzt */}
@@ -83,9 +81,7 @@ export const OperationalTopbar = ({ totalReservations, totalGuests }: Props) => 
 
       {/* E – Time */}
       <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
-        <button style={{ width: 22, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronLeft size={12} /></button>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", padding: "0 8px", fontVariantNumeric: "tabular-nums", fontFamily: "monospace" }}>{time}</span>
-        <button style={{ width: 22, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronRight size={12} /></button>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", padding: "0 12px", fontVariantNumeric: "tabular-nums", fontFamily: "monospace" }}>{time}</span>
       </div>
 
       {/* F – Right icons */}

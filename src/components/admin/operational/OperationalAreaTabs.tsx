@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const AREA_TABS = [
-  { id: "billard", label: "1. Billiard Tisch" },
+  { id: "billard", label: "1. Billard Tisch" },
   { id: "salitos", label: "2. Salitos Lounge / Outdoor" },
   { id: "rest140", label: "3. Restaurant 140 Zoll" },
   { id: "rest75", label: "4. Restaurant 75 Zoll / Sport" },
@@ -41,7 +41,7 @@ export const OperationalAreaTabs = ({ activeArea, onAreaChange }: Props) => {
               whiteSpace: "nowrap", border: "none", cursor: "pointer",
               color: active ? "#fff" : "#666",
               background: active ? "rgba(255,255,255,0.07)" : "transparent",
-              borderBottom: active ? "2px solid #fff" : "2px solid transparent",
+              borderBottom: active ? "2px solid #c9a84c" : "2px solid transparent",
             }}>
               {tab.label}
             </button>
@@ -53,13 +53,6 @@ export const OperationalAreaTabs = ({ activeArea, onAreaChange }: Props) => {
         width: 32, height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
         color: "#666", background: "transparent", border: "none", borderLeft: "1px solid #2a2a2a", cursor: "pointer",
       }}><ChevronRight size={14} /></button>
-
-      <div style={{ borderLeft: "1px solid #2a2a2a", padding: "0 14px", display: "flex", alignItems: "center", height: "100%" }}>
-        <button style={{
-          fontSize: 12, color: "#666", padding: "6px 10px",
-          border: "1px solid #333", borderRadius: 5, background: "transparent", cursor: "pointer",
-        }}>Ansicht ändern</button>
-      </div>
     </div>
   );
 };
