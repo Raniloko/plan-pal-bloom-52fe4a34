@@ -71,6 +71,7 @@ export default {
         "fade-slide-up": "fade-slide-up 0.5s ease-out forwards",
         "count-up": "count-up 0.4s ease-out forwards",
         "pulse-gold": "pulse-gold 2s ease-in-out infinite",
+        "slide-in-right": "slide-in-right 0.3s cubic-bezier(0.25,0.46,0.45,0.94) forwards",
       },
     },
   },
