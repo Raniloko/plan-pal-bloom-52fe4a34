@@ -3,6 +3,7 @@ import { FloorPlanProps, TableData, TABLE_AREA_MAP } from "./types";
 import BillardTable from "./BillardTable";
 import RestaurantTable from "./RestaurantTable";
 import AreaPlaceholder from "./AreaPlaceholder";
+import FensterFloorPlan from "./FensterFloorPlan";
 
 const DEFAULT_TABLES: Record<string, TableData> = {
   t10: { id: "t10", title: "Tisch 10", status: "free" },
