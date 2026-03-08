@@ -29,8 +29,8 @@ const DEFAULT_TABLES: Record<string, TableData> = {
 
 const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> = {
   billard: {
-    title: "Billard / Kicker / Dart",
-    desc: "8 Olio-Billardtische, 2 Leonhart-Tischkicker, 2 Löwen-Elektronik Darts",
+    title: "Billard",
+    desc: "5 Olio-Billardtische (Tische 4–8)",
     img: "/images/billard-area.jpg",
   },
   vip: {
