@@ -386,9 +386,29 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", textAlign: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", textAlign: "center" }}>
+              {/* Show timeline for free tables that have upcoming reservations */}
+              {data?.unitId && (() => {
+                const tableRes = reservations
+                  .filter(r => r.unit_id === data.unitId && r.customer_name && r.reservation_time)
+                  .map(r => ({
+                    id: r.id,
+                    customer_name: r.customer_name!,
+                    reservation_time: r.reservation_time!,
+                    guest_count: r.guest_count || 0,
+                    status: r.status,
+                  }));
+                return tableRes.length > 0 ? (
+                  <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
+                    <TableTimeline
+                      reservations={tableRes}
+                      currentTime={format(new Date(), "HH:mm")}
+                    />
+                  </div>
+                ) : null;
+              })()}
               <CalendarDays size={40} color="#ddd" style={{ marginBottom: 12 }} />
-              <span style={{ fontSize: 14, color: "#999" }}>Keine Reservierungen heute</span>
+              <span style={{ fontSize: 14, color: "#999" }}>Aktuell keine Reservierung</span>
               <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>Dieser Tisch ist frei verfügbar</span>
               <button onClick={() => setMode("book")} style={{
                 marginTop: 16, padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 6,

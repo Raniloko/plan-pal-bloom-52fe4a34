@@ -176,7 +176,19 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                 }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: r.overdue ? "#cc3300" : "#111" }}>{r.time}</div>
-                    <div style={{ fontSize: 10, color: r.overdue ? "#cc3300" : "#999", fontWeight: r.overdue ? 700 : 400 }}>{r.offset}</div>
+                    <div style={{ fontSize: 10, color: r.overdue ? "#cc3300" : "#999", fontWeight: r.overdue ? 700 : 400 }}>
+                      {r.overdue ? r.offset : r.status === "checked_in" ? (() => {
+                        const [h, m] = r.time.split(":").map(Number);
+                        const start = new Date(); start.setHours(h, m, 0, 0);
+                        const elapsed = Math.floor((Date.now() - start.getTime()) / 60000);
+                        const remaining = DURATION_MIN - elapsed;
+                        if (remaining <= 0) return <span style={{ color: "#cc3300", fontWeight: 700 }}>⏱ Überzogen</span>;
+                        if (remaining <= 15) return <span style={{ color: "#e07820", fontWeight: 600 }}>⏱ {remaining} Min</span>;
+                        const rh = Math.floor(remaining / 60);
+                        const rm = remaining % 60;
+                        return `⏱ ${rh > 0 ? `${rh}h ` : ""}${rm}min`;
+                      })() : r.offset}
+                    </div>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#111", textAlign: "center" }}>{r.guests}</div>
                   <div>
