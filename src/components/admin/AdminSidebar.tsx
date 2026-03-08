@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, CalendarCheck, Calendar, BarChart3,
   CircleDot, Gamepad2, Target,
-  UtensilsCrossed, Star, Mail, ScrollText, ClipboardList, Settings, LogOut, User
+  UtensilsCrossed, Star, Mail, ScrollText, ClipboardList, Settings, LogOut, User, MonitorSmartphone
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
