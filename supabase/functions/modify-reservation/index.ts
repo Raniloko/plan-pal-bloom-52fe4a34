@@ -7,9 +7,9 @@ const corsHeaders = {
 };
 
 const ZONE_LABELS: Record<string, string> = {
-  hauptbereich: "Restaurantbereich am 140-Zoll Screen",
-  fenster: "Restaurantbereich am 75-Zoll Screen",
-  billard: "Billard-Tisch",
+  hauptbereich: "Restaurant (140-Zoll Screen)",
+  fenster: "Restaurant (75-Zoll Screen)",
+  billard: "Billard",
   vip: "VIP-Raum",
   podest: "Podest",
 };
@@ -18,7 +18,7 @@ const OCCASION_LABELS: Record<string, string> = {
   sport: "Live-Sport schauen",
   feier: "Private Feier",
   essen: "Essen & Trinken",
-  billard: "Billard / Kicker / Dart",
+  billard: "Billard spielen",
   sonstiges: "Sonstiges",
 };
 
@@ -35,39 +35,40 @@ function formatDate(dateStr: string): string {
   return `${d}.${m}.${y}`;
 }
 
-function htmlPage(title: string, body: string): Response {
+function styledPage(title: string, body: string): Response {
   const html = `<!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title} – Rondo Sportsbar</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background:#0a0a0a; font-family:'Helvetica Neue',Arial,sans-serif; color:#e5e5e5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .card { background:#141414; border:1px solid #222; border-radius:16px; padding:40px; max-width:520px; width:100%; }
-  .brand { text-align:center; margin-bottom:24px; }
-  .brand h1 { color:#c8a960; font-size:20px; letter-spacing:2px; font-weight:800; }
-  .brand p { color:#666; font-size:11px; letter-spacing:1px; }
-  h2 { font-size:22px; margin-bottom:20px; text-align:center; }
-  label { display:block; color:#999; font-size:13px; margin-bottom:4px; margin-top:16px; }
-  input, select, textarea { width:100%; background:#1a1a1a; border:1px solid #333; color:#e5e5e5; border-radius:8px; padding:10px 14px; font-size:14px; outline:none; }
-  input:focus, select:focus, textarea:focus { border-color:#c8a960; }
-  select { appearance:none; cursor:pointer; }
-  textarea { resize:vertical; min-height:60px; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .btn { display:inline-block; width:100%; text-align:center; padding:14px; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; border:none; margin-top:24px; transition:opacity .2s; }
-  .btn:hover { opacity:.9; }
-  .btn-primary { background:linear-gradient(135deg,#c8a960,#b8963f); color:#0a0a0a; }
-  .btn-cancel { background:#3a1a1a; border:1px solid #5a2d2d; color:#f87171; margin-top:12px; font-size:13px; padding:10px; }
-  .current { background:#1a1a1a; border:1px solid #333; border-radius:8px; padding:12px 16px; margin-bottom:8px; }
-  .current span { color:#999; font-size:12px; }
-  .current p { color:#e5e5e5; font-size:14px; font-weight:600; }
-  .success-icon { width:64px; height:64px; border-radius:50%; background:#1a3d1a; border:2px solid #2d5a2d; color:#4ade80; display:inline-flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:16px; }
-  .error-icon { width:64px; height:64px; border-radius:50%; background:#3a1a1a; border:2px solid #5a2d2d; color:#f87171; display:inline-flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:16px; }
-  .msg { text-align:center; }
-  .msg p { color:#999; font-size:14px; line-height:1.6; }
-  .footer { text-align:center; margin-top:24px; padding-top:20px; border-top:1px solid #222; }
-  .footer p { color:#555; font-size:11px; }
-</style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} – Rondo Sportsbar</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#f5f5f5; font-family:-apple-system,'Helvetica Neue',Arial,sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; color:#1a1a1a; }
+    .card { background:#fff; border:1px solid #e5e5e5; border-radius:16px; padding:40px; max-width:480px; width:100%; }
+    .brand { text-align:center; font-size:14px; font-weight:800; color:#1a1a1a; letter-spacing:1px; margin-bottom:24px; }
+    h2 { font-size:20px; font-weight:700; text-align:center; margin-bottom:20px; }
+    label { display:block; color:#888; font-size:12px; font-weight:600; margin-bottom:4px; margin-top:14px; text-transform:uppercase; letter-spacing:0.5px; }
+    input, select, textarea { width:100%; background:#fafafa; border:1px solid #e5e5e5; color:#1a1a1a; border-radius:8px; padding:10px 14px; font-size:14px; outline:none; font-family:inherit; }
+    input:focus, select:focus, textarea:focus { border-color:#1a1a1a; }
+    textarea { resize:vertical; min-height:60px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .btn { display:block; width:100%; text-align:center; padding:12px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; border:none; margin-top:20px; }
+    .btn-primary { background:#1a1a1a; color:#fff; }
+    .btn-primary:hover { background:#333; }
+    .current { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:12px 16px; margin-bottom:8px; }
+    .current span { color:#888; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+    .current p { color:#1a1a1a; font-size:14px; font-weight:600; margin-top:4px; }
+    .icon { width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:16px; }
+    .icon-ok { background:#f0fdf4; border:2px solid #bbf7d0; color:#22c55e; }
+    .icon-err { background:#fef2f2; border:2px solid #fecaca; color:#dc2626; }
+    .msg { text-align:center; }
+    .msg p { color:#666; font-size:14px; line-height:1.6; }
+    .footer { text-align:center; margin-top:24px; padding-top:16px; border-top:1px solid #f0f0f0; }
+    .footer p { color:#bbb; font-size:11px; }
+    .back-link { display:inline-block; margin-top:12px; color:#1a1a1a; font-size:13px; font-weight:600; text-decoration:none; }
+    .back-link:hover { text-decoration:underline; }
+  </style>
 </head>
 <body><div class="card">${body}</div></body></html>`;
   return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders } });
@@ -87,17 +88,16 @@ Deno.serve(async (req) => {
   const id = url.searchParams.get("id");
 
   if (!id) {
-    return htmlPage("Fehler", `<div class="msg"><div class="error-icon">✕</div><h2>Fehler</h2><p>Keine Reservierungs-ID angegeben.</p></div>`);
+    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Keine Reservierungs-ID angegeben.</p></div>`);
   }
 
-  // GET = show form, POST = process update
   if (req.method === "GET") {
     const { data: r, error } = await supabase.from("reservations").select("*").eq("id", id).single();
     if (error || !r) {
-      return htmlPage("Nicht gefunden", `<div class="msg"><div class="error-icon">✕</div><h2>Nicht gefunden</h2><p>Diese Reservierung wurde nicht gefunden.</p></div>`);
+      return styledPage("Nicht gefunden", `<div class="msg"><div class="icon icon-err">✕</div><h2>Nicht gefunden</h2><p>Diese Reservierung wurde nicht gefunden.</p></div>`);
     }
     if (r.status === "cancelled") {
-      return htmlPage("Storniert", `<div class="msg"><div class="error-icon">✕</div><h2>Bereits storniert</h2><p>Diese Reservierung wurde bereits storniert und kann nicht mehr geändert werden.</p></div>`);
+      return styledPage("Storniert", `<div class="msg"><div class="icon icon-err">✕</div><h2>Storniert</h2><p>Diese Reservierung wurde bereits storniert.</p></div>`);
     }
 
     const zoneOptions = VALID_ZONES.map(z => `<option value="${z}" ${r.zone === z ? "selected" : ""}>${ZONE_LABELS[z] || z}</option>`).join("");
@@ -105,30 +105,32 @@ Deno.serve(async (req) => {
     const timeOptions = VALID_TIMES.map(t => `<option value="${t}" ${r.reservation_time === t ? "selected" : ""}>${t} Uhr</option>`).join("");
 
     const body = `
-      <div class="brand"><h1>RONDO SPORTSBAR</h1><p>ESSEN · SPORT · BILLIARD</p></div>
-      <h2>✏️ Reservierung ändern</h2>
-      <div class="current"><span>Aktuelle Reservierung</span><p>${formatDate(r.reservation_date)} um ${r.reservation_time} Uhr · ${r.guest_count} Personen · ${ZONE_LABELS[r.zone] || r.zone}</p></div>
+      <div class="brand">RONDO SPORTSBAR</div>
+      <h2>Reservierung ändern</h2>
+      <div class="current">
+        <span>Aktuelle Reservierung</span>
+        <p>${formatDate(r.reservation_date)} · ${r.reservation_time} Uhr · ${r.guest_count} Pers. · ${ZONE_LABELS[r.zone] || r.zone}</p>
+      </div>
       <form method="POST" action="?id=${id}">
         <div class="grid2">
-          <div><label>📅 Datum</label><input type="date" name="date" value="${r.reservation_date}" min="${new Date().toISOString().split("T")[0]}" required></div>
-          <div><label>🕐 Uhrzeit</label><select name="time" required>${timeOptions}</select></div>
+          <div><label>Datum</label><input type="date" name="date" value="${r.reservation_date}" min="${new Date().toISOString().split("T")[0]}" required></div>
+          <div><label>Uhrzeit</label><select name="time" required>${timeOptions}</select></div>
         </div>
-        <label>👥 Personenanzahl</label>
+        <label>Personen</label>
         <input type="number" name="guests" value="${r.guest_count}" min="1" max="50" required>
-        <label>📍 Bereich</label>
+        <label>Bereich</label>
         <select name="zone" required>${zoneOptions}</select>
-        <label>🎯 Anlass</label>
+        <label>Anlass</label>
         <select name="occasion" required>${occasionOptions}</select>
-        <label>💬 Nachricht (optional)</label>
+        <label>Nachricht (optional)</label>
         <textarea name="message">${r.message || ""}</textarea>
         <button type="submit" class="btn btn-primary">Änderungen speichern</button>
       </form>
-      <div class="footer"><p>Reservierungs-ID: ${id}</p></div>`;
+      <div class="footer"><p>ID: ${id.slice(0, 8).toUpperCase()}</p></div>`;
 
-    return htmlPage("Reservierung ändern", body);
+    return styledPage("Reservierung ändern", body);
   }
 
-  // POST - process update
   if (req.method === "POST") {
     try {
       const formData = await req.formData();
@@ -139,7 +141,6 @@ Deno.serve(async (req) => {
       const occasion = formData.get("occasion") as string;
       const message = (formData.get("message") as string || "").trim();
 
-      // Validate
       const errors: string[] = [];
       if (!date) errors.push("Datum fehlt.");
       if (!VALID_TIMES.includes(time)) errors.push("Ungültige Uhrzeit.");
@@ -148,13 +149,12 @@ Deno.serve(async (req) => {
       if (!VALID_OCCASIONS.includes(occasion)) errors.push("Ungültiger Anlass.");
 
       if (errors.length > 0) {
-        return htmlPage("Fehler", `<div class="msg"><div class="error-icon">✕</div><h2>Fehler</h2><p>${errors.join(" ")}</p></div><div class="footer"><a href="?id=${id}" style="color:#c8a960;">← Zurück zum Formular</a></div>`);
+        return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>${errors.join(" ")}</p></div><div class="footer"><a href="?id=${id}" class="back-link">← Zurück</a></div>`);
       }
 
-      // Get original reservation for email
       const { data: original } = await supabase.from("reservations").select("*").eq("id", id).single();
       if (!original || original.status === "cancelled") {
-        return htmlPage("Fehler", `<div class="msg"><div class="error-icon">✕</div><h2>Fehler</h2><p>Reservierung nicht gefunden oder bereits storniert.</p></div>`);
+        return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Reservierung nicht gefunden oder storniert.</p></div>`);
       }
 
       const { error: updateError } = await supabase.from("reservations").update({
@@ -168,10 +168,10 @@ Deno.serve(async (req) => {
 
       if (updateError) {
         console.error("Update error:", updateError);
-        return htmlPage("Fehler", `<div class="msg"><div class="error-icon">✕</div><h2>Fehler</h2><p>Die Änderung konnte nicht gespeichert werden.</p></div><div class="footer"><a href="?id=${id}" style="color:#c8a960;">← Zurück zum Formular</a></div>`);
+        return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Die Änderung konnte nicht gespeichert werden.</p></div><div class="footer"><a href="?id=${id}" class="back-link">← Zurück</a></div>`);
       }
 
-      // Send confirmation email for the modification
+      // Send modification email (non-blocking)
       try {
         const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
         const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -201,26 +201,25 @@ Deno.serve(async (req) => {
       }
 
       const body = `
-        <div class="brand"><h1>RONDO SPORTSBAR</h1><p>ESSEN · SPORT · BILLIARD</p></div>
+        <div class="brand">RONDO SPORTSBAR</div>
         <div class="msg">
-          <div class="success-icon">✓</div>
-          <h2 style="color:#4ade80;">Reservierung geändert!</h2>
-          <p>Deine Reservierung wurde erfolgreich aktualisiert:</p>
+          <div class="icon icon-ok">✓</div>
+          <h2>Reservierung geändert</h2>
+          <p>Deine Reservierung wurde aktualisiert.</p>
         </div>
         <div class="current" style="margin-top:16px;">
-          <p>📅 ${formatDate(date)} um ${time} Uhr</p>
-          <p>👥 ${guests} Personen · ${ZONE_LABELS[zone] || zone}</p>
-          <p>🎯 ${OCCASION_LABELS[occasion] || occasion}</p>
+          <p>${formatDate(date)} · ${time} Uhr · ${guests} Pers.</p>
+          <p>${ZONE_LABELS[zone] || zone}</p>
         </div>
-        <p style="text-align:center;color:#666;font-size:13px;margin-top:16px;">Du erhältst eine aktualisierte Bestätigung per E-Mail.</p>
-        <div class="footer"><p>Reservierungs-ID: ${id}</p></div>`;
+        <p style="text-align:center;color:#888;font-size:12px;margin-top:12px;">Bestätigung per E-Mail gesendet.</p>
+        <div class="footer"><p>ID: ${id.slice(0, 8).toUpperCase()}</p></div>`;
 
-      return htmlPage("Reservierung geändert", body);
+      return styledPage("Reservierung geändert", body);
     } catch (err) {
       console.error("Modify error:", err);
-      return htmlPage("Fehler", `<div class="msg"><div class="error-icon">✕</div><h2>Fehler</h2><p>Ein unerwarteter Fehler ist aufgetreten.</p></div>`);
+      return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Ein unerwarteter Fehler ist aufgetreten.</p></div>`);
     }
   }
 
-  return htmlPage("Fehler", `<div class="msg"><div class="error-icon">✕</div><h2>Ungültige Anfrage</h2></div>`);
+  return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Ungültige Anfrage</h2></div>`);
 });
