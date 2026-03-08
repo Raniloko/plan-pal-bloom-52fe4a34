@@ -57,6 +57,7 @@ const OperationalView = () => {
   const [showLabels, setShowLabels] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [colorMode, setColorMode] = useState<ColorMode>("status");
+  const [viewMode, setViewMode] = useState<ViewMode>("floorplan");
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelData, setPanelData] = useState<PanelData | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
