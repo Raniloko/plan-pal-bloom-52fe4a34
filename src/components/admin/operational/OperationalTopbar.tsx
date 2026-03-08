@@ -19,6 +19,7 @@ interface Props {
   onOpenSettings: () => void;
   onOpenStats: () => void;
   onOpenNotifications: () => void;
+  onOpenActivityLog: () => void;
 }
 
 const Div = () => <div style={{ width: 1, alignSelf: "stretch", background: "#2a2a2a" }} />;
