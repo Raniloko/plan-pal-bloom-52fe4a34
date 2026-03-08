@@ -284,12 +284,19 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                         })}
                       </optgroup>
                     ))}
-                  </select>
-                  {assignedUnitId && (
-                    <div style={{ fontSize: 10, color: "#999", marginTop: 4 }}>
-                      Zugewiesen: {units.find(u => u.id === assignedUnitId)?.name}
-                    </div>
-                  )}
+                   </select>
+                   {/* Status legend */}
+                   <div style={{ display: "flex", gap: 10, marginTop: 8, fontSize: 10, color: "#777" }}>
+                     <span>🟢 Frei</span>
+                     <span>🟡 Reserviert</span>
+                     <span>🔴 Besetzt</span>
+                     <span>⛔ Gesperrt</span>
+                   </div>
+                   {assignedUnitId && (
+                     <div style={{ fontSize: 10, color: "#999", marginTop: 4 }}>
+                       Zugewiesen: {units.find(u => u.id === assignedUnitId)?.name}
+                     </div>
+                   )}
                 </div>
               )}
 
