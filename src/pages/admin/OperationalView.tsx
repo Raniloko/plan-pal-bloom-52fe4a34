@@ -360,6 +360,7 @@ const OperationalView = () => {
         checkedInCount={checkedInCount} cancelledCount={cancelledCount}
       />
       <NotificationsPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <ActivityLogPanel open={activityLogOpen} onClose={() => setActivityLogOpen(false)} />
     </div>
   );
 };

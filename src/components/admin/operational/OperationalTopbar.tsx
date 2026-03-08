@@ -134,6 +134,7 @@ export const OperationalTopbar = ({
       {/* F – Right icons */}
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", height: "100%" }}>
         <IcoBtn borderL onClick={onOpenStats}><BarChart2 size={16} /></IcoBtn>
+        <IcoBtn borderL onClick={onOpenActivityLog}><Activity size={16} /></IcoBtn>
         <IcoBtn borderL onClick={onOpenNotifications}><Bell size={16} /></IcoBtn>
         <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
           <Users size={14} style={{ color: "#666", marginRight: 6 }} />
