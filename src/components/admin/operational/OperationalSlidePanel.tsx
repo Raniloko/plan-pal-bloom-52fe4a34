@@ -234,6 +234,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const handleAssignUnit = async (unitId: string) => {
     if (!data?.reservationId) return;
+    const previousUnitId = assignedUnitId;
     setAssignedUnitId(unitId);
     setSaving(true);
     try {
@@ -241,6 +242,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       toast.success(unitId ? "Tisch zugewiesen" : "Tischzuweisung entfernt");
       onRefresh();
     } catch (e: any) {
+      setAssignedUnitId(previousUnitId);
       toast.error(e?.message || "Fehler bei Tischzuweisung");
     }
     setSaving(false);
