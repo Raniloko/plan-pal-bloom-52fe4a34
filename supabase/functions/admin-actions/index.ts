@@ -111,8 +111,7 @@ Deno.serve(async (req) => {
           .update({ status: "cancelled", cancellation_reason: reason || "Admin-Stornierung" })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
-
-        try {
+        await logActivity(supabase, "cancel", "reservation", reservation_id, reason || "Admin-Stornierung");
           const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
           const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
           await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
