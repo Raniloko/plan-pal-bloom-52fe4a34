@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Pencil, Ban } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Pencil, Ban, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { TableData } from "@/components/admin/floorplan";
+import { toast } from "sonner";
+import BookingForm from "./BookingForm";
 
 export interface PanelData {
   tableLabel: string;
@@ -23,6 +24,7 @@ interface Props {
   data: PanelData | null;
   onClose: () => void;
   onBookNew: () => void;
+  onRefresh: () => void;
 }
 
 const STATUS_PILL: Record<string, React.CSSProperties> = {
@@ -32,15 +34,18 @@ const STATUS_PILL: Record<string, React.CSSProperties> = {
   Gesperrt: { background: "#fde8e8", color: "#cc2222", border: "1px solid #d8a0a0" },
 };
 
-export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props) => {
+export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh }: Props) => {
   const [notes, setNotes] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
+  const [mode, setMode] = useState<"view" | "book">("view");
+  const [saving, setSaving] = useState(false);
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
 
   useEffect(() => {
     if (open) {
       setNotes(data?.unitNotes || "");
       setCheckedIn(data?.status === "present");
+      setMode("view");
     }
   }, [open, data]);
 
@@ -53,6 +58,54 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props)
   const saveNotes = async () => {
     if (!data?.unitId) return;
     await supabase.from("units").update({ notes }).eq("id", data.unitId);
+  };
+
+  const handleCheckIn = async () => {
+    if (!data?.reservationId) return;
+    setSaving(true);
+    const newStatus = checkedIn ? "confirmed" : "checked_in";
+    const { error } = await supabase.from("reservations").update({ status: newStatus }).eq("id", data.reservationId);
+    setSaving(false);
+    if (error) { toast.error("Fehler beim Einchecken"); return; }
+    setCheckedIn(!checkedIn);
+    toast.success(checkedIn ? "Checkout erfolgreich" : "Gast eingecheckt");
+    onRefresh();
+  };
+
+  const handleBlock = async () => {
+    if (!data?.unitId) return;
+    setSaving(true);
+    const newStatus = data.status === "blocked" ? "free" : "blocked";
+    const { error } = await supabase.from("units").update({ status: newStatus }).eq("id", data.unitId);
+    setSaving(false);
+    if (error) { toast.error("Fehler beim Sperren"); return; }
+    toast.success(newStatus === "blocked" ? "Tisch gesperrt" : "Tisch freigegeben");
+    onRefresh();
+  };
+
+  const handleCancel = async () => {
+    if (!data?.reservationId) return;
+    if (!window.confirm(`Reservierung von ${data.guest} wirklich stornieren?`)) return;
+    setSaving(true);
+    const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", data.reservationId);
+    setSaving(false);
+    if (error) { toast.error("Fehler beim Stornieren"); return; }
+    toast.success("Reservierung storniert");
+    onRefresh();
+    onClose();
+  };
+
+  const handleMail = async () => {
+    if (!data?.reservationId) return;
+    try {
+      const res = await supabase.functions.invoke("send-reservation-email", {
+        body: { reservation_id: data.reservationId },
+      });
+      if (res.error) throw res.error;
+      toast.success("E-Mail gesendet");
+    } catch {
+      toast.error("E-Mail konnte nicht gesendet werden");
+    }
   };
 
   const statusText = () => {
@@ -79,15 +132,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props)
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8f8f8", borderBottom: "1px solid #eee", padding: "16px 18px" }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>{data?.tableLabel || "Tisch"}</div>
-            <div style={{ fontSize: 11, color: "#999" }}>{data?.areaName || data?.guest || "Kein Gast zugewiesen"}</div>
+            <div style={{ fontSize: 11, color: "#999" }}>{data?.guest || "Kein Gast zugewiesen"}</div>
           </div>
           <button onClick={onClose} style={{
             width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
             background: "#eee", border: "1px solid #ddd", borderRadius: 4, color: "#666", cursor: "pointer",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#cc2222"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#eee"; e.currentTarget.style.color = "#666"; }}
-          >
+          }}>
             <X size={14} />
           </button>
         </div>
@@ -104,7 +154,13 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props)
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 18px" }}>
-          {data?.guest ? (
+          {mode === "book" ? (
+            <BookingForm
+              tableLabel={data?.tableLabel}
+              onSuccess={() => { setMode("view"); onRefresh(); }}
+              onCancel={() => setMode("view")}
+            />
+          ) : data?.guest ? (
             <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>{data.startTime}{data.endTime ? ` – ${data.endTime}` : ""}</span>
@@ -115,17 +171,21 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props)
                 RND-{data.reservationId?.slice(0, 8).toUpperCase() || "XXXXXXXX"}
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                {[
-                  { label: "Bearbeiten", icon: <Pencil size={10} />, red: false },
-                  { label: "Mail", icon: <Mail size={10} />, red: false },
-                  { label: "Stornieren", icon: <Ban size={10} />, red: true },
-                ].map(btn => (
-                  <button key={btn.label} style={{
-                    flex: 1, padding: "6px 0", borderRadius: 5, border: "1px solid #e0e0e0",
-                    background: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer",
-                    color: btn.red ? "#cc2222" : "#777", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                  }}>{btn.icon} {btn.label}</button>
-                ))}
+                <button onClick={() => setMode("book")} disabled={saving} style={{
+                  flex: 1, padding: "6px 0", borderRadius: 5, border: "1px solid #e0e0e0",
+                  background: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer",
+                  color: "#777", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                }}><Pencil size={10} /> Bearbeiten</button>
+                <button onClick={handleMail} disabled={saving} style={{
+                  flex: 1, padding: "6px 0", borderRadius: 5, border: "1px solid #e0e0e0",
+                  background: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer",
+                  color: "#777", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                }}><Mail size={10} /> Mail</button>
+                <button onClick={handleCancel} disabled={saving} style={{
+                  flex: 1, padding: "6px 0", borderRadius: 5, border: "1px solid #e0e0e0",
+                  background: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer",
+                  color: "#cc2222", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                }}><Ban size={10} /> Stornieren</button>
               </div>
             </div>
           ) : (
@@ -133,7 +193,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props)
               <CalendarDays size={40} color="#ddd" style={{ marginBottom: 12 }} />
               <span style={{ fontSize: 14, color: "#999" }}>Keine Reservierungen heute</span>
               <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>Dieser Tisch ist frei verfügbar</span>
-              <button onClick={onBookNew} style={{
+              <button onClick={() => setMode("book")} style={{
                 marginTop: 16, padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 6,
                 background: "#c9a84c", color: "#111", border: "none", cursor: "pointer",
               }}>+ Reservierung anlegen</button>
@@ -143,27 +203,32 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew }: Props)
 
         {/* Footer */}
         <div style={{ background: "#f8f8f8", borderTop: "1px solid #eee", padding: "12px 18px", display: "flex", flexDirection: "column", gap: 6 }}>
-          <button onClick={onBookNew} style={{
+          <button onClick={() => setMode("book")} style={{
             width: "100%", padding: "10px 0", background: "#222", color: "#fff",
             fontSize: 13, fontWeight: 700, borderRadius: 7, border: "none", cursor: "pointer",
           }}>+ Neue Reservierung</button>
           <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => setCheckedIn(!checkedIn)} style={{
+            <button onClick={handleCheckIn} disabled={saving || !data?.reservationId} style={{
               flex: 1, padding: "8px 0", border: `1px solid ${checkedIn ? "#2a7a2a" : "#e0e0e0"}`,
               background: checkedIn ? "#e8f5e8" : "#fff", fontSize: 10, fontWeight: 700,
               color: checkedIn ? "#2a7a2a" : "#777", borderRadius: 6, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-            }}><LogIn size={11} /> Einchecken</button>
-            <button style={{
+              opacity: !data?.reservationId ? 0.4 : 1,
+            }}>{checkedIn ? <Check size={11} /> : <LogIn size={11} />} {checkedIn ? "Ausgecheckt" : "Einchecken"}</button>
+            <button onClick={handleBlock} disabled={saving || !data?.unitId} style={{
+              flex: 1, padding: "8px 0", border: `1px solid ${data?.status === "blocked" ? "#cc2222" : "#e0e0e0"}`,
+              background: data?.status === "blocked" ? "#fde8e8" : "#fff",
+              fontSize: 10, fontWeight: 700, color: data?.status === "blocked" ? "#cc2222" : "#777",
+              borderRadius: 6, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+              opacity: !data?.unitId ? 0.4 : 1,
+            }}><Lock size={11} /> {data?.status === "blocked" ? "Freigeben" : "Sperren"}</button>
+            <button onClick={handleMail} disabled={saving || !data?.reservationId} style={{
               flex: 1, padding: "8px 0", border: "1px solid #e0e0e0", background: "#fff",
               fontSize: 10, fontWeight: 700, color: "#777", borderRadius: 6, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-            }}><Lock size={11} /> Sperren</button>
-            <button style={{
-              flex: 1, padding: "8px 0", border: "1px solid #e0e0e0", background: "#fff",
-              fontSize: 10, fontWeight: 700, color: "#777", borderRadius: 6, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-            }}><Mail size={11} /> Mail senden</button>
+              opacity: !data?.reservationId ? 0.4 : 1,
+            }}><Mail size={11} /> Mail</button>
           </div>
           <textarea
             value={notes} onChange={e => setNotes(e.target.value)} onBlur={saveNotes}

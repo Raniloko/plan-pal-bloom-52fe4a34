@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Check, PauseCircle, Users } from "lucide-react";
+import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle } from "lucide-react";
 
 export interface ResRow {
   id: string;
@@ -28,14 +28,14 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
 
   const platziert = useMemo(() => rows.filter(r => ["double", "single", "chkps"].includes(r.icon)), [rows]);
   const bevorstehend = useMemo(() => rows.filter(r => ["none", "ob"].includes(r.icon)), [rows]);
-  const achtung = useMemo(() => rows.filter(r => r.highlighted && r.icon !== "double"), [rows]);
+  const achtung = useMemo(() => rows.filter(r => r.highlighted && !["double", "single", "chkps"].includes(r.icon)), [rows]);
 
   const filtered = subTab === "platziert" ? platziert : subTab === "achtung" ? achtung : bevorstehend;
 
-  const subTabs: { key: SubTab; label: string; count: number; color: string }[] = [
-    { key: "platziert", label: "Platziert", count: platziert.length, color: "#2a7a2a" },
-    { key: "bevorstehend", label: "Bevorsteh.", count: totalGuests, color: "#555" },
-    { key: "achtung", label: "Achtung", count: achtung.length, color: "#cc5500" },
+  const subTabs: { key: SubTab; label: string; count: number; color: string; icon: React.ReactNode }[] = [
+    { key: "platziert", label: "Platziert", count: platziert.length, color: "#2a7a2a", icon: <CheckCheck size={8} /> },
+    { key: "bevorstehend", label: "Bevorsteh.", count: bevorstehend.length, color: "#555", icon: <Users size={8} /> },
+    { key: "achtung", label: "Achtung", count: achtung.length, color: "#cc5500", icon: <AlertTriangle size={8} /> },
   ];
 
   const renderIcon = (icon: ResRow["icon"]) => {
@@ -88,10 +88,10 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           }}>
             <span style={{
               fontSize: 9, fontWeight: 700, color: "#fff", padding: "1px 6px", borderRadius: 10,
-              background: subTab === t.key && t.key !== "achtung" ? "#333" : t.color,
+              background: subTab === t.key ? "#333" : t.color,
               display: "flex", alignItems: "center", gap: 2,
             }}>
-              <Users size={8} /> {t.count}
+              {t.icon} {t.count}
             </span>
             {t.label}
           </button>
@@ -109,8 +109,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
       {/* Meal label */}
       <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #e0e0e0", gap: 8 }}>
         <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ABENDESSEN</span>
-        <span style={{ fontSize: 10, color: "#777" }}>Gesamt {rows.length}</span>
-        <span style={{ fontSize: 10, color: "#777", display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {totalGuests}</span>
+        <span style={{ fontSize: 10, color: "#777" }}>Gesamt {filtered.length}</span>
+        <span style={{ fontSize: 10, color: "#777", display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
       </div>
 
       {/* Rows */}
@@ -143,7 +143,6 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
         })}
         {filtered.length === 0 && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
-            <span style={{ fontSize: 36, marginBottom: 8, opacity: 0.3 }}>📅</span>
             <span style={{ fontSize: 14 }}>Keine Einträge</span>
           </div>
         )}
