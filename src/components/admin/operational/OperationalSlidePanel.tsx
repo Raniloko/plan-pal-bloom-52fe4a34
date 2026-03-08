@@ -408,12 +408,32 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 ) : null;
               })()}
               <CalendarDays size={40} color="#ddd" style={{ marginBottom: 12 }} />
-              <span style={{ fontSize: 14, color: "#999" }}>Aktuell keine Reservierung</span>
-              <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>Dieser Tisch ist frei verfügbar</span>
-              <button onClick={() => setMode("book")} style={{
-                marginTop: 16, padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 6,
-                background: "#c9a84c", color: "#111", border: "none", cursor: "pointer",
-              }}>+ Reservierung anlegen</button>
+              <span style={{ fontSize: 14, color: "#999" }}>
+                {data?.status === "blocked" ? "Tisch ist gesperrt" : "Aktuell keine Reservierung"}
+              </span>
+              <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>
+                {data?.status === "blocked" ? "Dieser Tisch ist aktuell nicht verfügbar" : "Dieser Tisch ist frei verfügbar"}
+              </span>
+              {/* Lock/Unlock for free or blocked tables */}
+              {data?.unitId && (
+                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                  <button onClick={handleBlock} disabled={saving} style={{
+                    padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 6,
+                    background: data.status === "blocked" ? "#e8f5e8" : "#fde8e8",
+                    color: data.status === "blocked" ? "#2a7a2a" : "#cc2222",
+                    border: `1px solid ${data.status === "blocked" ? "#b8d8b8" : "#d8a0a0"}`,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                  }}>
+                    <Lock size={12} /> {data.status === "blocked" ? "Tisch freigeben" : "Tisch sperren"}
+                  </button>
+                </div>
+              )}
+              {data?.status !== "blocked" && (
+                <button onClick={() => setMode("book")} style={{
+                  marginTop: data?.unitId ? 8 : 16, padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 6,
+                  background: "#c9a84c", color: "#111", border: "none", cursor: "pointer",
+                }}>+ Reservierung anlegen</button>
+              )}
             </div>
           )}
         </div>
