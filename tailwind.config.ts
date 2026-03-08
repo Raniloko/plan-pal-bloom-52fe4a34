@@ -59,6 +59,10 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(201,168,76,0)" },
           "50%": { boxShadow: "0 0 16px 4px rgba(201,168,76,0.12)" },
         },
+        "slide-in-right": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
