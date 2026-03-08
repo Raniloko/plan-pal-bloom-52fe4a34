@@ -58,6 +58,31 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "update_password") {
+      if (!email || !password) {
+        return new Response(JSON.stringify({ error: "email and password required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Find user by email
+      const { data: { users } } = await supabase.auth.admin.listUsers();
+      const user = users?.find((u: any) => u.email === email);
+      if (!user) {
+        return new Response(JSON.stringify({ error: "User not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: updateErr } = await supabase.auth.admin.updateUserById(user.id, { password });
+      if (updateErr) {
+        return new Response(JSON.stringify({ error: updateErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
