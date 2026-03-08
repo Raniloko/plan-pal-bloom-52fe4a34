@@ -3,6 +3,7 @@ import { FloorPlanProps, TableData, TABLE_AREA_MAP } from "./types";
 import BillardTable from "./BillardTable";
 import RestaurantTable from "./RestaurantTable";
 import AreaPlaceholder from "./AreaPlaceholder";
+import FensterFloorPlan from "./FensterFloorPlan";
 
 const DEFAULT_TABLES: Record<string, TableData> = {
   t10: { id: "t10", title: "Tisch 10", status: "free" },
@@ -25,28 +26,19 @@ const DEFAULT_TABLES: Record<string, TableData> = {
   b3:  { id: "b3",  title: "Billard 3", status: "free" },
 };
 
-const AREA_INFO: Record<string, { title: string; desc: string; emoji: string; img?: string }> = {
-  fenster: {
-    title: "Restaurantbereich 75 Zoll",
-    desc: "Fensterbereich mit 75-Zoll Screens – gemütliche Atmosphäre für Essen & Sport",
-    emoji: "🪟",
-    img: "/images/fensterbereich.jpg",
-  },
+const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> = {
   billard: {
     title: "Billard / Kicker / Dart",
-    desc: "8 Olio-Billardtische · 2 Leonhart-Tischkicker · 2 Löwen-Elektronik Darts",
-    emoji: "🎱",
+    desc: "8 Olio-Billardtische, 2 Leonhart-Tischkicker, 2 Löwen-Elektronik Darts",
     img: "/images/billard-area.jpg",
   },
   vip: {
     title: "VIP-Raum",
     desc: "Privater Bereich für Gruppen ab 11 Personen mit eigenem Service",
-    emoji: "⭐",
   },
   podest: {
     title: "Podest",
     desc: "Erhöhter Bereich für bis zu 33 Gäste – ideal für größere Gruppen und Feiern",
-    emoji: "🔺",
     img: "/images/podest.jpg",
   },
 };
@@ -54,6 +46,11 @@ const AREA_INFO: Record<string, { title: string; desc: string; emoji: string; im
 const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
+
+  // Fensterbereich has its own SVG floor plan
+  if (activeArea === "fenster") {
+    return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+  }
 
   // Show placeholder for areas that don't have SVG floor plans yet
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";

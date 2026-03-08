@@ -2,13 +2,13 @@ import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Settings, Eye, EyeOff, ZoomIn, ZoomOut, Palette, LayoutGrid } from "lucide-react";
 import type { FloorArea } from "@/components/admin/floorplan/types";
 
-const AREA_TABS: { id: FloorArea; label: string; emoji: string }[] = [
-  { id: "all", label: "Alle Bereiche", emoji: "🏠" },
-  { id: "hauptbereich", label: "Restaurant 140 Zoll", emoji: "📺" },
-  { id: "fenster", label: "Restaurant 75 Zoll", emoji: "🪟" },
-  { id: "billard", label: "Billard / Kicker / Dart", emoji: "🎱" },
-  { id: "vip", label: "VIP-Raum", emoji: "⭐" },
-  { id: "podest", label: "Podest", emoji: "🔺" },
+const AREA_TABS: { id: FloorArea; label: string }[] = [
+  { id: "all", label: "Alle Bereiche" },
+  { id: "hauptbereich", label: "Restaurant 140 Zoll" },
+  { id: "fenster", label: "Restaurant 75 Zoll" },
+  { id: "billard", label: "Billard / Kicker / Dart" },
+  { id: "vip", label: "VIP-Raum" },
+  { id: "podest", label: "Podest" },
 ];
 
 export type ColorMode = "status" | "timeSlot";
@@ -70,7 +70,6 @@ export const OperationalAreaTabs = ({
               letterSpacing: "0.01em",
               display: "flex", alignItems: "center", gap: 6,
             }}>
-              <span style={{ fontSize: 14 }}>{tab.emoji}</span>
               {tab.label}
             </button>
           );

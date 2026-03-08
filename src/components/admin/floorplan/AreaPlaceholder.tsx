@@ -1,18 +1,19 @@
+import { Monitor } from "lucide-react";
+
 interface AreaPlaceholderProps {
   title: string;
   desc: string;
-  emoji: string;
+  icon?: React.ReactNode;
   img?: string;
 }
 
-const AreaPlaceholder = ({ title, desc, emoji, img }: AreaPlaceholderProps) => {
+const AreaPlaceholder = ({ title, desc, icon, img }: AreaPlaceholderProps) => {
   return (
     <div style={{
       width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
       background: "#111111", fontFamily: "'DM Sans', sans-serif",
       position: "relative", overflow: "hidden",
     }}>
-      {/* Background image if available */}
       {img && (
         <div style={{
           position: "absolute", inset: 0,
@@ -27,10 +28,11 @@ const AreaPlaceholder = ({ title, desc, emoji, img }: AreaPlaceholderProps) => {
         padding: 40, maxWidth: 500,
       }}>
         <div style={{
-          fontSize: 64, marginBottom: 16,
+          marginBottom: 16, display: "flex", justifyContent: "center",
           filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5))",
+          color: "#555",
         }}>
-          {emoji}
+          {icon || <Monitor size={56} />}
         </div>
         <h2 style={{
           fontSize: 28, fontWeight: 700, color: "#fff",
@@ -51,7 +53,6 @@ const AreaPlaceholder = ({ title, desc, emoji, img }: AreaPlaceholderProps) => {
           border: "1px solid rgba(255,255,255,0.1)",
           color: "#888", fontSize: 13, fontWeight: 500,
         }}>
-          <span style={{ fontSize: 16 }}>🚧</span>
           Grundriss wird erstellt
         </div>
       </div>
