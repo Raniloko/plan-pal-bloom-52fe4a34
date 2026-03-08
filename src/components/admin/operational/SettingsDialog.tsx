@@ -66,7 +66,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
     setSaving(true);
     try {
       await supabase.functions.invoke("admin-actions", {
-        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals } },
+        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals, reservation_duration: duration } },
       });
       toast.success("Einstellungen gespeichert");
       onClose();
