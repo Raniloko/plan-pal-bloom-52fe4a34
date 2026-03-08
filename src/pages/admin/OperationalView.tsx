@@ -53,7 +53,7 @@ interface WaitlistEntry {
 }
 
 const OperationalView = () => {
-  const [activeArea, setActiveArea] = useState<FloorArea>("all");
+  const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
   const [showLabels, setShowLabels] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [colorMode, setColorMode] = useState<ColorMode>("status");
