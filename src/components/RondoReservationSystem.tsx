@@ -4,14 +4,15 @@ import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, A
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
-type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges" | "";
+type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
 
 interface ReservationData {
   date: string;
   time: string;
   guests: number;
   zone: ReservationZone;
-  anlass: ReservationAnlass;
+  anlass: ReservationAnlass[];
+  sonstigesText: string;
   name: string;
   email: string;
   phone: string;
@@ -74,7 +75,8 @@ const RondoReservationSystem = () => {
     time: "",
     guests: 2,
     zone: "",
-    anlass: "",
+    anlass: [],
+    sonstigesText: "",
     name: "",
     email: "",
     phone: "",
@@ -168,7 +170,7 @@ const RondoReservationSystem = () => {
       case 0: return data.date && data.time;
       case 1: return data.guests >= 1;
       case 2: return data.zone !== "";
-      case 3: return data.anlass !== "";
+      case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
       case 4: return data.name.trim() && data.email.trim() && data.phone.trim();
       default: return true;
     }
@@ -199,7 +201,9 @@ const RondoReservationSystem = () => {
           time: data.time,
           guests: data.guests,
           zone: data.zone,
-          anlass: data.anlass,
+          anlass: data.anlass.includes("sonstiges") && data.sonstigesText.trim()
+            ? [...data.anlass.filter(a => a !== "sonstiges"), `sonstiges: ${data.sonstigesText.trim()}`].join(", ")
+            : data.anlass.join(", "),
           name: data.name,
           email: data.email,
           phone: data.phone,
@@ -261,7 +265,11 @@ const RondoReservationSystem = () => {
         </p>
         <div className="bg-card border border-border rounded-lg p-6 inline-block text-left max-w-sm">
           <p className="text-sm"><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
-          <p className="text-sm"><strong>Anlass:</strong> {ANLAESSE.find(a => a.value === data.anlass)?.label}</p>
+              <p className="text-sm"><strong>Anlass:</strong> {data.anlass.map(a => {
+                const found = ANLAESSE.find(x => x.value === a);
+                if (a === "sonstiges" && data.sonstigesText.trim()) return `Sonstiges: ${data.sonstigesText.trim()}`;
+                return found?.label ?? a;
+              }).join(", ")}</p>
           <p className="text-sm"><strong>E-Mail:</strong> {data.email}</p>
           <p className="text-sm"><strong>Telefon:</strong> {data.phone}</p>
           {data.message && <p className="text-sm"><strong>Nachricht:</strong> {data.message}</p>}
@@ -270,7 +278,7 @@ const RondoReservationSystem = () => {
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
         <button
-          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: "", name: "", email: "", phone: "", message: "" }); }}
+          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "" }); }}
           className="mt-6 border border-primary text-primary px-6 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
         >
           Neue Reservierung
@@ -445,21 +453,46 @@ const RondoReservationSystem = () => {
         {step === 3 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Was ist der Anlass?</h3>
+            <p className="text-sm text-muted-foreground mb-3">Du kannst mehrere Anlässe auswählen.</p>
             <div className="grid sm:grid-cols-2 gap-3">
-              {ANLAESSE.map((a) => (
-                <button
-                  key={a.value}
-                  onClick={() => setData({ ...data, anlass: a.value as ReservationAnlass })}
-                  className={`text-left p-4 rounded-lg border transition-colors ${
-                    data.anlass === a.value
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-muted hover:border-primary/50"
-                  }`}
-                >
-                  <p className="font-semibold">{a.label}</p>
-                </button>
-              ))}
+              {ANLAESSE.map((a) => {
+                const selected = data.anlass.includes(a.value as ReservationAnlass);
+                return (
+                  <button
+                    key={a.value}
+                    onClick={() => {
+                      const val = a.value as ReservationAnlass;
+                      setData({
+                        ...data,
+                        anlass: selected
+                          ? data.anlass.filter(x => x !== val)
+                          : [...data.anlass, val],
+                        ...(a.value !== "sonstiges" ? {} : {}),
+                      });
+                    }}
+                    className={`text-left p-4 rounded-lg border transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-muted hover:border-primary/50"
+                    }`}
+                  >
+                    <p className="font-semibold">{a.label}</p>
+                  </button>
+                );
+              })}
             </div>
+            {data.anlass.includes("sonstiges") && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-1">Was genau? *</label>
+                <input
+                  type="text"
+                  value={data.sonstigesText}
+                  onChange={(e) => setData({ ...data, sonstigesText: e.target.value })}
+                  placeholder="z.B. Geburtstag, Firmenevent..."
+                  className="w-full bg-muted border border-border rounded-md px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -532,7 +565,11 @@ const RondoReservationSystem = () => {
               <p><strong>Uhrzeit:</strong> {data.time} Uhr</p>
               <p><strong>Personen:</strong> {data.guests}</p>
               <p><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
-              <p><strong>Anlass:</strong> {ANLAESSE.find(a => a.value === data.anlass)?.label}</p>
+              <p><strong>Anlass:</strong> {data.anlass.map(a => {
+                const found = ANLAESSE.find(x => x.value === a);
+                if (a === "sonstiges" && data.sonstigesText.trim()) return `Sonstiges: ${data.sonstigesText.trim()}`;
+                return found?.label ?? a;
+              }).join(", ")}</p>
               <p><strong>Name:</strong> {data.name}</p>
               <p><strong>E-Mail:</strong> {data.email}</p>
               <p><strong>Telefon:</strong> {data.phone}</p>

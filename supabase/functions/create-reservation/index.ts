@@ -89,7 +89,13 @@ Deno.serve(async (req) => {
     if (!time || !isValidTime(time)) errors.push("Ungültige Uhrzeit.");
     if (!guests || guests < 1 || guests > 50) errors.push("Personenanzahl muss zwischen 1 und 50 liegen.");
     if (!zone || !VALID_ZONES.includes(zone)) errors.push("Ungültiger Bereich.");
-    if (!anlass || !VALID_OCCASIONS.includes(anlass)) errors.push("Ungültiger Anlass.");
+    
+    // Validate occasion: can be comma-separated, each part must be valid or start with "sonstiges:"
+    const anlassParts = (anlass || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+    const validAnlass = anlassParts.length > 0 && anlassParts.every((p: string) => 
+      VALID_OCCASIONS.includes(p) || p.startsWith("sonstiges:")
+    );
+    if (!validAnlass) errors.push("Ungültiger Anlass.");
     if (!name || sanitize(name).length < 2 || sanitize(name).length > 100) errors.push("Name muss 2-100 Zeichen lang sein.");
     if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
     if (!phone || sanitize(phone).length < 5 || sanitize(phone).length > 30) errors.push("Ungültige Telefonnummer.");
