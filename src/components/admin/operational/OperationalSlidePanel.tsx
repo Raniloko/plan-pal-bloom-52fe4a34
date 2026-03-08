@@ -71,6 +71,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [assignedUnitId, setAssignedUnitId] = useState<string>("");
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
 
+  // Detect if this is a billard unit
+  const isBillardUnit = !!(data?.zone === "billard" || data?.tableLabel?.toLowerCase().includes("billard"));
+
   useEffect(() => {
     if (open) {
       setNotes(data?.unitNotes || "");
