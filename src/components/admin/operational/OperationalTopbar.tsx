@@ -43,10 +43,13 @@ export const OperationalTopbar = ({
   onOpenSettings, onOpenStats, onOpenNotifications,
 }: Props) => {
   const [time, setTime] = useState("");
-  const [mealIndex, setMealIndex] = useState(1); // default Abendessen
+  const [mealIndex, setMealIndex] = useState(1);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const shortDate = format(selectedDate, "EEE., d MMM", { locale: de });
+
 
   useEffect(() => {
     const tick = () => {
