@@ -31,7 +31,8 @@ const DEFAULT_MEALS: MealSlot[] = [
   { name: "Spätabend", start: "22:00", end: "02:00" },
 ];
 
-const DEFAULT_DURATION = 120; // minutes
+const DEFAULT_DURATION = 120;
+const DEFAULT_AUTO_CANCEL = 15;
 
 const inputStyle: React.CSSProperties = {
   background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, padding: "6px 10px",
@@ -43,6 +44,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
   const [hours, setHours] = useState<OpeningHours>(DEFAULT_HOURS);
   const [meals, setMeals] = useState<MealSlot[]>(DEFAULT_MEALS);
   const [duration, setDuration] = useState(DEFAULT_DURATION);
+  const [autoCancelMin, setAutoCancelMin] = useState(DEFAULT_AUTO_CANCEL);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           if (s.opening_hours) setHours(s.opening_hours);
           if (s.meal_slots) setMeals(s.meal_slots);
           if (s.reservation_duration) setDuration(Number(s.reservation_duration) || DEFAULT_DURATION);
+          if (s.auto_cancel_minutes) setAutoCancelMin(Number(s.auto_cancel_minutes) || DEFAULT_AUTO_CANCEL);
         }
       } catch { /* use defaults */ }
     })();
@@ -66,7 +69,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
     setSaving(true);
     try {
       await supabase.functions.invoke("admin-actions", {
-        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals, reservation_duration: duration } },
+        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals, reservation_duration: duration, auto_cancel_minutes: autoCancelMin } },
       });
       toast.success("Einstellungen gespeichert");
       onClose();
@@ -177,8 +180,25 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
                   </span>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
-                <p style={{ marginBottom: 12 }}>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Automatische Stornierung</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <select
+                    value={autoCancelMin}
+                    onChange={e => setAutoCancelMin(Number(e.target.value))}
+                    style={{ ...inputStyle, width: 160 }}
+                  >
+                    {[0, 5, 10, 15, 20, 30, 45, 60].map(m => (
+                      <option key={m} value={m}>{m === 0 ? "Deaktiviert" : `${m} Minuten`}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: "#777" }}>
+                    Reservierungen werden automatisch storniert, wenn der Gast nicht eincheckt
+                  </span>
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6, marginTop: 12 }}>
+                <p>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
               </div>
             </div>
           )}
