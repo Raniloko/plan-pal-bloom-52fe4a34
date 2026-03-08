@@ -34,6 +34,9 @@ interface ReservationRef {
   id: string;
   unit_id: string | null;
   status: string;
+  customer_name?: string;
+  reservation_time?: string;
+  guest_count?: number;
 }
 
 interface Props {
