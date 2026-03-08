@@ -319,6 +319,7 @@ Deno.serve(async (req) => {
         for (const [key, value] of Object.entries(settings)) {
           await supabase.from("settings").upsert({ key, value: value as Record<string, unknown> }, { onConflict: "key" });
         }
+        await logActivity(supabase, "save_settings", "settings", undefined, Object.keys(settings).join(", "));
         return ok({ saved: true });
       }
 
