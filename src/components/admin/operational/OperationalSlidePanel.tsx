@@ -200,6 +200,16 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
   };
 
+  // Build unit status map from reservations
+  const unitStatusMap = new Map<string, "occupied" | "reserved">();
+  reservations.forEach(r => {
+    if (!r.unit_id) return;
+    if (r.status === "checked_in") unitStatusMap.set(r.unit_id, "occupied");
+    else if (r.status === "confirmed" || r.status === "pending") {
+      if (!unitStatusMap.has(r.unit_id)) unitStatusMap.set(r.unit_id, "reserved");
+    }
+  });
+
   // Group units by area for dropdown
   const groupedUnits = units.reduce<Record<string, UnitOption[]>>((acc, u) => {
     (acc[u.area] = acc[u.area] || []).push(u);
