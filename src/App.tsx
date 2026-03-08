@@ -27,6 +27,7 @@ import ActivityLogPage from "./pages/admin/ActivityLogPage";
 import WaitlistPage from "./pages/admin/WaitlistPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import OperationalView from "./pages/admin/OperationalView";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
