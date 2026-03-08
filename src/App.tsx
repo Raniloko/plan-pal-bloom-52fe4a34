@@ -65,6 +65,7 @@ const AppContent = () => {
           <Route path="aktivitaet" element={<ActivityLogPage />} />
           <Route path="warteliste" element={<WaitlistPage />} />
           <Route path="einstellungen" element={<SettingsPage />} />
+          <Route path="betrieb" element={<OperationalView />} />
         </Route>
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
