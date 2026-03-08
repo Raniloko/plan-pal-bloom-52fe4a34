@@ -182,6 +182,12 @@ const OperationalView = () => {
     return map;
   }, [reservations, units, dateStr]);
 
+  // Map unit area to reservation zone
+  const areaToZone = (area: string): string => {
+    const map: Record<string, string> = { billard: "billard", kicker: "billard", dart: "billard", restaurant: "hauptbereich" };
+    return map[area] || area;
+  };
+
   const handleTableClick = (_id: string, data: TableData) => {
     const unit = units.find(u => u.name.toLowerCase() === data.title.toLowerCase());
     const reservation = data.reservationId ? reservations.find(r => r.id === data.reservationId) : undefined;
@@ -192,6 +198,7 @@ const OperationalView = () => {
       status: data.status, unitId: unit?.id, unitNotes: unit?.notes || "",
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
+      zone: reservation?.zone || (unit ? areaToZone(unit.area) : undefined),
     });
     setSelectedRowId(null);
     setPanelOpen(true);
