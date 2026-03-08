@@ -116,6 +116,21 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     setSaving(false);
   };
 
+  const handleCheckOut = async () => {
+    if (!data?.reservationId) return;
+    if (!window.confirm(`${data.guest} wirklich auschecken?`)) return;
+    setSaving(true);
+    try {
+      await adminAction({ action: "check_out", reservation_id: data.reservationId });
+      toast.success("Gast ausgecheckt – Tisch ist wieder frei");
+      onRefresh();
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler beim Auschecken");
+    }
+    setSaving(false);
+  };
+
   const handleBlock = async () => {
     if (!data?.unitId) return;
     setSaving(true);
