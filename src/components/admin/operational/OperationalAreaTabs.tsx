@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Settings, Eye, EyeOff, ZoomIn, ZoomOut, Palette, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings, Eye, EyeOff, ZoomIn, ZoomOut, Palette, LayoutGrid, Map, List } from "lucide-react";
 import type { FloorArea } from "@/components/admin/floorplan/types";
 
 const AREA_TABS: { id: FloorArea; label: string }[] = [
