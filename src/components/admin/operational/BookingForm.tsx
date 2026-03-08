@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
+import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 interface Props {
   tableLabel?: string;
@@ -10,11 +11,7 @@ interface Props {
   onCancel: () => void;
 }
 
-const TIMES = [
-  "14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30",
-  "18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30",
-  "22:00","22:30","23:00",
-];
+// TIMES are now dynamic from settings via useOpeningHours hook
 
 const ZONES = [
   { value: "hauptbereich", label: "Hauptbereich" },
@@ -33,6 +30,7 @@ const OCCASIONS = [
 ];
 
 const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
+  const { getTimesForDate } = useOpeningHours();
   const [guest, setGuest] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -149,7 +147,7 @@ const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
         <div>
           <label style={labelStyle}>Uhrzeit</label>
           <select value={startTime} onChange={e => setStartTime(e.target.value)} style={inputStyle}>
-            {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+            {getTimesForDate(date).map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>

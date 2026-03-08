@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges" | "";
@@ -38,11 +39,7 @@ const ANLAESSE = [
   { value: "sonstiges", label: "Sonstiges" },
 ];
 
-const TIMES = [
-  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-  "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30",
-  "22:00", "22:30", "23:00",
-];
+// TIMES are now dynamic from settings via useOpeningHours hook
 
 type ActiveReservation = {
   reservation_time: string;
@@ -70,6 +67,7 @@ const STEPS = [
 ];
 
 const RondoReservationSystem = () => {
+  const { getTimesForDate } = useOpeningHours();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<ReservationData>({
     date: "",
@@ -329,7 +327,7 @@ const RondoReservationSystem = () => {
                       </p>
                     )}
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                      {TIMES.map((t) => {
+                      {getTimesForDate(data.date).map((t) => {
                         const disabled = isTimeInPast(data.date, t) || isTimeFullyBooked(t);
                         return (
                           <button
