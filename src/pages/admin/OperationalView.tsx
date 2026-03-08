@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { RondoFloorPlan } from "@/components/admin/floorplan";
-import type { TableData } from "@/components/admin/floorplan";
+import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
   OperationalAreaTabs,
