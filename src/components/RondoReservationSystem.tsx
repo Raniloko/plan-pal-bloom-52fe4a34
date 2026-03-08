@@ -4,14 +4,15 @@ import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, A
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
-type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges" | "";
+type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
 
 interface ReservationData {
   date: string;
   time: string;
   guests: number;
   zone: ReservationZone;
-  anlass: ReservationAnlass;
+  anlass: ReservationAnlass[];
+  sonstigesText: string;
   name: string;
   email: string;
   phone: string;
