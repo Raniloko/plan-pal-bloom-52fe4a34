@@ -12,13 +12,45 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const { action } = body;
+    // Auth check: verify the caller is an authenticated admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return error("Nicht autorisiert", 401);
+    }
 
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return error("Nicht autorisiert", 401);
+    }
+
+    const userId = claimsData.claims.sub as string;
+
+    // Verify admin role using service role client
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .single();
+
+    if (!roleData) {
+      return error("Keine Admin-Berechtigung", 403);
+    }
+
+    const body = await req.json();
+    const { action } = body;
 
     switch (action) {
       case "fetch_dashboard": {

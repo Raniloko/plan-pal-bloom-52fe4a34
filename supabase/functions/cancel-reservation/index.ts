@@ -14,9 +14,10 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
+    const token = url.searchParams.get("token");
 
-    if (!id) {
-      return styledPage("Fehler", "Keine Reservierungs-ID angegeben.", false);
+    if (!id || !token) {
+      return styledPage("Fehler", "Ungültiger Stornierungslink.", false);
     }
 
     const supabase = createClient(
@@ -29,6 +30,15 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("id", id)
       .single();
+
+    if (fetchError || !reservation) {
+      return styledPage("Nicht gefunden", "Diese Reservierung wurde nicht gefunden.", false);
+    }
+
+    // Verify cancellation token
+    if (reservation.cancellation_token !== token) {
+      return styledPage("Fehler", "Ungültiger Stornierungslink.", false);
+    }
 
     if (fetchError || !reservation) {
       return styledPage("Nicht gefunden", "Diese Reservierung wurde nicht gefunden.", false);

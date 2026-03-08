@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
         <span>Aktuelle Reservierung</span>
         <p>${formatDate(r.reservation_date)} · ${r.reservation_time} Uhr · ${r.guest_count} Pers. · ${ZONE_LABELS[r.zone] || r.zone}</p>
       </div>
-      <form method="POST" action="?id=${id}">
+      <form method="POST" action="?id=${id}&token=${token}">
         <div class="grid2">
           <div><label>Datum</label><input type="date" name="date" value="${r.reservation_date}" min="${new Date().toISOString().split("T")[0]}" required></div>
           <div><label>Uhrzeit</label><select name="time" required>${timeOptions}</select></div>
