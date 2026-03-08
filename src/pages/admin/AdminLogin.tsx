@@ -36,7 +36,7 @@ const AdminLogin = () => {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 8 }}>
-          <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 48, margin: "0 auto 12px", display: "block", filter: "brightness(0) invert(1)", opacity: 0.9 }} />
+          <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 48, margin: "0 auto 12px", display: "block" }} />
           <div style={{ fontSize: 12, color: "#666", letterSpacing: 2, textTransform: "uppercase" }}>Admin Login</div>
         </div>
 
