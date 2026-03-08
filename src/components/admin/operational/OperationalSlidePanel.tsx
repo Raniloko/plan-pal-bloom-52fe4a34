@@ -276,9 +276,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                     <option value="">— Kein Tisch zugewiesen —</option>
                     {Object.entries(groupedUnits).map(([area, areaUnits]) => (
                       <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
-                        {areaUnits.map(u => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
+                        {areaUnits.map(u => {
+                          const statusIcon = u.status === "occupied" ? "🔴" : u.status === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                          return (
+                            <option key={u.id} value={u.id}>{statusIcon} {u.name}</option>
+                          );
+                        })}
                       </optgroup>
                     ))}
                   </select>
