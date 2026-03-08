@@ -8,11 +8,12 @@ const corsHeaders = {
 
 const VALID_ZONES = ["hauptbereich", "billard", "vip", "podest", "fenster"];
 const VALID_OCCASIONS = ["sport", "feier", "essen", "billard", "sonstiges"];
-const VALID_TIMES = [
-  "14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30",
-  "18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30",
-  "22:00","22:30","23:00",
-];
+// Accept any valid 15-min interval time (HH:MM)
+function isValidTime(t: string): boolean {
+  if (!/^\d{2}:\d{2}$/.test(t)) return false;
+  const [h, m] = t.split(":").map(Number);
+  return h >= 0 && h <= 23 && [0, 15, 30, 45].includes(m);
+}
 
 const ZONE_CAPACITY: Record<string, number> = {
   hauptbereich: 7,
