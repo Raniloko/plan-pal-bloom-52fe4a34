@@ -197,22 +197,11 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
         </div>
       )}
       {isBillard && (
-        <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12 }}>
-          <label style={{ ...labelStyle, marginBottom: 8 }}>Billard – Spielzeit</label>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "center" }}>
-            <div>
-              <label style={labelStyle}>Minuten</label>
-              <select value={billardMinutes} onChange={e => setBillardMinutes(Number(e.target.value))} style={inputStyle}>
-                {[30, 45, 60, 90, 120, 150, 180, 240].map(m => (
-                  <option key={m} value={m}>{m} Min ({Math.floor(m / 60)}h {m % 60 > 0 ? `${m % 60}m` : ""})</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: "#999", marginBottom: 2 }}>Geschätzter Preis</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#c9a84c" }}>{billardCost} €</div>
-              <div style={{ fontSize: 9, color: "#bbb" }}>à 0,23 €/Min</div>
-            </div>
+        <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <Timer size={16} color="#c9a84c" />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>Live-Timer Abrechnung</div>
+            <div style={{ fontSize: 10, color: "#999" }}>Kosten werden ab Check-in bis Check-out berechnet (0,23 €/Min)</div>
           </div>
         </div>
       )}
