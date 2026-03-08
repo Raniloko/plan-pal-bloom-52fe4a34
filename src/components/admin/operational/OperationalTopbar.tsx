@@ -73,7 +73,7 @@ export const OperationalTopbar = ({
     }}>
       {/* A – Logo (top left) */}
       <div style={{ padding: "0 12px", display: "flex", alignItems: "center", height: "100%" }}>
-        <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 28, filter: "brightness(0) invert(1)", opacity: 0.85 }} />
+        <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 28 }} />
       </div>
       <Div />
 
