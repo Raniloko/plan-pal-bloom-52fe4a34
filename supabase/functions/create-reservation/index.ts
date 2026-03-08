@@ -115,13 +115,21 @@ Deno.serve(async (req) => {
 
     const zoneCapacity = ZONE_CAPACITY[zone] ?? 1;
 
-    const { count: existingReservations, error: availabilityError } = await supabase
+    // Load duration setting for overlap calculation
+    const { data: settingsData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "reservation_duration")
+      .single();
+    const durMin = settingsData?.value ? Number(settingsData.value) : 120;
+
+    // Fetch all active reservations for this zone on the same date
+    const { data: existingRes, error: availabilityError } = await supabase
       .from("reservations")
-      .select("id", { count: "exact", head: true })
+      .select("id, reservation_time")
       .eq("reservation_date", date)
-      .eq("reservation_time", time)
       .eq("zone", zone)
-      .neq("status", "cancelled");
+      .not("status", "in", '("cancelled","checked_out")');
 
     if (availabilityError) {
       console.error("Availability check error:", availabilityError.message);
@@ -131,7 +139,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    if ((existingReservations ?? 0) >= zoneCapacity) {
+    // Check time-based overlap: count reservations whose duration window overlaps with the new one
+    const [newH, newM] = time.split(":").map(Number);
+    const newStart = newH * 60 + newM;
+    const newEnd = newStart + durMin;
+
+    const overlappingCount = (existingRes || []).filter(r => {
+      const [rH, rM] = r.reservation_time.split(":").map(Number);
+      const rStart = rH * 60 + rM;
+      const rEnd = rStart + durMin;
+      return newStart < rEnd && newEnd > rStart;
+    }).length;
+
+    if (overlappingCount >= zoneCapacity) {
       return new Response(
         JSON.stringify({ error: "Dieser Bereich ist zur gewählten Uhrzeit bereits vollständig belegt." }),
         { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
