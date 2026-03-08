@@ -12,6 +12,7 @@ const AREA_TABS: { id: FloorArea; label: string }[] = [
 ];
 
 export type ColorMode = "status" | "timeSlot";
+export type ViewMode = "floorplan" | "list";
 
 interface Props {
   activeArea: FloorArea;
