@@ -143,6 +143,31 @@ const OperationalView = () => {
 
   const totalGuests = rows.reduce((s, r) => s + r.guests, 0);
 
+  // Toast notification for overdue reservations
+  const notifiedOverdueRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const overdueRows = rows.filter(r => r.overdue);
+    overdueRows.forEach(r => {
+      if (!notifiedOverdueRef.current.has(r.id)) {
+        notifiedOverdueRef.current.add(r.id);
+        toast.warning(`⚠️ ${r.name} ist ${r.offset} überfällig!`, {
+          description: `Reservierung um ${r.time} · ${r.guests} Pers. – Noch nicht eingecheckt`,
+          duration: 10000,
+        });
+      }
+    });
+    // Clean up IDs no longer overdue
+    notifiedOverdueRef.current.forEach(id => {
+      if (!overdueRows.find(r => r.id === id)) notifiedOverdueRef.current.delete(id);
+    });
+  }, [rows]);
+
+  // Auto-refresh every 30s for overdue detection
+  useEffect(() => {
+    const interval = setInterval(() => load(), 30000);
+    return () => clearInterval(interval);
+  }, [load]);
+
   // Stats counts
   const confirmedCount = reservations.filter(r => r.status === "confirmed").length;
   const pendingCount = reservations.filter(r => r.status === "pending").length;
