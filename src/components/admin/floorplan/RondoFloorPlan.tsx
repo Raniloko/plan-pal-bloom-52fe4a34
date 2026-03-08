@@ -47,6 +47,11 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
 
+  // Fensterbereich has its own SVG floor plan
+  if (activeArea === "fenster") {
+    return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+  }
+
   // Show placeholder for areas that don't have SVG floor plans yet
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
   
