@@ -56,6 +56,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           const s = res.data.settings;
           if (s.opening_hours) setHours(s.opening_hours);
           if (s.meal_slots) setMeals(s.meal_slots);
+          if (s.reservation_duration) setDuration(Number(s.reservation_duration) || DEFAULT_DURATION);
         }
       } catch { /* use defaults */ }
     })();
