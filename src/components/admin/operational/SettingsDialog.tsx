@@ -42,6 +42,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
   const [tab, setTab] = useState<"hours" | "meals" | "capacity">("hours");
   const [hours, setHours] = useState<OpeningHours>(DEFAULT_HOURS);
   const [meals, setMeals] = useState<MealSlot[]>(DEFAULT_MEALS);
+  const [duration, setDuration] = useState(DEFAULT_DURATION);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
