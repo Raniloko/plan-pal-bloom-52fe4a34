@@ -67,6 +67,7 @@ const STEPS = [
 ];
 
 const RondoReservationSystem = () => {
+  const { getTimesForDate } = useOpeningHours();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<ReservationData>({
     date: "",
