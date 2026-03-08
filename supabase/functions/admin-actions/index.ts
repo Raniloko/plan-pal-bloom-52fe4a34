@@ -138,6 +138,7 @@ Deno.serve(async (req) => {
           .update({ status: newStatus })
           .eq("id", unit_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, newStatus === "blocked" ? "block_unit" : "unblock_unit", "unit", unit_id);
         return ok({ status: newStatus });
       }
 
