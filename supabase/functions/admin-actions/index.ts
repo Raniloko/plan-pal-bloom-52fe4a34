@@ -224,6 +224,39 @@ Deno.serve(async (req) => {
         return ok({ done: true });
       }
 
+      case "check_login_attempts": {
+        const { email } = body;
+        if (!email) return error("email required", 400);
+        const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const { data: attempts } = await supabase
+          .from("login_attempts")
+          .select("*")
+          .eq("email", email)
+          .eq("success", false)
+          .gte("attempted_at", cutoff)
+          .order("attempted_at", { ascending: false });
+        const failCount = attempts?.length || 0;
+        if (failCount >= 5) {
+          const lastAttempt = attempts?.[0]?.attempted_at;
+          const lockEnd = new Date(new Date(lastAttempt).getTime() + 30 * 60 * 1000);
+          const remaining = Math.ceil((lockEnd.getTime() - Date.now()) / 60000);
+          return ok({ locked: true, minutes_remaining: Math.max(1, remaining) });
+        }
+        return ok({ locked: false, failed_attempts: failCount });
+      }
+
+      case "log_login_attempt": {
+        const { email, success } = body;
+        if (!email) return error("email required", 400);
+        await supabase.from("login_attempts").insert({ email, success: !!success });
+        // On success, clean old failed attempts for this email
+        if (success) {
+          const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoff);
+        }
+        return ok({ logged: true });
+      }
+
       default:
         return error(`Unknown action: ${action}`, 400);
     }
