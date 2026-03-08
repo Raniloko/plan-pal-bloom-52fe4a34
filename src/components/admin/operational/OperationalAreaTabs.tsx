@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Settings, Eye, EyeOff, ZoomIn, ZoomOut, Palette, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings, Eye, EyeOff, ZoomIn, ZoomOut, Palette, LayoutGrid, Map, List } from "lucide-react";
 import type { FloorArea } from "@/components/admin/floorplan/types";
 
 const AREA_TABS: { id: FloorArea; label: string }[] = [
@@ -12,6 +12,7 @@ const AREA_TABS: { id: FloorArea; label: string }[] = [
 ];
 
 export type ColorMode = "status" | "timeSlot";
+export type ViewMode = "floorplan" | "list";
 
 interface Props {
   activeArea: FloorArea;
@@ -22,11 +23,14 @@ interface Props {
   onZoomChange?: (zoom: number) => void;
   colorMode?: ColorMode;
   onColorModeChange?: (mode: ColorMode) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 export const OperationalAreaTabs = ({
   activeArea, onAreaChange, showLabels = true, onToggleLabels,
   zoom = 1, onZoomChange, colorMode = "status", onColorModeChange,
+  viewMode = "floorplan", onViewModeChange,
 }: Props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -111,8 +115,22 @@ export const OperationalAreaTabs = ({
               boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
               fontFamily: "'DM Sans', sans-serif",
             }}>
-              {/* Labels section */}
+              {/* View mode section */}
               <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a2a" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em" }}>Ansicht</span>
+              </div>
+              <button
+                onClick={() => { onViewModeChange?.(viewMode === "floorplan" ? "list" : "floorplan"); setMenuOpen(false); }}
+                style={menuItemStyle}
+                onMouseEnter={e => (e.currentTarget.style.background = "#252525")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                {viewMode === "floorplan" ? <List size={14} /> : <Map size={14} />}
+                <span>{viewMode === "floorplan" ? "Listenansicht" : "Grundriss"}</span>
+              </button>
+
+              {/* Labels section */}
+              <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a2a", borderTop: "1px solid #2a2a2a" }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "0.05em" }}>Labels</span>
               </div>
               <button

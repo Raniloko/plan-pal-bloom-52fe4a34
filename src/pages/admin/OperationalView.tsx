@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { RondoFloorPlan } from "@/components/admin/floorplan";
+import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
 import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
@@ -12,7 +12,7 @@ import {
   StatsPanel,
   NotificationsPanel,
 } from "@/components/admin/operational";
-import type { ColorMode } from "@/components/admin/operational/OperationalAreaTabs";
+import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { Toaster } from "sonner";
 
@@ -57,6 +57,7 @@ const OperationalView = () => {
   const [showLabels, setShowLabels] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [colorMode, setColorMode] = useState<ColorMode>("status");
+  const [viewMode, setViewMode] = useState<ViewMode>("floorplan");
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelData, setPanelData] = useState<PanelData | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -249,9 +250,14 @@ const OperationalView = () => {
             showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)}
             zoom={zoom} onZoomChange={setZoom}
             colorMode={colorMode} onColorModeChange={setColorMode}
+            viewMode={viewMode} onViewModeChange={setViewMode}
           />
           <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-            <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
+            {viewMode === "list" ? (
+              <UnitListView tables={floorTables} onTableClick={handleTableClick} />
+            ) : (
+              <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
+            )}
           </div>
         </div>
       </div>

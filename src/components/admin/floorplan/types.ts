@@ -49,7 +49,7 @@ export const getTimeSlot = (time?: string): string => {
   return "night";
 };
 
-// All current SVG tables belong to "hauptbereich" (Restaurant 140Zoll area)
+// Maps SVG table IDs to their floor area
 export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   t10: "hauptbereich",
   t30: "hauptbereich",
@@ -69,4 +69,12 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   b1: "hauptbereich",
   b2: "hauptbereich",
   b3: "hauptbereich",
+  // Fensterbereich
+  f1: "fenster", f2: "fenster", f3: "fenster", f4: "fenster",
+  f5: "fenster", f6: "fenster", f7: "fenster", f8: "fenster",
+  // Billard area
+  bt1: "billard", bt2: "billard", bt3: "billard", bt4: "billard",
+  bt5: "billard", bt6: "billard", bt7: "billard", bt8: "billard",
+  k1: "billard", k2: "billard",
+  d1: "billard", d2: "billard",
 };

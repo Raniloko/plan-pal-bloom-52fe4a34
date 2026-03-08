@@ -4,6 +4,7 @@ import BillardTable from "./BillardTable";
 import RestaurantTable from "./RestaurantTable";
 import AreaPlaceholder from "./AreaPlaceholder";
 import FensterFloorPlan from "./FensterFloorPlan";
+import BillardFloorPlan from "./BillardFloorPlan";
 
 const DEFAULT_TABLES: Record<string, TableData> = {
   t10: { id: "t10", title: "Tisch 10", status: "free" },
@@ -50,6 +51,11 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
   // Fensterbereich has its own SVG floor plan
   if (activeArea === "fenster") {
     return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+  }
+
+  // Billard/Kicker/Dart area has its own SVG floor plan
+  if (activeArea === "billard") {
+    return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
   // Show placeholder for areas that don't have SVG floor plans yet
