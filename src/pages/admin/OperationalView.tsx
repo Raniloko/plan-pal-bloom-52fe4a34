@@ -73,6 +73,7 @@ const OperationalView = () => {
   const [statsOpen, setStatsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
   const load = useCallback(async () => {
@@ -86,6 +87,14 @@ const OperationalView = () => {
       setReservations((d.reservations as Reservation[]) || []);
       setUnits((d.units as Unit[]) || []);
       setWaitlist((d.waitlist as WaitlistEntry[]) || []);
+
+      // Load duration setting
+      const settingsRes = await supabase.functions.invoke("admin-actions", {
+        body: { action: "get_settings" },
+      });
+      if (settingsRes.data?.settings?.reservation_duration) {
+        setDurationMin(Number(settingsRes.data.settings.reservation_duration) || 120);
+      }
     } catch (err) {
       console.error("Failed to load dashboard:", err);
     }
@@ -145,7 +154,12 @@ const OperationalView = () => {
 
   // Toast notification for overdue reservations
   const notifiedOverdueRef = useRef<Set<string>>(new Set());
+  // Toast notification for exceeded duration (seated guests)
+  const notifiedExceededRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
+    const now = new Date();
+    // Overdue: not checked in
     const overdueRows = rows.filter(r => r.overdue);
     overdueRows.forEach(r => {
       if (!notifiedOverdueRef.current.has(r.id)) {
@@ -156,11 +170,30 @@ const OperationalView = () => {
         });
       }
     });
-    // Clean up IDs no longer overdue
     notifiedOverdueRef.current.forEach(id => {
       if (!overdueRows.find(r => r.id === id)) notifiedOverdueRef.current.delete(id);
     });
-  }, [rows]);
+
+    // Exceeded duration: checked in guests past their time
+    const seatedRows = rows.filter(r => r.status === "checked_in");
+    seatedRows.forEach(r => {
+      const [h, m] = r.time.split(":").map(Number);
+      const start = new Date(dateStr);
+      start.setHours(h, m, 0, 0);
+      const elapsed = Math.floor((now.getTime() - start.getTime()) / 60000);
+      if (elapsed >= durationMin && !notifiedExceededRef.current.has(r.id)) {
+        notifiedExceededRef.current.add(r.id);
+        const overBy = elapsed - durationMin;
+        toast.error(`⏱ ${r.name} hat die Reservierungsdauer überschritten!`, {
+          description: `Seit ${overBy} Min überzogen · Tisch ${r.tableRef} · ${r.guests} Pers.`,
+          duration: 15000,
+        });
+      }
+    });
+    notifiedExceededRef.current.forEach(id => {
+      if (!seatedRows.find(r => r.id === id)) notifiedExceededRef.current.delete(id);
+    });
+  }, [rows, durationMin, dateStr]);
 
   // Auto-refresh every 30s for overdue detection
   useEffect(() => {
@@ -287,6 +320,7 @@ const OperationalView = () => {
           onNewClick={handleNewReservation}
           waitlist={waitlist}
           onRefreshWaitlist={load}
+          durationMin={durationMin}
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>

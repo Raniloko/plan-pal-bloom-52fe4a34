@@ -31,6 +31,8 @@ const DEFAULT_MEALS: MealSlot[] = [
   { name: "Spätabend", start: "22:00", end: "02:00" },
 ];
 
+const DEFAULT_DURATION = 120; // minutes
+
 const inputStyle: React.CSSProperties = {
   background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, padding: "6px 10px",
   color: "#fff", fontSize: 13, width: 90, fontFamily: "'DM Sans', sans-serif",
@@ -40,6 +42,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
   const [tab, setTab] = useState<"hours" | "meals" | "capacity">("hours");
   const [hours, setHours] = useState<OpeningHours>(DEFAULT_HOURS);
   const [meals, setMeals] = useState<MealSlot[]>(DEFAULT_MEALS);
+  const [duration, setDuration] = useState(DEFAULT_DURATION);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           const s = res.data.settings;
           if (s.opening_hours) setHours(s.opening_hours);
           if (s.meal_slots) setMeals(s.meal_slots);
+          if (s.reservation_duration) setDuration(Number(s.reservation_duration) || DEFAULT_DURATION);
         }
       } catch { /* use defaults */ }
     })();
@@ -62,7 +66,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
     setSaving(true);
     try {
       await supabase.functions.invoke("admin-actions", {
-        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals } },
+        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals, reservation_duration: duration } },
       });
       toast.success("Einstellungen gespeichert");
       onClose();
@@ -155,9 +159,27 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           )}
 
           {tab === "capacity" && (
-            <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
-              <p style={{ marginBottom: 12 }}>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
-              <p style={{ color: "#555" }}>Geplant: Bereichs-übergreifende Kapazitätslimits und automatische Overbooking-Regeln.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Standard-Reservierungsdauer</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <select
+                    value={duration}
+                    onChange={e => setDuration(Number(e.target.value))}
+                    style={{ ...inputStyle, width: 160 }}
+                  >
+                    {[60, 90, 120, 150, 180, 240].map(m => (
+                      <option key={m} value={m}>{m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}min` : ""}` : `${m} Min`}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: "#777" }}>
+                    Gilt für alle Bereiche außer Billard (Abrechnung vor Ort nach Minuten)
+                  </span>
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
+                <p style={{ marginBottom: 12 }}>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
+              </div>
             </div>
           )}
         </div>
