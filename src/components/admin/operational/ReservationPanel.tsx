@@ -37,6 +37,7 @@ interface Props {
   onNewClick: () => void;
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
+  durationMin?: number;
 }
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
