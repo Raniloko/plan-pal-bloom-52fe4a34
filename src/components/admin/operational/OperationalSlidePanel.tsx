@@ -58,7 +58,7 @@ const adminAction = async (body: Record<string, unknown>) => {
   return res.data;
 };
 
-export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh }: Props) => {
+export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [] }: Props) => {
   const [notes, setNotes] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
   const [mode, setMode] = useState<"view" | "book">("view");
