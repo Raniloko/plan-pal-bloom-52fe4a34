@@ -144,6 +144,43 @@ Deno.serve(async (req) => {
         return ok({ status: "notified" });
       }
 
+      case "resend_email": {
+        const { reservation_id } = body;
+        if (!reservation_id) return error("reservation_id required", 400);
+        const { data: resData, error: rErr } = await supabase
+          .from("reservations")
+          .select("*")
+          .eq("id", reservation_id)
+          .single();
+        if (rErr || !resData) return error("Reservation not found", 404);
+
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+        const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const emailRes = await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+          body: JSON.stringify({
+            reservation: {
+              id: resData.id,
+              customer_name: resData.customer_name,
+              customer_email: resData.customer_email,
+              reservation_date: resData.reservation_date,
+              reservation_time: resData.reservation_time,
+              guest_count: resData.guest_count,
+              zone: resData.zone,
+              occasion: resData.occasion,
+              message: resData.message || "",
+            },
+          }),
+        });
+        const emailResult = await emailRes.json();
+        if (!emailRes.ok) return error(emailResult?.error || "Email failed", 500);
+        return ok({ sent: true });
+      }
+
       case "update_reservation": {
         const { reservation_id, updates } = body;
         if (!reservation_id || !updates) return error("reservation_id and updates required", 400);

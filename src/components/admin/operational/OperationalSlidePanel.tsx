@@ -134,10 +134,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     if (!data?.reservationId) return;
     setSaving(true);
     try {
-      const res = await supabase.functions.invoke("send-reservation-email", {
-        body: { reservation_id: data.reservationId },
-      });
-      if (res.error) throw res.error;
+      await adminAction({ action: "resend_email", reservation_id: data.reservationId });
       toast.success("E-Mail gesendet");
     } catch {
       toast.error("E-Mail konnte nicht gesendet werden");
