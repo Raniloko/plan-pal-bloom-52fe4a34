@@ -292,14 +292,20 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>{data.guest}</div>
                 {data.customerEmail && (
-                  <div style={{ fontSize: 11, color: "#999", marginBottom: 1 }}>{data.customerEmail}</div>
+                  <div style={{ fontSize: 11, color: "#999", marginBottom: 1 }}>✉ {data.customerEmail}</div>
                 )}
                 {data.customerPhone && (
-                  <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{data.customerPhone}</div>
+                  <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>☎ {data.customerPhone}</div>
                 )}
                 <div style={{ fontSize: 10, color: "#bbb", marginBottom: 12 }}>
                   RND-{data.reservationId?.slice(0, 8).toUpperCase() || "XXXXXXXX"}
                 </div>
+
+                {/* Live billard timer for checked-in billard guests */}
+                {checkedIn && isBillardUnit && (
+                  <BillardLiveTimer startTime={data.startTime} />
+                )}
+
                 <div style={{ display: "flex", gap: 6 }}>
                   <button onClick={handleMail} disabled={saving} style={{ ...btnBase, color: "#777" }}>
                     <Mail size={10} /> Mail
