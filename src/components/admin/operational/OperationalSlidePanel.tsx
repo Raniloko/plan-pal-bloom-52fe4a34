@@ -335,15 +335,22 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
               {/* Quick actions */}
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                <button onClick={handleCheckIn} disabled={saving} style={{
-                  ...btnBase,
-                  border: `1px solid ${checkedIn ? "#2a7a2a" : "#e0e0e0"}`,
-                  background: checkedIn ? "#e8f5e8" : "#fff",
-                  color: checkedIn ? "#2a7a2a" : "#777",
-                }}>
-                  {checkedIn ? <Check size={11} /> : <LogIn size={11} />}
-                  {checkedIn ? "Auschecken" : "Einchecken"}
-                </button>
+                {!checkedIn ? (
+                  <button onClick={handleCheckIn} disabled={saving} style={{
+                    ...btnBase, color: "#777",
+                  }}>
+                    <LogIn size={11} /> Einchecken
+                  </button>
+                ) : (
+                  <button onClick={handleCheckOut} disabled={saving} style={{
+                    ...btnBase,
+                    border: "1px solid #cc2222",
+                    background: "#fde8e8",
+                    color: "#cc2222",
+                  }}>
+                    <LogOut size={11} /> Gast geht
+                  </button>
+                )}
                 {data.unitId && (
                   <button onClick={handleBlock} disabled={saving} style={{
                     ...btnBase,
