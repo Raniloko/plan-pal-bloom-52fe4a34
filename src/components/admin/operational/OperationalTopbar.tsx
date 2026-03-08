@@ -3,7 +3,7 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight, BarChart2,
-  Users, Settings, Bell, LogOut, Menu,
+  Users, Settings, Bell, LogOut, Menu, Activity,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
