@@ -291,7 +291,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                   color: checkedIn ? "#2a7a2a" : "#777",
                 }}>
                   {checkedIn ? <Check size={11} /> : <LogIn size={11} />}
-                  {checkedIn ? "Ausgecheckt" : "Einchecken"}
+                  {checkedIn ? "Auschecken" : "Einchecken"}
                 </button>
                 {data.unitId && (
                   <button onClick={handleBlock} disabled={saving} style={{
