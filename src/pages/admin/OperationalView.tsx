@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
 import type { TableData, FloorArea } from "@/components/admin/floorplan";
@@ -53,7 +54,7 @@ interface WaitlistEntry {
 }
 
 const OperationalView = () => {
-  const [activeArea, setActiveArea] = useState<FloorArea>("all");
+  const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
   const [showLabels, setShowLabels] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [colorMode, setColorMode] = useState<ColorMode>("status");
@@ -142,6 +143,31 @@ const OperationalView = () => {
 
   const totalGuests = rows.reduce((s, r) => s + r.guests, 0);
 
+  // Toast notification for overdue reservations
+  const notifiedOverdueRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const overdueRows = rows.filter(r => r.overdue);
+    overdueRows.forEach(r => {
+      if (!notifiedOverdueRef.current.has(r.id)) {
+        notifiedOverdueRef.current.add(r.id);
+        toast.warning(`⚠️ ${r.name} ist ${r.offset} überfällig!`, {
+          description: `Reservierung um ${r.time} · ${r.guests} Pers. – Noch nicht eingecheckt`,
+          duration: 10000,
+        });
+      }
+    });
+    // Clean up IDs no longer overdue
+    notifiedOverdueRef.current.forEach(id => {
+      if (!overdueRows.find(r => r.id === id)) notifiedOverdueRef.current.delete(id);
+    });
+  }, [rows]);
+
+  // Auto-refresh every 30s for overdue detection
+  useEffect(() => {
+    const interval = setInterval(() => load(), 30000);
+    return () => clearInterval(interval);
+  }, [load]);
+
   // Stats counts
   const confirmedCount = reservations.filter(r => r.status === "confirmed").length;
   const pendingCount = reservations.filter(r => r.status === "pending").length;
@@ -181,6 +207,12 @@ const OperationalView = () => {
     return map;
   }, [reservations, units, dateStr]);
 
+  // Map unit area to reservation zone
+  const areaToZone = (area: string): string => {
+    const map: Record<string, string> = { billard: "billard", kicker: "billard", dart: "billard", restaurant: "hauptbereich" };
+    return map[area] || area;
+  };
+
   const handleTableClick = (_id: string, data: TableData) => {
     const unit = units.find(u => u.name.toLowerCase() === data.title.toLowerCase());
     const reservation = data.reservationId ? reservations.find(r => r.id === data.reservationId) : undefined;
@@ -191,6 +223,7 @@ const OperationalView = () => {
       status: data.status, unitId: unit?.id, unitNotes: unit?.notes || "",
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
+      zone: reservation?.zone || (unit ? areaToZone(unit.area) : undefined),
     });
     setSelectedRowId(null);
     setPanelOpen(true);
@@ -205,6 +238,7 @@ const OperationalView = () => {
       reservationId: row.id,
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
+      zone: reservation?.zone,
     });
     setSelectedRowId(row.id);
     setPanelOpen(true);

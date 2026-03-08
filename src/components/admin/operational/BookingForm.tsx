@@ -7,6 +7,7 @@ import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 interface Props {
   tableLabel?: string;
+  initialZone?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -29,7 +30,7 @@ const OCCASIONS = [
   { value: "sonstiges", label: "Sonstiges" },
 ];
 
-const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
+const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
   const [guest, setGuest] = useState("");
   const [email, setEmail] = useState("");
@@ -37,7 +38,7 @@ const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
   const [pax, setPax] = useState(2);
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [startTime, setStartTime] = useState("19:00");
-  const [zone, setZone] = useState("hauptbereich");
+  const [zone, setZone] = useState(initialZone || "hauptbereich");
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
   const [sonstigesText, setSonstigesText] = useState("");
   const [note, setNote] = useState("");

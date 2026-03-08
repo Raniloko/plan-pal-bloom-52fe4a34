@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, Settings, Eye, EyeOff, ZoomIn, ZoomOut, Pale
 import type { FloorArea } from "@/components/admin/floorplan/types";
 
 const AREA_TABS: { id: FloorArea; label: string }[] = [
-  { id: "all", label: "Alle Bereiche" },
   { id: "hauptbereich", label: "Restaurant 140 Zoll" },
   { id: "fenster", label: "Restaurant 75 Zoll" },
   { id: "billard", label: "Billard / Kicker / Dart" },

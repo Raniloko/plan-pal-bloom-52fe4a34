@@ -19,6 +19,7 @@ export interface PanelData {
   unitNotes?: string;
   customerEmail?: string;
   customerPhone?: string;
+  zone?: string;
 }
 
 interface UnitOption {
@@ -216,6 +217,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
           {mode === "book" ? (
             <BookingForm
               tableLabel={data?.tableLabel}
+              initialZone={data?.zone}
               onSuccess={() => { setMode("view"); onRefresh(); }}
               onCancel={() => setMode("view")}
             />
