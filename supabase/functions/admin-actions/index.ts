@@ -21,6 +21,19 @@ Deno.serve(async (req) => {
     );
 
     switch (action) {
+      case "fetch_dashboard": {
+        const { date } = body;
+        if (!date) return error("date required", 400);
+        const [r, u, w] = await Promise.all([
+          supabase.from("reservations").select("*").eq("reservation_date", date).neq("status", "cancelled"),
+          supabase.from("units").select("*").order("position_index"),
+          supabase.from("waitlist").select("*").in("status", ["waiting", "notified"]).order("desired_date").order("desired_time"),
+        ]);
+        if (r.error) return error(r.error.message, 500);
+        if (u.error) return error(u.error.message, 500);
+        return ok({ reservations: r.data, units: u.data, waitlist: w.data || [] });
+      }
+
       case "check_in": {
         const { reservation_id, checked_in } = body;
         if (!reservation_id) return error("reservation_id required", 400);
@@ -42,7 +55,6 @@ Deno.serve(async (req) => {
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
 
-        // Try to send cancellation email
         try {
           const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
           const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -98,7 +110,6 @@ Deno.serve(async (req) => {
       case "notify_waitlist": {
         const { waitlist_id } = body;
         if (!waitlist_id) return error("waitlist_id required", 400);
-        // Get waitlist entry
         const { data: wEntry, error: wErr } = await supabase
           .from("waitlist")
           .select("*")
@@ -106,17 +117,13 @@ Deno.serve(async (req) => {
           .single();
         if (wErr || !wEntry) return error("Waitlist entry not found", 404);
 
-        // Update status to notified
         const { error: updErr } = await supabase
           .from("waitlist")
           .update({ status: "notified", notified_at: new Date().toISOString() })
           .eq("id", waitlist_id);
         if (updErr) return error(updErr.message, 500);
 
-        // Try to send notification email
         try {
-          const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-          const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
           const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
           if (RESEND_API_KEY) {
             await fetch("https://api.resend.com/emails", {
@@ -140,7 +147,6 @@ Deno.serve(async (req) => {
       case "update_reservation": {
         const { reservation_id, updates } = body;
         if (!reservation_id || !updates) return error("reservation_id and updates required", 400);
-        // Only allow safe fields
         const allowed: Record<string, unknown> = {};
         for (const key of ["guest_count", "reservation_time", "reservation_date", "zone", "occasion", "message", "status", "unit_id"]) {
           if (updates[key] !== undefined) allowed[key] = updates[key];
