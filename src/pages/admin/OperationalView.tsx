@@ -110,7 +110,7 @@ const OperationalView = () => {
         const now = new Date();
         const [h, m] = r.reservation_time.split(":").map(Number);
         const start = new Date(dateStr); start.setHours(h, m);
-        const isPresent = r.status === "checked_in" || (r.status === "confirmed" && now >= start);
+      const isPresent = r.status === "checked_in";
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
         else if (r.status === "checked_in") icon = "double";
