@@ -59,6 +59,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           if (s.opening_hours) setHours(s.opening_hours);
           if (s.meal_slots) setMeals(s.meal_slots);
           if (s.reservation_duration) setDuration(Number(s.reservation_duration) || DEFAULT_DURATION);
+          if (s.auto_cancel_minutes) setAutoCancelMin(Number(s.auto_cancel_minutes) || DEFAULT_AUTO_CANCEL);
         }
       } catch { /* use defaults */ }
     })();
