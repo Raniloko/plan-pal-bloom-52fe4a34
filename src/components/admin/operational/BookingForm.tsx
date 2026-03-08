@@ -38,7 +38,8 @@ const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [startTime, setStartTime] = useState("19:00");
   const [zone, setZone] = useState("hauptbereich");
-  const [occasion, setOccasion] = useState("essen");
+  const [occasion, setOccasion] = useState<string[]>(["essen"]);
+  const [sonstigesText, setSonstigesText] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
