@@ -7,6 +7,48 @@ import { toast } from "sonner";
 import BookingForm from "./BookingForm";
 import { TableTimeline } from "./TableTimeline";
 
+const BILLARD_PRICE_PER_MIN = 0.23;
+
+/** Live counter that ticks every second showing elapsed minutes & running cost */
+const BillardLiveTimer = ({ startTime }: { startTime?: string }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (!startTime) return null;
+  const [h, m] = startTime.split(":").map(Number);
+  const start = new Date();
+  start.setHours(h, m, 0, 0);
+  const elapsedSec = Math.max(0, Math.floor((now - start.getTime()) / 1000));
+  const elapsedMin = Math.floor(elapsedSec / 60);
+  const secs = elapsedSec % 60;
+  const cost = (elapsedMin * BILLARD_PRICE_PER_MIN).toFixed(2);
+
+  return (
+    <div style={{
+      background: "#1e1e1e", borderRadius: 8, padding: 12, marginBottom: 12,
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Timer size={16} color="#c9a84c" />
+        <div>
+          <div style={{ fontSize: 9, color: "#999", fontWeight: 600, textTransform: "uppercase" }}>Spielzeit</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
+            {String(elapsedMin).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+          </div>
+        </div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ fontSize: 9, color: "#999", fontWeight: 600, textTransform: "uppercase" }}>Kosten</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#c9a84c" }}>{cost} €</div>
+        <div style={{ fontSize: 9, color: "#666" }}>à 0,23 €/Min</div>
+      </div>
+    </div>
+  );
+};
+
 export interface PanelData {
   tableLabel: string;
   areaName?: string;
