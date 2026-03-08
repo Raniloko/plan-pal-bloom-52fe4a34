@@ -30,14 +30,29 @@ const OCCASIONS = [
   { value: "sonstiges", label: "Sonstiges" },
 ];
 
+const getNextQuarterHour = (): string => {
+  const now = new Date();
+  const mins = now.getMinutes();
+  const nextSlot = Math.ceil(mins / 15) * 15;
+  const h = nextSlot >= 60 ? now.getHours() + 1 : now.getHours();
+  const m = nextSlot >= 60 ? 0 : nextSlot;
+  return `${String(h % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
+
 const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const defaultTime = getNextQuarterHour();
+  const availableTimes = getTimesForDate(todayStr);
+  // Pick the next available slot that is >= current rounded time, fallback to first
+  const smartDefault = availableTimes.find(t => t >= defaultTime) || availableTimes[0] || "19:00";
+
   const [guest, setGuest] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pax, setPax] = useState(2);
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [startTime, setStartTime] = useState("19:00");
+  const [date, setDate] = useState(todayStr);
+  const [startTime, setStartTime] = useState(smartDefault);
   const [zone, setZone] = useState(initialZone || "hauptbereich");
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
   const [sonstigesText, setSonstigesText] = useState("");
