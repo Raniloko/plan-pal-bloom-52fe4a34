@@ -69,7 +69,9 @@ const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
           date,
           time: startTime,
           zone,
-          anlass: occasion,
+          anlass: occasion.includes("sonstiges") && sonstigesText.trim()
+            ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim()}`].join(", ")
+            : occasion.join(", "),
           message: note.trim() || "",
           honeypot: "",
         },
