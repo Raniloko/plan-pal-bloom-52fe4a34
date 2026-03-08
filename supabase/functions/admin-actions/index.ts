@@ -302,6 +302,7 @@ Deno.serve(async (req) => {
           .update(allowed)
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, "update_reservation", "reservation", reservation_id, JSON.stringify(allowed));
         return ok({ updated: true });
       }
 
