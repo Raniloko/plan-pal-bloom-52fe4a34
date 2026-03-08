@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges" | "";
