@@ -70,7 +70,6 @@ export const OperationalAreaTabs = ({
               letterSpacing: "0.01em",
               display: "flex", alignItems: "center", gap: 6,
             }}>
-              <span style={{ fontSize: 14 }}>{tab.emoji}</span>
               {tab.label}
             </button>
           );
