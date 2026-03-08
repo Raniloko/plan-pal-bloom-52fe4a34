@@ -312,6 +312,7 @@ const OperationalView = () => {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenStats={() => setStatsOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
+        onOpenActivityLog={() => setActivityLogOpen(true)}
       />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
