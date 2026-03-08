@@ -9,6 +9,7 @@ const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 // Generate 15-min interval times between open and close
 function generateTimeSlots(open: string, close: string): string[] {
+  if (!open || !close) return [];
   const slots: string[] = [];
   const [oh, om] = open.split(":").map(Number);
   const [ch, cm] = close.split(":").map(Number);
