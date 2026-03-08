@@ -86,9 +86,16 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
+  const token = url.searchParams.get("token");
 
-  if (!id) {
-    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Keine Reservierungs-ID angegeben.</p></div>`);
+  if (!id || !token) {
+    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Ungültiger Link.</p></div>`);
+  }
+
+  // Verify cancellation_token matches
+  const { data: tokenCheck } = await supabase.from("reservations").select("cancellation_token").eq("id", id).single();
+  if (!tokenCheck || tokenCheck.cancellation_token !== token) {
+    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Zugriff verweigert</h2><p>Dieser Link ist ungültig oder abgelaufen.</p></div>`);
   }
 
   if (req.method === "GET") {
