@@ -164,8 +164,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           <div style={{ flex: 1, overflowY: "auto" }}>
             {filtered.map(r => {
               const sel = r.id === selectedRowId;
-              const borderL = r.highlighted ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
-              const bg = sel ? "#eaeaea" : r.highlighted ? "#edf4ed" : "#fff";
+              const borderL = r.overdue ? "#cc3300" : r.status === "checked_in" ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
+              const bg = sel ? "#eaeaea" : r.overdue ? "#fef2f2" : r.status === "checked_in" ? "#edf4ed" : "#fff";
               return (
                 <div key={r.id} onClick={() => onRowClick(r)} style={{
                   display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
@@ -174,8 +174,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                   padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
                 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{r.time}</div>
-                    <div style={{ fontSize: 10, color: "#999" }}>{r.offset}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: r.overdue ? "#cc3300" : "#111" }}>{r.time}</div>
+                    <div style={{ fontSize: 10, color: r.overdue ? "#cc3300" : "#999", fontWeight: r.overdue ? 700 : 400 }}>{r.offset}</div>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#111", textAlign: "center" }}>{r.guests}</div>
                   <div>
@@ -183,7 +183,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                     <div style={{ fontSize: 10, color: "#999" }}>{r.tableRef}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {renderIcon(r.icon)}
+                    {r.overdue ? <AlertTriangle size={15} color="#cc3300" /> : renderIcon(r.icon)}
                   </div>
                 </div>
               );
