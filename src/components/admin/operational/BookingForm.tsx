@@ -162,12 +162,37 @@ const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
           </select>
         </div>
         <div>
-          <label style={labelStyle}>Anlass</label>
-          <select value={occasion} onChange={e => setOccasion(e.target.value)} style={inputStyle}>
-            {OCCASIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <label style={labelStyle}>Anlass (Mehrfachauswahl)</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {OCCASIONS.map(o => {
+              const selected = occasion.includes(o.value);
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => setOccasion(prev =>
+                    selected ? prev.filter(x => x !== o.value) : [...prev, o.value]
+                  )}
+                  style={{
+                    padding: "4px 10px", fontSize: 11, borderRadius: 4,
+                    border: selected ? "1.5px solid #c9a84c" : "1px solid #ddd",
+                    background: selected ? "#c9a84c22" : "#fff",
+                    color: selected ? "#111" : "#666",
+                    cursor: "pointer", fontWeight: selected ? 700 : 400,
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >{o.label}</button>
+              );
+            })}
+          </div>
         </div>
       </div>
+      {occasion.includes("sonstiges") && (
+        <div>
+          <label style={labelStyle}>Sonstiges – bitte beschreiben *</label>
+          <input value={sonstigesText} onChange={e => setSonstigesText(e.target.value)} placeholder="z.B. Firmenevent..." style={inputStyle} />
+        </div>
+      )}
       <div>
         <label style={labelStyle}>Nachricht / Notiz</label>
         <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Optional..." style={{ ...inputStyle, height: 50, resize: "none" }} />
