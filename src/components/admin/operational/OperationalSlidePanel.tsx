@@ -168,7 +168,17 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const handleCheckOut = async () => {
     if (!data?.reservationId) return;
-    if (!window.confirm(`${data.guest} wirklich auschecken?`)) return;
+    // For billard: show price summary dialog first
+    if (isBillardUnit && checkedIn) {
+      setShowBillardCheckout(true);
+      return;
+    }
+    await performCheckOut();
+  };
+
+  const performCheckOut = async () => {
+    if (!data?.reservationId) return;
+    setShowBillardCheckout(false);
     setSaving(true);
     try {
       await adminAction({ action: "check_out", reservation_id: data.reservationId });
