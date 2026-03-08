@@ -1,11 +1,53 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
 import { TableTimeline } from "./TableTimeline";
+
+const BILLARD_PRICE_PER_MIN = 0.23;
+
+/** Live counter that ticks every second showing elapsed minutes & running cost */
+const BillardLiveTimer = ({ startTime }: { startTime?: string }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (!startTime) return null;
+  const [h, m] = startTime.split(":").map(Number);
+  const start = new Date();
+  start.setHours(h, m, 0, 0);
+  const elapsedSec = Math.max(0, Math.floor((now - start.getTime()) / 1000));
+  const elapsedMin = Math.floor(elapsedSec / 60);
+  const secs = elapsedSec % 60;
+  const cost = (elapsedMin * BILLARD_PRICE_PER_MIN).toFixed(2);
+
+  return (
+    <div style={{
+      background: "#1e1e1e", borderRadius: 8, padding: 12, marginBottom: 12,
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Timer size={16} color="#c9a84c" />
+        <div>
+          <div style={{ fontSize: 9, color: "#999", fontWeight: 600, textTransform: "uppercase" }}>Spielzeit</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "monospace" }}>
+            {String(elapsedMin).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+          </div>
+        </div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ fontSize: 9, color: "#999", fontWeight: 600, textTransform: "uppercase" }}>Kosten</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#c9a84c" }}>{cost} €</div>
+        <div style={{ fontSize: 9, color: "#666" }}>à 0,23 €/Min</div>
+      </div>
+    </div>
+  );
+};
 
 export interface PanelData {
   tableLabel: string;
@@ -70,6 +112,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [assignedUnitId, setAssignedUnitId] = useState<string>("");
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
+
+  // Detect if this is a billard unit
+  const isBillardUnit = !!(data?.zone === "billard" || data?.tableLabel?.toLowerCase().includes("billard"));
 
   useEffect(() => {
     if (open) {
@@ -142,6 +187,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       const res = await adminAction({ action: "block_unit", unit_id: data.unitId, blocked: data.status === "blocked" });
       toast.success(res.status === "blocked" ? "Tisch gesperrt" : "Tisch freigegeben");
       onRefresh();
+      onClose();
     } catch (e: any) {
       toast.error(e?.message || "Fehler beim Sperren");
     }
@@ -291,14 +337,20 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>{data.guest}</div>
                 {data.customerEmail && (
-                  <div style={{ fontSize: 11, color: "#999", marginBottom: 1 }}>{data.customerEmail}</div>
+                  <div style={{ fontSize: 11, color: "#999", marginBottom: 1 }}>✉ {data.customerEmail}</div>
                 )}
                 {data.customerPhone && (
-                  <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{data.customerPhone}</div>
+                  <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>☎ {data.customerPhone}</div>
                 )}
                 <div style={{ fontSize: 10, color: "#bbb", marginBottom: 12 }}>
                   RND-{data.reservationId?.slice(0, 8).toUpperCase() || "XXXXXXXX"}
                 </div>
+
+                {/* Live billard timer for checked-in billard guests */}
+                {checkedIn && isBillardUnit && (
+                  <BillardLiveTimer startTime={data.startTime} />
+                )}
+
                 <div style={{ display: "flex", gap: 6 }}>
                   <button onClick={handleMail} disabled={saving} style={{ ...btnBase, color: "#777" }}>
                     <Mail size={10} /> Mail
