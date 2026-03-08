@@ -111,6 +111,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [saving, setSaving] = useState(false);
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [assignedUnitId, setAssignedUnitId] = useState<string>("");
+  const [showBillardCheckout, setShowBillardCheckout] = useState(false);
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
 
   // Detect if this is a billard unit
