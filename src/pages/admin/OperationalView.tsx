@@ -250,9 +250,14 @@ const OperationalView = () => {
             showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)}
             zoom={zoom} onZoomChange={setZoom}
             colorMode={colorMode} onColorModeChange={setColorMode}
+            viewMode={viewMode} onViewModeChange={setViewMode}
           />
           <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-            <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
+            {viewMode === "list" ? (
+              <UnitListView tables={floorTables} onTableClick={handleTableClick} />
+            ) : (
+              <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
+            )}
           </div>
         </div>
       </div>
