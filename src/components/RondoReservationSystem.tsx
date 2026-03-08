@@ -201,7 +201,9 @@ const RondoReservationSystem = () => {
           time: data.time,
           guests: data.guests,
           zone: data.zone,
-          anlass: data.anlass,
+          anlass: data.anlass.includes("sonstiges") && data.sonstigesText.trim()
+            ? [...data.anlass.filter(a => a !== "sonstiges"), `sonstiges: ${data.sonstigesText.trim()}`].join(", ")
+            : data.anlass.join(", "),
           name: data.name,
           email: data.email,
           phone: data.phone,
