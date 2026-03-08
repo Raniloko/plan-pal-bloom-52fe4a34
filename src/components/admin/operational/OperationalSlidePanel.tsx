@@ -142,6 +142,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       const res = await adminAction({ action: "block_unit", unit_id: data.unitId, blocked: data.status === "blocked" });
       toast.success(res.status === "blocked" ? "Tisch gesperrt" : "Tisch freigegeben");
       onRefresh();
+      onClose();
     } catch (e: any) {
       toast.error(e?.message || "Fehler beim Sperren");
     }

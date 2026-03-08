@@ -117,7 +117,7 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "8px 10px", fontSize: 12, border: "1px solid #ddd",
     borderRadius: 6, outline: "none", fontFamily: "'DM Sans', sans-serif",
-    background: "#fff",
+    background: "#fff", color: "#111",
   };
   const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: "#555", marginBottom: 4, display: "block" };
 
