@@ -29,12 +29,19 @@ interface UnitOption {
   status: string | null;
 }
 
+interface ReservationRef {
+  id: string;
+  unit_id: string | null;
+  status: string;
+}
+
 interface Props {
   open: boolean;
   data: PanelData | null;
   onClose: () => void;
   onBookNew: () => void;
   onRefresh: () => void;
+  reservations?: ReservationRef[];
 }
 
 const STATUS_PILL: Record<string, React.CSSProperties> = {
