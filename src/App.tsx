@@ -17,6 +17,9 @@ import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import Jobs from "./pages/Jobs";
 import OperationalView from "./pages/admin/OperationalView";
+import AdminLogin from "./pages/admin/AdminLogin";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +40,8 @@ const AppContent = () => {
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
-        <Route path="/admin" element={<OperationalView />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<ProtectedRoute><OperationalView /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <Footer onOpenCookieSettings={() => setCookieSettingsOpen(true)} />}
@@ -57,7 +61,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -3,11 +3,13 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight, BarChart2,
-  Users, Settings, Bell, Menu,
+  Users, Settings, Bell, LogOut, Menu,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   totalReservations: number;
@@ -41,10 +43,13 @@ export const OperationalTopbar = ({
   onOpenSettings, onOpenStats, onOpenNotifications,
 }: Props) => {
   const [time, setTime] = useState("");
-  const [mealIndex, setMealIndex] = useState(1); // default Abendessen
+  const [mealIndex, setMealIndex] = useState(1);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const shortDate = format(selectedDate, "EEE., d MMM", { locale: de });
+
 
   useEffect(() => {
     const tick = () => {
@@ -136,6 +141,7 @@ export const OperationalTopbar = ({
           </span>
         </div>
         <IcoBtn borderL onClick={onOpenSettings}><Settings size={16} /></IcoBtn>
+        <IcoBtn borderL onClick={async () => { await signOut(); navigate("/admin/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
       </div>
     </div>
   );
