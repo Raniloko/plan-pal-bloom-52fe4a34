@@ -6,6 +6,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// deno-lint-ignore no-explicit-any
+async function logActivity(sb: any, action: string, entityType: string, entityId?: string, details?: string) {
+  try {
+    await sb.from("activity_log").insert({ action, entity_type: entityType, entity_id: entityId || null, details: details || null });
+  } catch (e) { console.error("Activity log (non-blocking):", e); }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -80,18 +87,19 @@ Deno.serve(async (req) => {
           .update({ status: newStatus })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, checked_in ? "check_out" : "check_in", "reservation", reservation_id);
         return ok({ status: newStatus });
       }
 
       case "check_out": {
         const { reservation_id } = body;
         if (!reservation_id) return error("reservation_id required", 400);
-        // Set status to checked_out and remove unit assignment
         const { error: err } = await supabase
           .from("reservations")
           .update({ status: "checked_out", unit_id: null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, "check_out", "reservation", reservation_id);
         return ok({ status: "checked_out" });
       }
 
@@ -103,8 +111,7 @@ Deno.serve(async (req) => {
           .update({ status: "cancelled", cancellation_reason: reason || "Admin-Stornierung" })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
-
-        try {
+        await logActivity(supabase, "cancel", "reservation", reservation_id, reason || "Admin-Stornierung");
           const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
           const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
           await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
@@ -131,6 +138,7 @@ Deno.serve(async (req) => {
           .update({ status: newStatus })
           .eq("id", unit_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, newStatus === "blocked" ? "block_unit" : "unblock_unit", "unit", unit_id);
         return ok({ status: newStatus });
       }
 
@@ -204,6 +212,7 @@ Deno.serve(async (req) => {
           .update({ unit_id: unit_id || null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, "assign_unit", "reservation", reservation_id, unit_id ? `Unit: ${unit_id}` : "Zuweisung entfernt");
         return ok({ assigned: true });
       }
 
@@ -293,6 +302,7 @@ Deno.serve(async (req) => {
           .update(allowed)
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, "update_reservation", "reservation", reservation_id, JSON.stringify(allowed));
         return ok({ updated: true });
       }
 
@@ -309,6 +319,7 @@ Deno.serve(async (req) => {
         for (const [key, value] of Object.entries(settings)) {
           await supabase.from("settings").upsert({ key, value: value as Record<string, unknown> }, { onConflict: "key" });
         }
+        await logActivity(supabase, "save_settings", "settings", undefined, Object.keys(settings).join(", "));
         return ok({ saved: true });
       }
 

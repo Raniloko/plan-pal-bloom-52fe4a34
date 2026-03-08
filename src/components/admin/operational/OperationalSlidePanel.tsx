@@ -111,6 +111,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [saving, setSaving] = useState(false);
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [assignedUnitId, setAssignedUnitId] = useState<string>("");
+  const [showBillardCheckout, setShowBillardCheckout] = useState(false);
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
 
   // Detect if this is a billard unit
@@ -167,7 +168,17 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const handleCheckOut = async () => {
     if (!data?.reservationId) return;
-    if (!window.confirm(`${data.guest} wirklich auschecken?`)) return;
+    // For billard: show price summary dialog first
+    if (isBillardUnit && checkedIn) {
+      setShowBillardCheckout(true);
+      return;
+    }
+    await performCheckOut();
+  };
+
+  const performCheckOut = async () => {
+    if (!data?.reservationId) return;
+    setShowBillardCheckout(false);
     setSaving(true);
     try {
       await adminAction({ action: "check_out", reservation_id: data.reservationId });
@@ -266,8 +277,62 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     return acc;
   }, {});
 
+  // Calculate billard checkout values
+  const billardCheckoutData = (() => {
+    if (!isBillardUnit || !data?.startTime) return null;
+    const [h, m] = data.startTime.split(":").map(Number);
+    const start = new Date();
+    start.setHours(h, m, 0, 0);
+    const elapsedMin = Math.max(1, Math.floor((Date.now() - start.getTime()) / 60000));
+    const cost = (elapsedMin * BILLARD_PRICE_PER_MIN).toFixed(2);
+    return { elapsedMin, cost };
+  })();
+
   return (
     <>
+      {/* Billard Checkout Dialog */}
+      {showBillardCheckout && billardCheckoutData && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{
+            background: "#fff", borderRadius: 16, padding: "32px 28px", maxWidth: 380, width: "100%",
+            fontFamily: "'DM Sans', sans-serif", boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fff8e7", border: "2px solid #f0d88a", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                <Timer size={28} color="#c9a84c" />
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: "#111", margin: "0 0 4px" }}>Billard Abrechnung</h3>
+              <p style={{ fontSize: 13, color: "#888", margin: 0 }}>{data?.guest}</p>
+            </div>
+
+            <div style={{ background: "#fafafa", border: "1px solid #eee", borderRadius: 10, padding: 16, marginBottom: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #eee" }}>
+                <span style={{ fontSize: 13, color: "#666" }}>Spielzeit</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: "#111", fontFamily: "monospace" }}>{billardCheckoutData.elapsedMin} Min</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #eee" }}>
+                <span style={{ fontSize: 13, color: "#666" }}>Preis/Min</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#666" }}>0,23 €</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>Gesamt</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: "#c9a84c" }}>{billardCheckoutData.cost} €</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowBillardCheckout(false)} style={{
+                flex: 1, padding: "10px 0", borderRadius: 8, border: "1px solid #ddd", background: "#fff",
+                fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#666",
+              }}>Abbrechen</button>
+              <button onClick={performCheckOut} disabled={saving} style={{
+                flex: 1, padding: "10px 0", borderRadius: 8, border: "none", background: "#222",
+                fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#fff",
+              }}>Auschecken</button>
+            </div>
+          </div>
+        </div>
+      )}
       {open && <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 199 }} />}
       <div style={{
         position: "fixed", top: 0, right: open ? 0 : -460, height: "100%", width: 420,
