@@ -12,6 +12,7 @@ import {
   StatsPanel,
   NotificationsPanel,
 } from "@/components/admin/operational";
+import type { ColorMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { Toaster } from "sonner";
 
@@ -54,6 +55,8 @@ interface WaitlistEntry {
 const OperationalView = () => {
   const [activeArea, setActiveArea] = useState<FloorArea>("all");
   const [showLabels, setShowLabels] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [colorMode, setColorMode] = useState<ColorMode>("status");
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelData, setPanelData] = useState<PanelData | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -241,9 +244,14 @@ const OperationalView = () => {
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <OperationalAreaTabs activeArea={activeArea} onAreaChange={setActiveArea} showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)} />
+          <OperationalAreaTabs
+            activeArea={activeArea} onAreaChange={setActiveArea}
+            showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)}
+            zoom={zoom} onZoomChange={setZoom}
+            colorMode={colorMode} onColorModeChange={setColorMode}
+          />
           <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-            <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} />
+            <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
           </div>
         </div>
       </div>

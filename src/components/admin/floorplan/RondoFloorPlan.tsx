@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { FloorPlanProps, TableData, TABLE_AREA_MAP } from "./types";
 import BillardTable from "./BillardTable";
 import RestaurantTable from "./RestaurantTable";
+import AreaPlaceholder from "./AreaPlaceholder";
 
 const DEFAULT_TABLES: Record<string, TableData> = {
   t10: { id: "t10", title: "Tisch 10", status: "free" },
@@ -24,24 +25,61 @@ const DEFAULT_TABLES: Record<string, TableData> = {
   b3:  { id: "b3",  title: "Billard 3", status: "free" },
 };
 
-const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabels = true }: FloorPlanProps) => {
+const AREA_INFO: Record<string, { title: string; desc: string; emoji: string; img?: string }> = {
+  fenster: {
+    title: "Restaurantbereich 75 Zoll",
+    desc: "Fensterbereich mit 75-Zoll Screens – gemütliche Atmosphäre für Essen & Sport",
+    emoji: "🪟",
+    img: "/images/fensterbereich.jpg",
+  },
+  billard: {
+    title: "Billard / Kicker / Dart",
+    desc: "8 Olio-Billardtische · 2 Leonhart-Tischkicker · 2 Löwen-Elektronik Darts",
+    emoji: "🎱",
+    img: "/images/billard-area.jpg",
+  },
+  vip: {
+    title: "VIP-Raum",
+    desc: "Privater Bereich für Gruppen ab 11 Personen mit eigenem Service",
+    emoji: "⭐",
+  },
+  podest: {
+    title: "Podest",
+    desc: "Erhöhter Bereich für bis zu 33 Gäste – ideal für größere Gruppen und Feiern",
+    emoji: "🔺",
+    img: "/images/podest.jpg",
+  },
+};
+
+const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
 
-  const isDimmed = (id: string) => {
-    if (!activeArea || activeArea === "all") return false;
-    return TABLE_AREA_MAP[id] !== activeArea;
-  };
+  // Show placeholder for areas that don't have SVG floor plans yet
+  const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
+  
+  if (showPlaceholder && activeArea) {
+    const info = AREA_INFO[activeArea];
+    if (info) {
+      return <AreaPlaceholder {...info} />;
+    }
+  }
 
   return (
     <div className="relative w-full h-full min-h-[400px]" style={{
       background: "radial-gradient(ellipse 50% 40% at 50% 35%, rgba(255,150,40,0.06) 0%, transparent 70%), #111111",
+      overflow: "auto",
     }}>
       <svg
         viewBox="0 0 1000 720"
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 w-full h-full"
-        style={{ fontFamily: "'DM Sans', sans-serif" }}
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          transform: `scale(${zoom})`,
+          transformOrigin: "center center",
+          transition: "transform 0.3s ease",
+        }}
       >
         <defs>
           <filter id="tableGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -53,7 +91,35 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          {/* Pulse animation for check-in */}
+          <filter id="pulseGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feFlood floodColor="#1e8a38" floodOpacity="0.6" result="color" />
+            <feComposite in="color" in2="blur" operator="in" result="glow" />
+            <feMerge>
+              <feMergeNode in="glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
+
+        <style>{`
+          @keyframes pulseRing {
+            0% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 0; transform: scale(1.4); }
+            100% { opacity: 0; transform: scale(1.4); }
+          }
+          .pulse-ring {
+            animation: pulseRing 2s ease-out infinite;
+          }
+          @keyframes statusFade {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+          }
+          .status-transition {
+            animation: statusFade 0.5s ease-out;
+          }
+        `}</style>
 
         {/* Room border */}
         <rect x={6} y={6} width={988} height={708} rx={5} fill="none" stroke="#222" strokeWidth={1.5} />
@@ -65,53 +131,53 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")}
           cx={80} cy={65} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t10")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── BILLARD 1 ─── */}
         <BillardTable id="b1" data={tables.b1} onClick={() => click("b1")}
           x={260} y={25} w={215} h={140}
-          dimmed={isDimmed("b1")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── BILLARD 2 ─── */}
         <BillardTable id="b2" data={tables.b2} onClick={() => click("b2")}
           x={500} y={25} w={215} h={140} strokeColor="#3a6adb" strokeWidth={4}
-          dimmed={isDimmed("b2")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── BILLARD 3 ─── */}
         <BillardTable id="b3" data={tables.b3} onClick={() => click("b3")}
           x={750} y={80} w={220} h={130}
           rotation={{ angle: -30, cx: 860, cy: 145 }}
-          dimmed={isDimmed("b3")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ MIDDLE ROW 1: 52, 53, 54 ═══ */}
         <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")}
           cx={180} cy={290} tw={50} th={34}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
-          dimmed={isDimmed("t52")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t53" data={tables.t53} onClick={() => click("t53")}
           cx={330} cy={290} tw={66} th={34}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
-          dimmed={isDimmed("t53")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t54" data={tables.t54} onClick={() => click("t54")}
           cx={520} cy={290} tw={90} th={40}
           seats={{ top: 3, right: 2, bottom: 3, left: 2 }}
-          dimmed={isDimmed("t54")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ MIDDLE ROW 2: 50, 59 ═══ */}
         <RestaurantTable id="t50" data={tables.t50} onClick={() => click("t50")}
           cx={330} cy={400} tw={50} th={34}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
-          dimmed={isDimmed("t50")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t59" data={tables.t59} onClick={() => click("t59")}
           cx={740} cy={400} tw={44} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t59")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── TABLE 30 ─── */}
         <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")}
           cx={80} cy={475} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t30")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── ENCLOSED RESTAURANT BOX ─── */}
         <rect x={320} y={475} width={650} height={230} rx={6}
@@ -121,37 +187,37 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")}
           cx={385} cy={525} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t61")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t60" data={tables.t60} onClick={() => click("t60")}
           cx={530} cy={525} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t60")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t67" data={tables.t67} onClick={() => click("t67")}
           cx={680} cy={525} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t67")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t66" data={tables.t66} onClick={() => click("t66")}
           cx={840} cy={525} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t66")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* BOX ROW 2 */}
         <RestaurantTable id="t62" data={tables.t62} onClick={() => click("t62")}
           cx={385} cy={645} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t62")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t63" data={tables.t63} onClick={() => click("t63")}
           cx={530} cy={645} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t63")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t64" data={tables.t64} onClick={() => click("t64")}
           cx={680} cy={645} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t64")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t65" data={tables.t65} onClick={() => click("t65")}
           cx={840} cy={645} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          dimmed={isDimmed("t65")} showLabels={showLabels} />
+          showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── RONDO LOGO BOX ─── */}
         <rect x={14} y={540} width={230} height={140} rx={6}

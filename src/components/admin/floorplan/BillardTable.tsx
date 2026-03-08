@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TableData, STATUS_FILLS } from "./types";
+import { TableData, STATUS_FILLS, TIME_SLOT_FILLS, getTimeSlot } from "./types";
 
 interface BillardTableProps {
   id: string;
@@ -14,13 +14,21 @@ interface BillardTableProps {
   strokeWidth?: number;
   dimmed?: boolean;
   showLabels?: boolean;
+  colorMode?: "status" | "timeSlot";
 }
 
-const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "#7a4e1a", strokeWidth = 5, dimmed = false, showLabels = true }: BillardTableProps) => {
+const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "#7a4e1a", strokeWidth = 5, dimmed = false, showLabels = true, colorMode = "status" }: BillardTableProps) => {
   const [hovered, setHovered] = useState(false);
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
-  const sc = isReserved ? "#3a6adb" : isPresent ? "#1e8a38" : strokeColor;
+  const isFree = data.status === "free";
+  const isBlocked = data.status === "blocked";
+
+  // Color mode
+  const useTimeSlot = colorMode === "timeSlot" && !isFree && !isBlocked;
+  const tsFill = useTimeSlot ? TIME_SLOT_FILLS[getTimeSlot(data.startTime)] : null;
+
+  const sc = tsFill ? tsFill.fill : isReserved ? "#3a6adb" : isPresent ? "#1e8a38" : strokeColor;
   const sw = isReserved ? 4 : strokeWidth;
 
   const cx = x + w / 2;
@@ -64,25 +72,49 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
         transition: "opacity 0.4s ease",
       }}
     >
+      {/* Pulse ring for "present" status */}
+      {isPresent && !dimmed && (
+        <>
+          <rect
+            className="pulse-ring"
+            x={x - 4} y={y - 4} width={w + 8} height={h + 8} rx={8}
+            fill="none" stroke="#1e8a38" strokeWidth={2}
+            style={{ transformOrigin: `${cx}px ${cy}px` }}
+          />
+          <rect
+            className="pulse-ring"
+            x={x - 8} y={y - 8} width={w + 16} height={h + 16} rx={10}
+            fill="none" stroke="#1e8a38" strokeWidth={1}
+            style={{ transformOrigin: `${cx}px ${cy}px`, animationDelay: "0.8s" }}
+          />
+        </>
+      )}
+
       {/* Shadow underneath */}
       {hovered && !dimmed && (
         <ellipse cx={cx} cy={y + h + 6} rx={w / 2 - 10} ry={8}
           fill="rgba(0,0,0,0.3)" />
       )}
 
-      {/* Outer frame with wood grain effect */}
+      {/* Outer frame */}
       <rect x={x} y={y} width={w} height={h} rx={6}
-        fill="#1c6e2a" stroke={hovered && !dimmed ? "rgba(255,255,255,0.4)" : sc}
+        fill={tsFill ? tsFill.fill : "#1c6e2a"}
+        stroke={hovered && !dimmed ? "rgba(255,255,255,0.4)" : sc}
         strokeWidth={hovered && !dimmed ? sw + 1 : sw}
-        filter={hovered && !dimmed ? "url(#tableGlow)" : undefined}
+        filter={hovered && !dimmed ? "url(#tableGlow)" : isPresent && !dimmed ? "url(#pulseGlow)" : undefined}
+        className={isPresent ? "status-transition" : undefined}
       />
       {/* Wood border inner highlight */}
       <rect x={x + 2} y={y + 2} width={w - 4} height={4} rx={2}
         fill="rgba(255,255,255,0.06)" />
 
       {/* Felt */}
-      <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={4} fill="#1e7830" opacity={0.6} />
-      {isReserved && <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={4} fill="rgba(58,106,219,0.06)" />}
+      {!tsFill && (
+        <>
+          <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={4} fill="#1e7830" opacity={0.6} />
+          {isReserved && <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={4} fill="rgba(58,106,219,0.06)" />}
+        </>
+      )}
 
       {/* Pockets */}
       {pockets.map((p, i) => (
@@ -95,8 +127,8 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
       {/* Center line */}
       <line x1={cx} y1={y + 5} x2={cx} y2={y + h - 4} stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
 
-      {/* Balls with subtle highlights */}
-      {balls.map((b, i) => (
+      {/* Balls */}
+      {!tsFill && balls.map((b, i) => (
         <g key={i}>
           <circle cx={b.bx} cy={b.by} r={b.r} fill={b.color} opacity={b.op} />
           <circle cx={b.bx - 1} cy={b.by - 2} r={b.r * 0.35} fill="rgba(255,255,255,0.3)" opacity={b.op} />

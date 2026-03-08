@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TableData, STATUS_FILLS } from "./types";
+import { TableData, STATUS_FILLS, TIME_SLOT_FILLS, getTimeSlot } from "./types";
 
 interface RestaurantTableProps {
   id: string;
@@ -12,14 +12,22 @@ interface RestaurantTableProps {
   seats: { top: number; right: number; bottom: number; left: number };
   dimmed?: boolean;
   showLabels?: boolean;
+  colorMode?: "status" | "timeSlot";
 }
 
-const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = false, showLabels = true }: RestaurantTableProps) => {
+const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = false, showLabels = true, colorMode = "status" }: RestaurantTableProps) => {
   const [hovered, setHovered] = useState(false);
   const s = STATUS_FILLS[data.status] || STATUS_FILLS.free;
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
   const isBlocked = data.status === "blocked";
+  const isFree = data.status === "free";
+
+  // Color mode override
+  const useTimeSlot = colorMode === "timeSlot" && !isFree && !isBlocked;
+  const tsFill = useTimeSlot ? TIME_SLOT_FILLS[getTimeSlot(data.startTime)] : null;
+  const fillColor = tsFill ? tsFill.fill : s.fill;
+  const numColor = tsFill ? tsFill.numColor : s.numColor;
 
   const cW = 12;
   const cD = 8;
@@ -70,7 +78,6 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = fa
   const groupOpacity = dimmed ? 0.2 : 1;
   const scale = hovered && !dimmed ? 1.06 : 1;
 
-  // Tooltip content
   const hasInfo = data.guest || data.startTime || data.pax;
 
   return (
@@ -87,27 +94,49 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = fa
         transition: "opacity 0.4s ease, transform 0.2s ease",
       }}
     >
+      {/* Pulse ring for "present" status (check-in animation) */}
+      {isPresent && !dimmed && (
+        <>
+          <rect
+            className="pulse-ring"
+            x={cx - halfW - 6} y={cy - halfH - 6}
+            width={tableW + 12} height={tableH + 12} rx={8}
+            fill="none" stroke="#1e8a38" strokeWidth={2}
+            style={{ transformOrigin: `${cx}px ${cy}px` }}
+          />
+          <rect
+            className="pulse-ring"
+            x={cx - halfW - 10} y={cy - halfH - 10}
+            width={tableW + 20} height={tableH + 20} rx={10}
+            fill="none" stroke="#1e8a38" strokeWidth={1}
+            style={{ transformOrigin: `${cx}px ${cy}px`, animationDelay: "0.8s" }}
+          />
+        </>
+      )}
+
       {/* Drop shadow */}
       {hovered && !dimmed && (
         <ellipse cx={cx} cy={cy + halfH + 2} rx={halfW + 4} ry={6}
           fill="rgba(0,0,0,0.25)" />
       )}
 
-      {/* Chair stubs with gradient */}
+      {/* Chair stubs */}
       {allChairs.map((c, i) => (
         <rect key={i} x={c.x} y={c.y} width={c.w} height={c.h} rx={cR}
-          fill={s.fill} opacity={s.chairOpacity}
+          fill={fillColor} opacity={s.chairOpacity}
           stroke={strokeCol} strokeWidth={0.5}
+          className={isPresent ? "status-transition" : undefined}
         />
       ))}
 
       {/* Table body */}
       <rect
         x={cx - halfW} y={cy - halfH} width={tableW} height={tableH} rx={5}
-        fill={s.fill} opacity={s.opacity}
+        fill={fillColor} opacity={s.opacity}
         stroke={hovered && !dimmed ? "rgba(255,255,255,0.5)" : strokeCol}
         strokeWidth={hovered && !dimmed ? 1.8 : 1.2}
-        filter={hovered && !dimmed ? "url(#tableGlow)" : undefined}
+        filter={hovered && !dimmed ? "url(#tableGlow)" : isPresent && !dimmed ? "url(#pulseGlow)" : undefined}
+        className={isPresent ? "status-transition" : undefined}
       />
 
       {/* Inner highlight for depth */}
@@ -118,7 +147,7 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = fa
 
       {/* Table number */}
       <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central"
-        fontSize={12} fontWeight={700} fill={s.numColor}
+        fontSize={12} fontWeight={700} fill={numColor}
         fontFamily="'DM Sans', sans-serif">
         {num}
       </text>
