@@ -12,6 +12,7 @@ import {
   StatsPanel,
   NotificationsPanel,
 } from "@/components/admin/operational";
+import type { ColorMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { Toaster } from "sonner";
 
