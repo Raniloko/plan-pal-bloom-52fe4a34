@@ -30,6 +30,7 @@ const OCCASIONS = [
 ];
 
 const BookingForm = ({ tableLabel, onSuccess, onCancel }: Props) => {
+  const { getTimesForDate } = useOpeningHours();
   const [guest, setGuest] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
