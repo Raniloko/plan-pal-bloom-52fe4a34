@@ -325,6 +325,15 @@ Deno.serve(async (req) => {
         return ok({ saved: true });
       }
 
+      case "fetch_activity_log": {
+        const { data: logData } = await supabase
+          .from("activity_log")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(100);
+        return ok({ entries: logData || [] });
+      }
+
       case "fetch_notifications": {
         const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50);
         return ok({ notifications: data || [] });
