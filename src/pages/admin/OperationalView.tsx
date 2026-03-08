@@ -182,12 +182,10 @@ const OperationalView = () => {
       if (!unit) return;
       const name = unit.name.toLowerCase();
       let fpId = "";
-      if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
+      if (name.startsWith("tisch") && unit.area === "billard") fpId = "bt" + name.replace("tisch ", "").trim();
+      else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
       else if (name.startsWith("billard")) fpId = "b" + name.replace("billard ", "").trim();
       if (!fpId) return;
-      const now = new Date();
-      const [h, m] = r.reservation_time.split(":").map(Number);
-      const start = new Date(dateStr); start.setHours(h, m);
       const isPresent = r.status === "checked_in";
       map[fpId] = {
         id: fpId, title: unit.name,
