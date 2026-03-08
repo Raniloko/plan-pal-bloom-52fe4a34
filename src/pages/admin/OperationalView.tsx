@@ -12,25 +12,6 @@ import {
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { Toaster } from "sonner";
 
-const SEED_ROWS: ResRow[] = [
-  { id: "s1", time: "19:00", offset: "01:00", guests: 4, name: ". Jana", tableRef: "1. / 3", icon: "ob", highlighted: false },
-  { id: "s2", time: "19:15", offset: "01:15", guests: 4, name: "Michelik", tableRef: "1. / 2", icon: "none", highlighted: false },
-  { id: "s3", time: "19:30", offset: "01:30", guests: 2, name: "Licata, Francesco", tableRef: "3. / 64", icon: "double", highlighted: true },
-  { id: "s4", time: "19:30", offset: "01:30", guests: 3, name: "Lenga, Dennis", tableRef: "1. / 6", icon: "double", highlighted: true },
-  { id: "s5", time: "20:00", offset: "02:00", guests: 4, name: "Gutsch, Fabian", tableRef: "3. / 65", icon: "chkps", highlighted: false },
-  { id: "s6", time: "20:00", offset: "02:00", guests: 4, name: "Hantal", tableRef: "1. / 1", icon: "single", highlighted: false },
-  { id: "s7", time: "20:00", offset: "02:00", guests: 4, name: "Kewelo", tableRef: "1. / 8", icon: "none", highlighted: false },
-];
-
-const SEED_TABLES: Record<string, TableData> = {
-  b2: { id: "b2", title: "Billard 2", status: "reserved", guest: "Michelik", startTime: "19:15", endTime: "21:15", pax: 4 },
-  t61: { id: "t61", title: "Tisch 61", status: "reserved", guest: "Guido", startTime: "01:30", endTime: "03:00", pax: 2 },
-  t62: { id: "t62", title: "Tisch 62", status: "reserved", guest: "Lentino", startTime: "19:30", endTime: "21:00", pax: 3 },
-  t63: { id: "t63", title: "Tisch 63", status: "reserved", guest: "Santos d.", startTime: "20:00", endTime: "22:00", pax: 4 },
-  t64: { id: "t64", title: "Tisch 64", status: "present", guest: "Licata", startTime: "19:30", endTime: "21:30", pax: 2 },
-  t65: { id: "t65", title: "Tisch 65", status: "present", guest: "Gutsch", startTime: "20:00", endTime: "22:00", pax: 4 },
-};
-
 interface Reservation {
   id: string;
   customer_name: string;
@@ -54,6 +35,19 @@ interface Unit {
   notes: string | null;
 }
 
+interface WaitlistEntry {
+  id: string;
+  guest_name: string;
+  guest_email: string;
+  guest_phone: string;
+  desired_date: string;
+  desired_time: string;
+  area: string;
+  status: string | null;
+  created_at: string | null;
+  notified_at: string | null;
+}
+
 const OperationalView = () => {
   const [activeArea, setActiveArea] = useState("billard");
   const [panelOpen, setPanelOpen] = useState(false);
@@ -61,16 +55,26 @@ const OperationalView = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
   const load = useCallback(async () => {
-    const [r, u] = await Promise.all([
-      supabase.from("reservations").select("*").eq("reservation_date", today).neq("status", "cancelled"),
-      supabase.from("units").select("*").order("position_index"),
-    ]);
-    setReservations((r.data as Reservation[]) || []);
-    setUnits((u.data as Unit[]) || []);
+    try {
+      const res = await supabase.functions.invoke("admin-actions", {
+        body: { action: "fetch_dashboard", date: today },
+      });
+      if (res.error) throw res.error;
+      const d = res.data;
+      if (d?.error) { console.error("Dashboard fetch error:", d.error); return; }
+      setReservations((d.reservations as Reservation[]) || []);
+      setUnits((d.units as Unit[]) || []);
+      setWaitlist((d.waitlist as WaitlistEntry[]) || []);
+    } catch (err) {
+      console.error("Failed to load dashboard:", err);
+    }
+    setLoading(false);
   }, [today]);
 
   useEffect(() => {
@@ -79,12 +83,12 @@ const OperationalView = () => {
       .channel("op-view")
       .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "units" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "waitlist" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
   const rows: ResRow[] = useMemo(() => {
-    if (reservations.length === 0) return SEED_ROWS;
     return reservations
       .filter(r => r.status !== "cancelled")
       .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
@@ -115,7 +119,6 @@ const OperationalView = () => {
   const totalGuests = rows.reduce((s, r) => s + r.guests, 0);
 
   const floorTables = useMemo(() => {
-    if (reservations.length === 0) return SEED_TABLES;
     const map: Record<string, TableData> = {};
     reservations.forEach(r => {
       if (!r.unit_id) return;
@@ -185,6 +188,17 @@ const OperationalView = () => {
 
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
+  if (loading) {
+    return (
+      <div style={{
+        position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "'DM Sans', sans-serif", background: "#f2f2f2", color: "#666", fontSize: 14,
+      }}>
+        Dashboard wird geladen...
+      </div>
+    );
+  }
+
   return (
     <div style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
@@ -198,6 +212,8 @@ const OperationalView = () => {
           selectedRowId={selectedRowId}
           onRowClick={handleRowClick}
           onNewClick={handleNewReservation}
+          waitlist={waitlist}
+          onRefreshWaitlist={load}
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState } from "react";
 import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -33,43 +33,16 @@ interface Props {
   selectedRowId: string | null;
   onRowClick: (row: ResRow) => void;
   onNewClick: () => void;
+  waitlist: WaitlistEntry[];
+  onRefreshWaitlist: () => void;
 }
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick }: Props) => {
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, waitlist, onRefreshWaitlist }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
-  const [loadingWait, setLoadingWait] = useState(false);
   const [notifying, setNotifying] = useState<string | null>(null);
-
-  const loadWaitlist = useCallback(async () => {
-    setLoadingWait(true);
-    const { data } = await supabase
-      .from("waitlist")
-      .select("*")
-      .in("status", ["waiting", "notified"])
-      .order("desired_date")
-      .order("desired_time");
-    setWaitlist((data as WaitlistEntry[]) || []);
-    setLoadingWait(false);
-  }, []);
-
-  useEffect(() => {
-    if (resTab === "wait") loadWaitlist();
-  }, [resTab, loadWaitlist]);
-
-  // Realtime for waitlist
-  useEffect(() => {
-    const ch = supabase
-      .channel("waitlist-panel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "waitlist" }, () => {
-        if (resTab === "wait") loadWaitlist();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [resTab, loadWaitlist]);
 
   const handleNotify = async (entry: WaitlistEntry) => {
     setNotifying(entry.id);
@@ -80,7 +53,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
       if (res.error) throw res.error;
       if (res.data?.error) throw new Error(res.data.error);
       toast.success(`Benachrichtigung an ${entry.guest_name} gesendet`);
-      loadWaitlist();
+      onRefreshWaitlist();
     } catch (e: any) {
       toast.error(e?.message || "Fehler beim Benachrichtigen");
     }
@@ -239,9 +212,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
 
           {/* Waitlist rows */}
           <div style={{ flex: 1, overflowY: "auto" }}>
-            {loadingWait ? (
-              <div style={{ padding: "48px 0", textAlign: "center", color: "#999", fontSize: 13 }}>Laden...</div>
-            ) : waitlist.length === 0 ? (
+            {waitlist.length === 0 ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
                 <Clock size={32} color="#ddd" style={{ marginBottom: 8 }} />
                 <span style={{ fontSize: 14 }}>Warteliste ist leer</span>
