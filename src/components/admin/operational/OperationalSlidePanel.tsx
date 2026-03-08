@@ -26,6 +26,7 @@ interface UnitOption {
   id: string;
   name: string;
   area: string;
+  status: string | null;
 }
 
 interface Props {
@@ -71,8 +72,13 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   // Load available units for assignment dropdown
   useEffect(() => {
     if (!open) return;
-    supabase.from("units").select("id, name, area").order("position_index").then(({ data: u }) => {
-      setUnits((u as UnitOption[]) || []);
+    supabase.from("units").select("id, name, area, status").order("position_index").then(({ data: u }) => {
+      // Filter out kicker and dart units
+      const filtered = ((u as UnitOption[]) || []).filter(unit => {
+        const lower = unit.name.toLowerCase();
+        return !lower.startsWith("kicker") && !lower.startsWith("dart");
+      });
+      setUnits(filtered);
     });
   }, [open]);
 
@@ -270,9 +276,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                     <option value="">— Kein Tisch zugewiesen —</option>
                     {Object.entries(groupedUnits).map(([area, areaUnits]) => (
                       <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
-                        {areaUnits.map(u => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                        ))}
+                        {areaUnits.map(u => {
+                          const statusIcon = u.status === "occupied" ? "🔴" : u.status === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                          return (
+                            <option key={u.id} value={u.id}>{statusIcon} {u.name}</option>
+                          );
+                        })}
                       </optgroup>
                     ))}
                   </select>
