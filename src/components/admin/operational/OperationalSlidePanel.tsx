@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
@@ -29,12 +29,19 @@ interface UnitOption {
   status: string | null;
 }
 
+interface ReservationRef {
+  id: string;
+  unit_id: string | null;
+  status: string;
+}
+
 interface Props {
   open: boolean;
   data: PanelData | null;
   onClose: () => void;
   onBookNew: () => void;
   onRefresh: () => void;
+  reservations?: ReservationRef[];
 }
 
 const STATUS_PILL: Record<string, React.CSSProperties> = {
@@ -51,7 +58,7 @@ const adminAction = async (body: Record<string, unknown>) => {
   return res.data;
 };
 
-export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh }: Props) => {
+export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [] }: Props) => {
   const [notes, setNotes] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
   const [mode, setMode] = useState<"view" | "book">("view");
@@ -105,6 +112,21 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       onRefresh();
     } catch (e: any) {
       toast.error(e?.message || "Fehler beim Einchecken");
+    }
+    setSaving(false);
+  };
+
+  const handleCheckOut = async () => {
+    if (!data?.reservationId) return;
+    if (!window.confirm(`${data.guest} wirklich auschecken?`)) return;
+    setSaving(true);
+    try {
+      await adminAction({ action: "check_out", reservation_id: data.reservationId });
+      toast.success("Gast ausgecheckt – Tisch ist wieder frei");
+      onRefresh();
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler beim Auschecken");
     }
     setSaving(false);
   };
@@ -177,6 +199,16 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     background: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
   };
+
+  // Build unit status map from reservations
+  const unitStatusMap = new Map<string, "occupied" | "reserved">();
+  reservations.forEach(r => {
+    if (!r.unit_id) return;
+    if (r.status === "checked_in") unitStatusMap.set(r.unit_id, "occupied");
+    else if (r.status === "confirmed" || r.status === "pending") {
+      if (!unitStatusMap.has(r.unit_id)) unitStatusMap.set(r.unit_id, "reserved");
+    }
+  });
 
   // Group units by area for dropdown
   const groupedUnits = units.reduce<Record<string, UnitOption[]>>((acc, u) => {
@@ -277,7 +309,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                     {Object.entries(groupedUnits).map(([area, areaUnits]) => (
                       <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
                         {areaUnits.map(u => {
-                          const statusIcon = u.status === "occupied" ? "🔴" : u.status === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                          const resStatus = unitStatusMap.get(u.id);
+                          const statusIcon = resStatus === "occupied" ? "🔴" : resStatus === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
                           return (
                             <option key={u.id} value={u.id}>{statusIcon} {u.name}</option>
                           );
@@ -302,15 +335,22 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
               {/* Quick actions */}
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                <button onClick={handleCheckIn} disabled={saving} style={{
-                  ...btnBase,
-                  border: `1px solid ${checkedIn ? "#2a7a2a" : "#e0e0e0"}`,
-                  background: checkedIn ? "#e8f5e8" : "#fff",
-                  color: checkedIn ? "#2a7a2a" : "#777",
-                }}>
-                  {checkedIn ? <Check size={11} /> : <LogIn size={11} />}
-                  {checkedIn ? "Auschecken" : "Einchecken"}
-                </button>
+                {!checkedIn ? (
+                  <button onClick={handleCheckIn} disabled={saving} style={{
+                    ...btnBase, color: "#777",
+                  }}>
+                    <LogIn size={11} /> Einchecken
+                  </button>
+                ) : (
+                  <button onClick={handleCheckOut} disabled={saving} style={{
+                    ...btnBase,
+                    border: "1px solid #cc2222",
+                    background: "#fde8e8",
+                    color: "#cc2222",
+                  }}>
+                    <LogOut size={11} /> Gast geht
+                  </button>
+                )}
                 {data.unitId && (
                   <button onClick={handleBlock} disabled={saving} style={{
                     ...btnBase,

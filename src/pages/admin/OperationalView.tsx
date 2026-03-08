@@ -182,12 +182,10 @@ const OperationalView = () => {
       if (!unit) return;
       const name = unit.name.toLowerCase();
       let fpId = "";
-      if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
+      if (name.startsWith("tisch") && unit.area === "billard") fpId = "bt" + name.replace("tisch ", "").trim();
+      else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
       else if (name.startsWith("billard")) fpId = "b" + name.replace("billard ", "").trim();
       if (!fpId) return;
-      const now = new Date();
-      const [h, m] = r.reservation_time.split(":").map(Number);
-      const start = new Date(dateStr); start.setHours(h, m);
       const isPresent = r.status === "checked_in";
       map[fpId] = {
         id: fpId, title: unit.name,
@@ -200,7 +198,8 @@ const OperationalView = () => {
       if (u.status !== "blocked") return;
       const name = u.name.toLowerCase();
       let fpId = "";
-      if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
+      if (name.startsWith("tisch") && u.area === "billard") fpId = "bt" + name.replace("tisch ", "").trim();
+      else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
       else if (name.startsWith("billard")) fpId = "b" + name.replace("billard ", "").trim();
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
@@ -311,6 +310,7 @@ const OperationalView = () => {
         onClose={closePanel}
         onBookNew={handleNewReservation}
         onRefresh={load}
+        reservations={reservations.map(r => ({ id: r.id, unit_id: r.unit_id, status: r.status }))}
       />
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
