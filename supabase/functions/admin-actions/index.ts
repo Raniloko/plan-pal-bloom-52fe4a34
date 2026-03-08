@@ -212,6 +212,7 @@ Deno.serve(async (req) => {
           .update({ unit_id: unit_id || null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, "assign_unit", "reservation", reservation_id, unit_id ? `Unit: ${unit_id}` : "Zuweisung entfernt");
         return ok({ assigned: true });
       }
 
