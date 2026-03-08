@@ -265,6 +265,24 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             />
           ) : data?.guest ? (
             <div>
+              {/* Table timeline - upcoming reservations for this unit */}
+              {data.unitId && (() => {
+                const tableRes = reservations
+                  .filter(r => r.unit_id === data.unitId && r.customer_name && r.reservation_time)
+                  .map(r => ({
+                    id: r.id,
+                    customer_name: r.customer_name!,
+                    reservation_time: r.reservation_time!,
+                    guest_count: r.guest_count || 0,
+                    status: r.status,
+                  }));
+                return tableRes.length > 0 ? (
+                  <TableTimeline
+                    reservations={tableRes}
+                    currentTime={format(new Date(), "HH:mm")}
+                  />
+                ) : null;
+              })()}
               {/* Reservation card */}
               <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14, marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
