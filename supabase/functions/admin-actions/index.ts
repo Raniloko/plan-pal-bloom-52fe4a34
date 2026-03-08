@@ -94,12 +94,12 @@ Deno.serve(async (req) => {
       case "check_out": {
         const { reservation_id } = body;
         if (!reservation_id) return error("reservation_id required", 400);
-        // Set status to checked_out and remove unit assignment
         const { error: err } = await supabase
           .from("reservations")
           .update({ status: "checked_out", unit_id: null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
+        await logActivity(supabase, "check_out", "reservation", reservation_id);
         return ok({ status: "checked_out" });
       }
 
