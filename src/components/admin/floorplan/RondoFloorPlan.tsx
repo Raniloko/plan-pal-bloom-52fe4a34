@@ -26,28 +26,19 @@ const DEFAULT_TABLES: Record<string, TableData> = {
   b3:  { id: "b3",  title: "Billard 3", status: "free" },
 };
 
-const AREA_INFO: Record<string, { title: string; desc: string; emoji: string; img?: string }> = {
-  fenster: {
-    title: "Restaurantbereich 75 Zoll",
-    desc: "Fensterbereich mit 75-Zoll Screens – gemütliche Atmosphäre für Essen & Sport",
-    emoji: "🪟",
-    img: "/images/fensterbereich.jpg",
-  },
+const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> = {
   billard: {
     title: "Billard / Kicker / Dart",
-    desc: "8 Olio-Billardtische · 2 Leonhart-Tischkicker · 2 Löwen-Elektronik Darts",
-    emoji: "🎱",
+    desc: "8 Olio-Billardtische, 2 Leonhart-Tischkicker, 2 Löwen-Elektronik Darts",
     img: "/images/billard-area.jpg",
   },
   vip: {
     title: "VIP-Raum",
     desc: "Privater Bereich für Gruppen ab 11 Personen mit eigenem Service",
-    emoji: "⭐",
   },
   podest: {
     title: "Podest",
     desc: "Erhöhter Bereich für bis zu 33 Gäste – ideal für größere Gruppen und Feiern",
-    emoji: "🔺",
     img: "/images/podest.jpg",
   },
 };
