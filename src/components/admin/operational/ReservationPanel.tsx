@@ -12,6 +12,8 @@ export interface ResRow {
   tableRef: string;
   icon: "ob" | "double" | "single" | "chkps" | "none";
   highlighted: boolean;
+  status: "confirmed" | "pending" | "checked_in" | "checked_out";
+  overdue: boolean;
 }
 
 interface WaitlistEntry {
