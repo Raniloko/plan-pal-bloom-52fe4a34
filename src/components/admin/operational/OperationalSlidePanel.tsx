@@ -19,6 +19,7 @@ export interface PanelData {
   unitNotes?: string;
   customerEmail?: string;
   customerPhone?: string;
+  zone?: string;
 }
 
 interface UnitOption {
