@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -198,8 +200,21 @@ Deno.serve(async (req) => {
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const cancelUrl = `${SUPABASE_URL}/functions/v1/cancel-reservation?id=${reservation.id}`;
-    const modifyUrl = `${SUPABASE_URL}/functions/v1/modify-reservation?id=${reservation.id}`;
+    
+    // Fetch cancellation_token for secure links
+    let cancellationToken = "";
+    if (!is_cancellation) {
+      const supabase = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: tokenData } = await supabase
+        .from("reservations")
+        .select("cancellation_token")
+        .eq("id", reservation.id)
+        .single();
+      cancellationToken = tokenData?.cancellation_token || "";
+    }
+    
+    const cancelUrl = `${SUPABASE_URL}/functions/v1/cancel-reservation?id=${reservation.id}&token=${cancellationToken}`;
+    const modifyUrl = `${SUPABASE_URL}/functions/v1/modify-reservation?id=${reservation.id}&token=${cancellationToken}`;
 
     let html: string;
     let subjectPrefix: string;

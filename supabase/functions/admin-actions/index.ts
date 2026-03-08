@@ -12,13 +12,50 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Parse body first to check if action is public
     const body = await req.json();
     const { action } = body;
+
+    // Public actions that don't require auth
+    const PUBLIC_ACTIONS = ["check_login_attempts", "log_login_attempt", "get_settings"];
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    if (!PUBLIC_ACTIONS.includes(action)) {
+      // Auth check: verify the caller is an authenticated admin
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return error("Nicht autorisiert", 401);
+      }
+
+      const anonClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims) {
+        return error("Nicht autorisiert", 401);
+      }
+
+      const userId = claimsData.claims.sub as string;
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .single();
+
+      if (!roleData) {
+        return error("Keine Admin-Berechtigung", 403);
+      }
+    }
 
     switch (action) {
       case "fetch_dashboard": {

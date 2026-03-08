@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.admin-login]
 verify_jwt = false
+
+[functions.admin-actions]
+verify_jwt = false
+
+[functions.modify-reservation]
+verify_jwt = false

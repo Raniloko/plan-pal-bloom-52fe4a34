@@ -86,9 +86,16 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
+  const token = url.searchParams.get("token");
 
-  if (!id) {
-    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Keine Reservierungs-ID angegeben.</p></div>`);
+  if (!id || !token) {
+    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Fehler</h2><p>Ungültiger Link.</p></div>`);
+  }
+
+  // Verify cancellation_token matches
+  const { data: tokenCheck } = await supabase.from("reservations").select("cancellation_token").eq("id", id).single();
+  if (!tokenCheck || tokenCheck.cancellation_token !== token) {
+    return styledPage("Fehler", `<div class="msg"><div class="icon icon-err">✕</div><h2>Zugriff verweigert</h2><p>Dieser Link ist ungültig oder abgelaufen.</p></div>`);
   }
 
   if (req.method === "GET") {
@@ -111,7 +118,7 @@ Deno.serve(async (req) => {
         <span>Aktuelle Reservierung</span>
         <p>${formatDate(r.reservation_date)} · ${r.reservation_time} Uhr · ${r.guest_count} Pers. · ${ZONE_LABELS[r.zone] || r.zone}</p>
       </div>
-      <form method="POST" action="?id=${id}">
+      <form method="POST" action="?id=${id}&token=${token}">
         <div class="grid2">
           <div><label>Datum</label><input type="date" name="date" value="${r.reservation_date}" min="${new Date().toISOString().split("T")[0]}" required></div>
           <div><label>Uhrzeit</label><select name="time" required>${timeOptions}</select></div>
