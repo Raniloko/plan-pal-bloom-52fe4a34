@@ -41,7 +41,7 @@ const MEALS = ["Mittagessen", "Abendessen", "Spätabend"];
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenSettings, onOpenStats, onOpenNotifications,
+  onOpenSettings, onOpenStats, onOpenNotifications, onOpenActivityLog,
 }: Props) => {
   const [time, setTime] = useState("");
   const [mealIndex, setMealIndex] = useState(1);
