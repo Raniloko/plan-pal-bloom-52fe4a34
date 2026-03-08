@@ -565,7 +565,11 @@ const RondoReservationSystem = () => {
               <p><strong>Uhrzeit:</strong> {data.time} Uhr</p>
               <p><strong>Personen:</strong> {data.guests}</p>
               <p><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
-              <p><strong>Anlass:</strong> {ANLAESSE.find(a => a.value === data.anlass)?.label}</p>
+              <p><strong>Anlass:</strong> {data.anlass.map(a => {
+                const found = ANLAESSE.find(x => x.value === a);
+                if (a === "sonstiges" && data.sonstigesText.trim()) return `Sonstiges: ${data.sonstigesText.trim()}`;
+                return found?.label ?? a;
+              }).join(", ")}</p>
               <p><strong>Name:</strong> {data.name}</p>
               <p><strong>E-Mail:</strong> {data.email}</p>
               <p><strong>Telefon:</strong> {data.phone}</p>
