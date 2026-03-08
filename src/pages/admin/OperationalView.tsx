@@ -241,7 +241,7 @@ const OperationalView = () => {
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <OperationalAreaTabs activeArea={activeArea} onAreaChange={setActiveArea} />
+          <OperationalAreaTabs activeArea={activeArea} onAreaChange={setActiveArea} showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)} />
           <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
             <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} />
           </div>
