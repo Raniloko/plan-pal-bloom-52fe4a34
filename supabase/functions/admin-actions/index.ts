@@ -6,6 +6,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// deno-lint-ignore no-explicit-any
+async function logActivity(sb: any, action: string, entityType: string, entityId?: string, details?: string) {
+  try {
+    await sb.from("activity_log").insert({ action, entity_type: entityType, entity_id: entityId || null, details: details || null });
+  } catch (e) { console.error("Activity log (non-blocking):", e); }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
