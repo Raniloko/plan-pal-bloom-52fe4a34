@@ -52,14 +52,14 @@ export function useOpeningHours() {
   }, []);
 
   const getTimesForDate = useMemo(() => {
-    const FULL_DAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
     return (dateStr: string): string[] => {
       if (!hours || !dateStr) return DEFAULT_TIMES;
 
       const date = new Date(dateStr + "T00:00:00");
       const jsDay = date.getDay(); // 0=Sun
       const idx = jsDay === 0 ? 6 : jsDay - 1;
-      const dayConfig = hours[DAY_KEYS[idx]] || hours[FULL_DAY_KEYS[idx]];
+      const dayKey = DAY_KEYS[idx];
+      const dayConfig = hours[dayKey];
 
       if (!dayConfig || dayConfig.closed) return [];
       if (!dayConfig.open || !dayConfig.close) return DEFAULT_TIMES;
