@@ -103,29 +103,39 @@ const OperationalView = () => {
   }, [load]);
 
   const rows: ResRow[] = useMemo(() => {
+    const now = new Date();
     return reservations
-      .filter(r => r.status !== "cancelled")
+      .filter(r => r.status !== "cancelled" && r.status !== "checked_out")
       .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
       .map(r => {
         const unit = r.unit_id ? units.find(u => u.id === r.unit_id) : undefined;
-        const now = new Date();
         const [h, m] = r.reservation_time.split(":").map(Number);
         const start = new Date(dateStr); start.setHours(h, m);
-      const isPresent = r.status === "checked_in";
+        const isCheckedIn = r.status === "checked_in";
+        const minutesOverdue = (now.getTime() - start.getTime()) / 60000;
+        const isOverdue = !isCheckedIn && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
+
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
-        else if (r.status === "checked_in") icon = "double";
-        else if (isPresent) icon = "double";
+        else if (isCheckedIn) icon = "double";
         else if (r.status === "confirmed") icon = "single";
+
+        let offset = "";
+        if (isOverdue) {
+          offset = `+${Math.floor(minutesOverdue)} Min`;
+        }
+
         return {
           id: r.id,
           time: r.reservation_time.slice(0, 5),
-          offset: "",
+          offset,
           guests: r.guest_count,
           name: r.customer_name,
           tableRef: unit ? `${unit.area.slice(0, 2)}. / ${unit.name.replace(/\D/g, "")}` : r.zone,
           icon,
-          highlighted: isPresent,
+          highlighted: isCheckedIn || isOverdue,
+          status: r.status as ResRow["status"],
+          overdue: isOverdue,
         };
       });
   }, [reservations, units, dateStr]);
