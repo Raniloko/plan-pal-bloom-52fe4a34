@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban } from "lucide-react";
+import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban, Filter } from "lucide-react";
+import { LegendDialog } from "./LegendDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
