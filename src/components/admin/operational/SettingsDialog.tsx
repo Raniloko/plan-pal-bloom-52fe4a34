@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Clock, UtensilsCrossed, Users, Save } from "lucide-react";
+import { X, Clock, Users, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -12,24 +12,12 @@ interface OpeningHours {
   [day: string]: { open: string; close: string; closed: boolean };
 }
 
-interface MealSlot {
-  name: string;
-  start: string;
-  end: string;
-}
-
 const DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 const DEFAULT_HOURS: OpeningHours = Object.fromEntries(
   DAY_KEYS.map(d => [d, { open: "17:00", close: "02:00", closed: false }])
 );
-
-const DEFAULT_MEALS: MealSlot[] = [
-  { name: "Mittagessen", start: "11:30", end: "14:30" },
-  { name: "Abendessen", start: "17:00", end: "22:00" },
-  { name: "Spätabend", start: "22:00", end: "02:00" },
-];
 
 const DEFAULT_DURATION = 120;
 const DEFAULT_AUTO_CANCEL = 15;
@@ -40,9 +28,8 @@ const inputStyle: React.CSSProperties = {
 };
 
 export const SettingsDialog = ({ open, onClose }: Props) => {
-  const [tab, setTab] = useState<"hours" | "meals" | "capacity">("hours");
+  const [tab, setTab] = useState<"hours" | "capacity">("hours");
   const [hours, setHours] = useState<OpeningHours>(DEFAULT_HOURS);
-  const [meals, setMeals] = useState<MealSlot[]>(DEFAULT_MEALS);
   const [duration, setDuration] = useState(DEFAULT_DURATION);
   const [autoCancelMin, setAutoCancelMin] = useState(DEFAULT_AUTO_CANCEL);
   const [saving, setSaving] = useState(false);
@@ -57,7 +44,6 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
         if (res.data?.settings) {
           const s = res.data.settings;
           if (s.opening_hours) setHours(s.opening_hours);
-          if (s.meal_slots) setMeals(s.meal_slots);
           if (s.reservation_duration) setDuration(Number(s.reservation_duration) || DEFAULT_DURATION);
           if (s.auto_cancel_minutes) setAutoCancelMin(Number(s.auto_cancel_minutes) || DEFAULT_AUTO_CANCEL);
         }
@@ -69,7 +55,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
     setSaving(true);
     try {
       await supabase.functions.invoke("admin-actions", {
-        body: { action: "save_settings", settings: { opening_hours: hours, meal_slots: meals, reservation_duration: duration, auto_cancel_minutes: autoCancelMin } },
+        body: { action: "save_settings", settings: { opening_hours: hours, reservation_duration: duration, auto_cancel_minutes: autoCancelMin } },
       });
       toast.success("Einstellungen gespeichert");
       onClose();
@@ -83,7 +69,6 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
 
   const tabs = [
     { key: "hours" as const, label: "Öffnungszeiten", icon: <Clock size={14} /> },
-    { key: "meals" as const, label: "Mahlzeiten", icon: <UtensilsCrossed size={14} /> },
     { key: "capacity" as const, label: "Kapazitäten", icon: <Users size={14} /> },
   ];
 
@@ -96,13 +81,11 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
         borderRadius: 12, zIndex: 9999, display: "flex", flexDirection: "column",
         fontFamily: "'DM Sans', sans-serif", overflow: "hidden",
       }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #2a2a2a" }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Einstellungen</span>
           <button onClick={onClose} style={{ color: "#666", background: "none", border: "none", cursor: "pointer" }}><X size={18} /></button>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid #2a2a2a" }}>
           {tabs.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -117,7 +100,6 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           ))}
         </div>
 
-        {/* Content */}
         <div style={{ flex: 1, overflow: "auto", padding: 20 }}>
           {tab === "hours" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -140,71 +122,34 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
             </div>
           )}
 
-          {tab === "meals" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {meals.map((m, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "#1a1a1a", borderRadius: 8 }}>
-                  <input value={m.name} onChange={e => { const nm = [...meals]; nm[i] = { ...nm[i], name: e.target.value }; setMeals(nm); }}
-                    style={{ ...inputStyle, width: 140 }} placeholder="Name" />
-                  <input type="time" value={m.start} onChange={e => { const nm = [...meals]; nm[i] = { ...nm[i], start: e.target.value }; setMeals(nm); }} style={inputStyle} />
-                  <span style={{ color: "#555" }}>–</span>
-                  <input type="time" value={m.end} onChange={e => { const nm = [...meals]; nm[i] = { ...nm[i], end: e.target.value }; setMeals(nm); }} style={inputStyle} />
-                  <button onClick={() => setMeals(meals.filter((_, j) => j !== i))} style={{ color: "#f87171", background: "none", border: "none", cursor: "pointer", fontSize: 18 }}>×</button>
-                </div>
-              ))}
-              <button onClick={() => setMeals([...meals, { name: "", start: "12:00", end: "15:00" }])} style={{
-                padding: "8px 16px", fontSize: 13, color: "#4ade80", background: "transparent",
-                border: "1px dashed #333", borderRadius: 8, cursor: "pointer",
-              }}>
-                + Mahlzeit hinzufügen
-              </button>
-            </div>
-          )}
-
           {tab === "capacity" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Standard-Reservierungsdauer</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <select
-                    value={duration}
-                    onChange={e => setDuration(Number(e.target.value))}
-                    style={{ ...inputStyle, width: 160 }}
-                  >
+                  <select value={duration} onChange={e => setDuration(Number(e.target.value))} style={{ ...inputStyle, width: 160 }}>
                     {[60, 90, 120, 150, 180, 240].map(m => (
                       <option key={m} value={m}>{m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}min` : ""}` : `${m} Min`}</option>
                     ))}
                   </select>
-                  <span style={{ fontSize: 11, color: "#777" }}>
-                    Gilt für alle Bereiche außer Billard (Abrechnung vor Ort nach Minuten)
-                  </span>
+                  <span style={{ fontSize: 11, color: "#777" }}>Gilt für alle Bereiche außer Billard</span>
                 </div>
               </div>
               <div style={{ marginTop: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Automatische Stornierung</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <select
-                    value={autoCancelMin}
-                    onChange={e => setAutoCancelMin(Number(e.target.value))}
-                    style={{ ...inputStyle, width: 160 }}
-                  >
+                  <select value={autoCancelMin} onChange={e => setAutoCancelMin(Number(e.target.value))} style={{ ...inputStyle, width: 160 }}>
                     {[0, 5, 10, 15, 20, 30, 45, 60].map(m => (
                       <option key={m} value={m}>{m === 0 ? "Deaktiviert" : `${m} Minuten`}</option>
                     ))}
                   </select>
-                  <span style={{ fontSize: 11, color: "#777" }}>
-                    Reservierungen werden automatisch storniert, wenn der Gast nicht eincheckt
-                  </span>
+                  <span style={{ fontSize: 11, color: "#777" }}>Reservierungen werden automatisch storniert wenn nicht eingecheckt</span>
                 </div>
-              </div>
-              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6, marginTop: 12 }}>
-                <p>Tisch-Kapazitäten werden direkt über die Einheiten-Verwaltung konfiguriert. Klicke auf einen Tisch im Grundriss, um dessen Kapazität anzupassen.</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "12px 20px", borderTop: "1px solid #2a2a2a" }}>
           <button onClick={onClose} style={{ padding: "8px 20px", fontSize: 13, color: "#888", background: "transparent", border: "1px solid #333", borderRadius: 8, cursor: "pointer" }}>
             Abbrechen

@@ -8,11 +8,10 @@ import { useOpeningHours } from "@/hooks/useOpeningHours";
 interface Props {
   tableLabel?: string;
   initialZone?: string;
+  initialUnitId?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
-
-// TIMES are now dynamic from settings via useOpeningHours hook
 
 const ZONES = [
   { value: "hauptbereich", label: "Hauptbereich" },
@@ -39,12 +38,11 @@ const getNextQuarterHour = (): string => {
   return `${String(h % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) => {
+const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const defaultTime = getNextQuarterHour();
   const availableTimes = getTimesForDate(todayStr);
-  // Pick the next available slot that is >= current rounded time, fallback to first
   const smartDefault = availableTimes.find(t => t >= defaultTime) || availableTimes[0] || "19:00";
 
   const [guest, setGuest] = useState("");
@@ -59,20 +57,14 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
 
   const isBillard = zone === "billard";
 
   const handleSubmit = async () => {
-    if (!guest.trim() || !email.trim() || !phone.trim()) {
-      toast.error("Bitte Name, E-Mail und Telefon ausfüllen");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.error("Bitte eine gültige E-Mail-Adresse eingeben");
-      return;
-    }
-    if (phone.trim().length < 5) {
-      toast.error("Bitte eine gültige Telefonnummer eingeben");
+    // Only name is softly required for admin bookings
+    if (!guest.trim()) {
+      toast.error("Bitte mindestens einen Gastnamen eingeben");
       return;
     }
 
@@ -81,8 +73,8 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
       const res = await supabase.functions.invoke("create-reservation", {
         body: {
           name: guest.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
+          email: email.trim() || "walkin@intern.local",
+          phone: phone.trim() || "000",
           guests: pax,
           date,
           time: startTime,
@@ -90,7 +82,7 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
           anlass: occasion.includes("sonstiges") && sonstigesText.trim()
             ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim()}`].join(", ")
             : occasion.join(", "),
-          message: (isBillard ? "Billard – Abrechnung per Live-Timer (0,23 €/Min). " : "") + (note.trim() || ""),
+          message: (isWalkIn ? "Walk-in Gast. " : "") + (isBillard ? "Billard – Abrechnung per Live-Timer (0,23 €/Min). " : "") + (note.trim() || ""),
           honeypot: "",
         },
       });
@@ -101,8 +93,18 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
         setSaving(false);
         return;
       }
+
+      // If initialUnitId is set, auto-assign the unit
+      if (initialUnitId && body?.reservation_id) {
+        try {
+          await supabase.functions.invoke("admin-actions", {
+            body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: initialUnitId },
+          });
+        } catch { /* silent - unit assignment is best-effort */ }
+      }
+
       setSuccess(true);
-      toast.success("Reservierung erstellt");
+      toast.success(isWalkIn ? "Walk-in erstellt" : "Reservierung erstellt");
       setTimeout(() => onSuccess(), 1200);
     } catch (err: any) {
       toast.error(err?.message || "Fehler beim Erstellen");
@@ -119,7 +121,7 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
         }}>
           <Check size={24} color="#fff" />
         </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>Reservierung erstellt</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>{isWalkIn ? "Walk-in erstellt" : "Reservierung erstellt"}</span>
         <span style={{ fontSize: 12, color: "#999", marginTop: 4 }}>{guest} · {pax} Pers. · {startTime}</span>
       </div>
     );
@@ -135,23 +137,43 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 2 }}>
-        Neue Reservierung {tableLabel ? `· ${tableLabel}` : ""}
+        {isWalkIn ? "Walk-in Gast" : "Neue Reservierung"} {tableLabel ? `· ${tableLabel}` : ""}
+      </div>
+
+      {/* Walk-in toggle */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+        <button type="button" onClick={() => setIsWalkIn(false)} style={{
+          padding: "5px 14px", fontSize: 11, borderRadius: 20, cursor: "pointer",
+          border: !isWalkIn ? "1.5px solid #c9a84c" : "1px solid #ddd",
+          background: !isWalkIn ? "#c9a84c22" : "#fff",
+          color: !isWalkIn ? "#111" : "#666", fontWeight: !isWalkIn ? 700 : 400,
+          fontFamily: "'DM Sans', sans-serif",
+        }}>Reservierung</button>
+        <button type="button" onClick={() => setIsWalkIn(true)} style={{
+          padding: "5px 14px", fontSize: 11, borderRadius: 20, cursor: "pointer",
+          border: isWalkIn ? "1.5px solid #4ade80" : "1px solid #ddd",
+          background: isWalkIn ? "#4ade8022" : "#fff",
+          color: isWalkIn ? "#111" : "#666", fontWeight: isWalkIn ? 700 : 400,
+          fontFamily: "'DM Sans', sans-serif",
+        }}>Walk-in</button>
       </div>
 
       <div>
         <label style={labelStyle}>Gastname *</label>
         <input value={guest} onChange={e => setGuest(e.target.value)} placeholder="Vor- und Nachname" style={inputStyle} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <div>
-          <label style={labelStyle}>E-Mail *</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@beispiel.de" style={inputStyle} />
+      {!isWalkIn && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div>
+            <label style={labelStyle}>E-Mail</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Optional" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Telefon</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Optional" style={inputStyle} />
+          </div>
         </div>
-        <div>
-          <label style={labelStyle}>Telefon *</label>
-          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+49 ..." style={inputStyle} />
-        </div>
-      </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
         <div>
           <label style={labelStyle}>Personen</label>
@@ -207,7 +229,7 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
       </div>
       {occasion.includes("sonstiges") && (
         <div>
-          <label style={labelStyle}>Sonstiges – bitte beschreiben *</label>
+          <label style={labelStyle}>Sonstiges – bitte beschreiben</label>
           <input value={sonstigesText} onChange={e => setSonstigesText(e.target.value)} placeholder="z.B. Firmenevent..." style={inputStyle} />
         </div>
       )}
@@ -232,9 +254,9 @@ const BookingForm = ({ tableLabel, initialZone, onSuccess, onCancel }: Props) =>
         }}>Abbrechen</button>
         <button onClick={handleSubmit} disabled={saving || !guest.trim()} style={{
           flex: 1, padding: "10px", fontSize: 12, fontWeight: 700, borderRadius: 6,
-          background: !guest.trim() ? "#ccc" : "#c9a84c", color: "#111", border: "none", cursor: "pointer",
+          background: !guest.trim() ? "#ccc" : isWalkIn ? "#4ade80" : "#c9a84c", color: "#111", border: "none", cursor: "pointer",
           opacity: saving ? 0.6 : 1,
-        }}>{saving ? "Speichern..." : "Reservierung anlegen"}</button>
+        }}>{saving ? "Speichern..." : isWalkIn ? "Walk-in anlegen" : "Reservierung anlegen"}</button>
       </div>
     </div>
   );

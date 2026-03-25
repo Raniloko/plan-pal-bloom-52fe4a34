@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
-  CalendarDays, ChevronLeft, ChevronRight, BarChart2,
-  Users, Settings, Bell, LogOut, Menu, Activity,
+  CalendarDays, ChevronLeft, ChevronRight,
+  Users, Settings, Bell, LogOut,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -17,9 +17,7 @@ interface Props {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   onOpenSettings: () => void;
-  onOpenStats: () => void;
   onOpenNotifications: () => void;
-  onOpenActivityLog: () => void;
 }
 
 const Div = () => <div style={{ width: 1, alignSelf: "stretch", background: "#2a2a2a" }} />;
@@ -37,20 +35,16 @@ const IcoBtn = ({ children, borderL, onClick, active }: { children: React.ReactN
   </button>
 );
 
-const MEALS = ["Mittagessen", "Abendessen", "Spätabend"];
-
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenSettings, onOpenStats, onOpenNotifications, onOpenActivityLog,
+  onOpenSettings, onOpenNotifications,
 }: Props) => {
   const [time, setTime] = useState("");
-  const [mealIndex, setMealIndex] = useState(1);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const shortDate = format(selectedDate, "EEE., d MMM", { locale: de });
-
 
   useEffect(() => {
     const tick = () => {
@@ -72,19 +66,19 @@ export const OperationalTopbar = ({
       background: "#111111", borderBottom: "1px solid #2a2a2a",
       fontFamily: "'DM Sans', sans-serif",
     }}>
-      {/* A – Logo (top left) */}
+      {/* Logo */}
       <div style={{ padding: "0 12px", display: "flex", alignItems: "center", height: "100%" }}>
         <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 28 }} />
       </div>
       <Div />
 
-      {/* B – Jetzt */}
+      {/* Jetzt */}
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
           <button
             onClick={(e) => {
               if (isToday(selectedDate)) {
-                // If already today, just open calendar
+                // already today, open calendar
               } else {
                 e.preventDefault();
                 goToday();
@@ -112,29 +106,20 @@ export const OperationalTopbar = ({
         </PopoverContent>
       </Popover>
 
-      {/* C – Date nav */}
+      {/* Date nav */}
       <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
         <button onClick={() => onDateChange(subDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronLeft size={14} /></button>
         <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", padding: "0 4px", whiteSpace: "nowrap" }}>{shortDate}</span>
         <button onClick={() => onDateChange(addDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronRight size={14} /></button>
       </div>
 
-      {/* D – Meal */}
-      <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
-        <button onClick={() => setMealIndex(i => Math.max(0, i - 1))} style={{ width: 22, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: mealIndex > 0 ? "#666" : "#333", background: "transparent", border: "none", cursor: mealIndex > 0 ? "pointer" : "default" }}><ChevronLeft size={12} /></button>
-        <span style={{ fontSize: 13, fontWeight: 500, color: "#fff", padding: "0 4px" }}>{MEALS[mealIndex]}</span>
-        <button onClick={() => setMealIndex(i => Math.min(MEALS.length - 1, i + 1))} style={{ width: 22, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: mealIndex < MEALS.length - 1 ? "#666" : "#333", background: "transparent", border: "none", cursor: mealIndex < MEALS.length - 1 ? "pointer" : "default" }}><ChevronRight size={12} /></button>
-      </div>
-
-      {/* E – Time */}
+      {/* Time */}
       <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
         <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", padding: "0 12px", fontVariantNumeric: "tabular-nums", fontFamily: "monospace" }}>{time}</span>
       </div>
 
-      {/* F – Right icons */}
+      {/* Right icons */}
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", height: "100%" }}>
-        <IcoBtn borderL onClick={onOpenStats}><BarChart2 size={16} /></IcoBtn>
-        <IcoBtn borderL onClick={onOpenActivityLog}><Activity size={16} /></IcoBtn>
         <IcoBtn borderL onClick={onOpenNotifications}><Bell size={16} /></IcoBtn>
         <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
           <Users size={14} style={{ color: "#666", marginRight: 6 }} />
