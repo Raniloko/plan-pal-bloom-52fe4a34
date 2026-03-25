@@ -102,7 +102,7 @@ const RondoReservationSystem = () => {
       .from("reservations")
       .select("reservation_time, zone")
       .eq("reservation_date", date)
-      .neq("status", "cancelled")
+      .not("status", "in", '("cancelled","checked_out")')
       .in("zone", zoneKeys);
 
     if (error) {
