@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban } from "lucide-react";
+import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban, Filter } from "lucide-react";
+import { LegendDialog } from "./LegendDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -168,11 +169,14 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           </div>
 
           {/* Column header */}
-          <div style={{ display: "grid", gridTemplateColumns: "70px 28px 1fr 36px", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>UHRZEIT</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444", textAlign: "center" }}>P</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>NAME / TISCH</span>
-            <span style={{ display: "flex", justifyContent: "center" }}><Bell size={12} color="#888" /></span>
+          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2", gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>Uhrzeit ↕ Gast</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>Name</span>
+            <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <Filter size={12} color="#888" />
+              <LegendDialog />
+              <Bell size={12} color="#888" />
+            </span>
           </div>
 
           {/* Summary */}

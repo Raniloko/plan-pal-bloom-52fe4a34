@@ -9,10 +9,13 @@ import BillardFloorPlan from "./BillardFloorPlan";
 const DEFAULT_TABLES: Record<string, TableData> = {
   t10: { id: "t10", title: "Tisch 10", status: "free" },
   t30: { id: "t30", title: "Tisch 30", status: "free" },
-  t50: { id: "t50", title: "Tisch 50", status: "free" },
+  t51: { id: "t51", title: "Tisch 51", status: "free" },
   t52: { id: "t52", title: "Tisch 52", status: "free" },
   t53: { id: "t53", title: "Tisch 53", status: "free" },
   t54: { id: "t54", title: "Tisch 54", status: "free" },
+  t55: { id: "t55", title: "Tisch 55", status: "free" },
+  t56: { id: "t56", title: "Tisch 56", status: "free" },
+  t57: { id: "t57", title: "Tisch 57", status: "free" },
   t59: { id: "t59", title: "Tisch 59", status: "free" },
   t60: { id: "t60", title: "Tisch 60", status: "free" },
   t61: { id: "t61", title: "Tisch 61", status: "free" },
@@ -28,11 +31,6 @@ const DEFAULT_TABLES: Record<string, TableData> = {
 };
 
 const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> = {
-  billard: {
-    title: "Billard",
-    desc: "5 Olio-Billardtische (Tische 4–8)",
-    img: "/images/billard-area.jpg",
-  },
   vip: {
     title: "VIP-Raum",
     desc: "Privater Bereich für Gruppen ab 11 Personen mit eigenem Service",
@@ -48,33 +46,27 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
 
-  // Fensterbereich has its own SVG floor plan
   if (activeArea === "fenster") {
     return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
-  // Billard/Kicker/Dart area has its own SVG floor plan
   if (activeArea === "billard") {
     return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
-  // Show placeholder for areas that don't have SVG floor plans yet
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
-  
   if (showPlaceholder && activeArea) {
     const info = AREA_INFO[activeArea];
-    if (info) {
-      return <AreaPlaceholder {...info} />;
-    }
+    if (info) return <AreaPlaceholder {...info} />;
   }
 
   return (
     <div className="relative w-full h-full min-h-[400px]" style={{
-      background: "radial-gradient(ellipse 50% 40% at 50% 35%, rgba(255,150,40,0.06) 0%, transparent 70%), #111111",
+      background: "#111111",
       overflow: "auto",
     }}>
       <svg
-        viewBox="0 0 1000 720"
+        viewBox="0 0 1100 800"
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 w-full h-full"
         style={{
@@ -89,144 +81,157 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feFlood floodColor="rgba(255,255,255,0.15)" result="color" />
             <feComposite in="color" in2="blur" operator="in" result="glow" />
-            <feMerge>
-              <feMergeNode in="glow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+            <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          {/* Pulse animation for check-in */}
           <filter id="pulseGlow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="6" result="blur" />
             <feFlood floodColor="#1e8a38" floodOpacity="0.6" result="color" />
             <feComposite in="color" in2="blur" operator="in" result="glow" />
-            <feMerge>
-              <feMergeNode in="glow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+            <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
-
         <style>{`
           @keyframes pulseRing {
             0% { opacity: 0.6; transform: scale(1); }
             50% { opacity: 0; transform: scale(1.4); }
             100% { opacity: 0; transform: scale(1.4); }
           }
-          .pulse-ring {
-            animation: pulseRing 2s ease-out infinite;
-          }
-          @keyframes statusFade {
-            0% { opacity: 0.3; }
-            100% { opacity: 1; }
-          }
-          .status-transition {
-            animation: statusFade 0.5s ease-out;
-          }
+          .pulse-ring { animation: pulseRing 2s ease-out infinite; }
+          @keyframes statusFade { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+          .status-transition { animation: statusFade 0.5s ease-out; }
         `}</style>
 
-        {/* Room border */}
-        <rect x={6} y={6} width={988} height={708} rx={5} fill="none" stroke="#222" strokeWidth={1.5} />
+        {/* ═══ ROOM WALLS ═══ */}
+        {/* Outer room border */}
+        <rect x={10} y={10} width={1080} height={780} rx={4} fill="none" stroke="#444" strokeWidth={3} />
+        
+        {/* Left wall section - upper area with corridor */}
+        <rect x={10} y={10} width={340} height={350} fill="none" stroke="#555" strokeWidth={3} />
+        
+        {/* Diagonal staircase wall (left area) */}
+        <line x1={100} y1={360} x2={200} y2={260} stroke="#555" strokeWidth={3} />
+        <line x1={200} y1={260} x2={200} y2={180} stroke="#555" strokeWidth={3} />
+        <line x1={100} y1={360} x2={100} y2={460} stroke="#555" strokeWidth={3} />
+        
+        {/* Inner corridor wall - vertical divider */}
+        <line x1={350} y1={10} x2={350} y2={360} stroke="#444" strokeWidth={2.5} />
+        
+        {/* Horizontal corridor wall */}
+        <line x1={10} y1={360} x2={350} y2={360} stroke="#444" strokeWidth={2.5} />
+        
+        {/* Central vertical divider (between corridor and main area) */}
+        <line x1={600} y1={360} x2={600} y2={460} stroke="#444" strokeWidth={2} />
+        
+        {/* Lower room wall */}
+        <line x1={10} y1={460} x2={600} y2={460} stroke="#444" strokeWidth={2.5} />
+        
+        {/* ─── RONDO LOGO (upper left room) ─── */}
+        <image href="/images/rondo-logo.png" x={30} y={40} width={280} height={120}
+          style={{ opacity: 0.9 } as React.CSSProperties} />
 
-        {/* Subtle ambient glow */}
-        <ellipse cx={500} cy={200} rx={120} ry={60} fill="rgba(255,180,60,0.04)" />
+        {/* ═══ BILLARD TABLES 1-3 (right side) ═══ */}
+        <BillardTable id="b1" data={tables.b1} onClick={() => click("b1")}
+          x={700} y={40} w={180} h={120}
+          showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── TABLE 10 ─── */}
-        <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")}
-          cx={80} cy={65} tw={44} th={44}
+        <BillardTable id="b2" data={tables.b2} onClick={() => click("b2")}
+          x={700} y={200} w={180} h={120}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        <BillardTable id="b3" data={tables.b3} onClick={() => click("b3")}
+          x={740} y={380} w={180} h={120}
+          rotation={{ angle: -25, cx: 830, cy: 440 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        {/* ═══ RESTAURANT TABLES ═══ */}
+        {/* Bottom row: 57, 56, 55 */}
+        <RestaurantTable id="t57" data={tables.t57} onClick={() => click("t57")}
+          cx={200} cy={720} tw={44} th={44}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+        <RestaurantTable id="t56" data={tables.t56} onClick={() => click("t56")}
+          cx={340} cy={720} tw={44} th={44}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+        <RestaurantTable id="t55" data={tables.t55} onClick={() => click("t55")}
+          cx={480} cy={720} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── BILLARD 1 ─── */}
-        <BillardTable id="b1" data={tables.b1} onClick={() => click("b1")}
-          x={260} y={25} w={215} h={140}
-          showLabels={showLabels} colorMode={colorMode} />
-
-        {/* ─── BILLARD 2 ─── */}
-        <BillardTable id="b2" data={tables.b2} onClick={() => click("b2")}
-          x={500} y={25} w={215} h={140} strokeColor="#3a6adb" strokeWidth={4}
-          showLabels={showLabels} colorMode={colorMode} />
-
-        {/* ─── BILLARD 3 ─── */}
-        <BillardTable id="b3" data={tables.b3} onClick={() => click("b3")}
-          x={750} y={80} w={220} h={130}
-          rotation={{ angle: -30, cx: 860, cy: 145 }}
-          showLabels={showLabels} colorMode={colorMode} />
-
-        {/* ═══ MIDDLE ROW 1: 52, 53, 54 ═══ */}
+        {/* Middle area tables */}
         <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")}
-          cx={180} cy={290} tw={50} th={34}
+          cx={420} cy={200} tw={50} th={34}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t53" data={tables.t53} onClick={() => click("t53")}
-          cx={330} cy={290} tw={66} th={34}
+          cx={560} cy={200} tw={66} th={34}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
+
         <RestaurantTable id="t54" data={tables.t54} onClick={() => click("t54")}
-          cx={520} cy={290} tw={90} th={40}
+          cx={420} cy={320} tw={80} th={38}
           seats={{ top: 3, right: 2, bottom: 3, left: 2 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ═══ MIDDLE ROW 2: 50, 59 ═══ */}
-        <RestaurantTable id="t50" data={tables.t50} onClick={() => click("t50")}
-          cx={330} cy={400} tw={50} th={34}
+        <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")}
+          cx={80} cy={200} tw={44} th={44}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")}
+          cx={80} cy={540} tw={44} th={44}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        <RestaurantTable id="t51" data={tables.t51} onClick={() => click("t51")}
+          cx={250} cy={540} tw={50} th={34}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
+
         <RestaurantTable id="t59" data={tables.t59} onClick={() => click("t59")}
-          cx={740} cy={400} tw={44} th={34}
+          cx={700} cy={540} tw={44} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── TABLE 30 ─── */}
-        <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")}
-          cx={80} cy={475} tw={44} th={44}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          showLabels={showLabels} colorMode={colorMode} />
+        {/* ─── LOWER ENCLOSED BOX (Fenster-side) ─── */}
+        <rect x={350} y={520} width={600} height={250} rx={4}
+              fill="rgba(12,12,14,0.85)" stroke="#333" strokeWidth={2} />
 
-        {/* ─── ENCLOSED RESTAURANT BOX ─── */}
-        <rect x={320} y={475} width={650} height={230} rx={6}
-              fill="rgba(12,12,14,0.9)" stroke="#2a2a2a" strokeWidth={1.5} />
-
-        {/* BOX ROW 1 */}
+        {/* Box Row 1 */}
         <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")}
-          cx={385} cy={525} tw={50} th={34}
+          cx={420} cy={580} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t60" data={tables.t60} onClick={() => click("t60")}
-          cx={530} cy={525} tw={50} th={34}
+          cx={550} cy={580} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t67" data={tables.t67} onClick={() => click("t67")}
-          cx={680} cy={525} tw={50} th={34}
+          cx={680} cy={580} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t66" data={tables.t66} onClick={() => click("t66")}
-          cx={840} cy={525} tw={50} th={34}
+          cx={840} cy={580} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* BOX ROW 2 */}
+        {/* Box Row 2 */}
         <RestaurantTable id="t62" data={tables.t62} onClick={() => click("t62")}
-          cx={385} cy={645} tw={50} th={34}
+          cx={420} cy={700} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t63" data={tables.t63} onClick={() => click("t63")}
-          cx={530} cy={645} tw={50} th={34}
+          cx={550} cy={700} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t64" data={tables.t64} onClick={() => click("t64")}
-          cx={680} cy={645} tw={50} th={34}
+          cx={680} cy={700} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
         <RestaurantTable id="t65" data={tables.t65} onClick={() => click("t65")}
-          cx={840} cy={645} tw={50} th={34}
+          cx={840} cy={700} tw={50} th={34}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
-
-        {/* ─── RONDO LOGO BOX ─── */}
-        <rect x={14} y={540} width={230} height={140} rx={6}
-              fill="rgba(10,10,10,0.96)" stroke="#2a2a2a" strokeWidth={1.5} />
-        <image href="/images/rondo-logo.png" x={22} y={548} width={214} height={124}
-               style={{ filter: "brightness(0) invert(1)", opacity: 0.85 } as React.CSSProperties} />
       </svg>
     </div>
   );
