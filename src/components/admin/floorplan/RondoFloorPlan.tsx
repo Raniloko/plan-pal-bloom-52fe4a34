@@ -229,8 +229,6 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <image href="/images/rondo-logo.png" x={30} y={720} width={230} height={120}
           style={{ opacity: 0.9 } as React.CSSProperties} />
 
-        {/* Plant decoration (bottom left) */}
-        <text x={260} y={810} fontSize={36} style={{ opacity: 0.7 } as React.CSSProperties}>🌿</text>
       </svg>
     </div>
   );

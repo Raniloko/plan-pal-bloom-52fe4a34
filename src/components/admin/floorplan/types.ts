@@ -76,6 +76,6 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   // Fensterbereich (101-106)
   f1: "fenster", f2: "fenster", f3: "fenster",
   f4: "fenster", f5: "fenster", f6: "fenster",
-  // VIP
-  vip1: "vip", vip2: "vip",
+  // VIP (101-106)
+  vip1: "vip", vip2: "vip", vip3: "vip", vip4: "vip", vip5: "vip", vip6: "vip",
 };
