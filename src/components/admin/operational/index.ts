@@ -7,3 +7,4 @@ export type { PanelData } from "./OperationalSlidePanel";
 export { default as BookingForm } from "./BookingForm";
 export { SettingsDialog } from "./SettingsDialog";
 export { NotificationsPanel } from "./NotificationsPanel";
+export { LegendDialog } from "./LegendDialog";
