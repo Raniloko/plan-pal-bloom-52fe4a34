@@ -126,22 +126,6 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
         }}>+ Neu</button>
       </div>
 
-      {/* Billard availability badge */}
-      {billardAvailable && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "6px 14px",
-          background: "#1e1e1e", borderBottom: "1px solid #2a2a2a",
-        }}>
-          <span style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700 }}>🎱 Billard</span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
-            background: billardAvailable.free > 0 ? "#2a7a2a22" : "#cc222222",
-            color: billardAvailable.free > 0 ? "#4ade80" : "#f87171",
-          }}>
-            {billardAvailable.free} von {billardAvailable.total} verfügbar
-          </span>
-        </div>
-      )}
 
       {resTab === "res" ? (
         <>

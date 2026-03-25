@@ -123,8 +123,6 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
           x={680} y={40} w={210} h={140}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* Plant decoration (top right) */}
-        <text x={930} y={80} fontSize={36} style={{ opacity: 0.7 } as React.CSSProperties}>🌿</text>
 
         {/* ─── BILLARD 3 (rotated ~45°, right side) ─── */}
         <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")}
@@ -231,8 +229,6 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <image href="/images/rondo-logo.png" x={30} y={720} width={230} height={120}
           style={{ opacity: 0.9 } as React.CSSProperties} />
 
-        {/* Plant decoration (bottom left) */}
-        <text x={260} y={810} fontSize={36} style={{ opacity: 0.7 } as React.CSSProperties}>🌿</text>
       </svg>
     </div>
   );

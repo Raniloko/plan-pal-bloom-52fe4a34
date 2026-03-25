@@ -82,7 +82,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Server-side validation
+    // Detect admin/walk-in requests (placeholder email)
+    const isAdminBooking = sanitize(email) === "walkin@intern.local";
+
     const errors: string[] = [];
 
     if (!date || !isValidDate(date)) errors.push("Ungültiges Datum.");
@@ -97,8 +99,11 @@ Deno.serve(async (req) => {
     );
     if (!validAnlass) errors.push("Ungültiger Anlass.");
     if (!name || sanitize(name).length < 2 || sanitize(name).length > 100) errors.push("Name muss 2-100 Zeichen lang sein.");
-    if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
-    if (!phone || sanitize(phone).length < 5 || sanitize(phone).length > 30) errors.push("Ungültige Telefonnummer.");
+    // Relax email/phone validation for admin walk-in bookings
+    if (!isAdminBooking) {
+      if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
+      if (!phone || sanitize(phone).length < 5 || sanitize(phone).length > 30) errors.push("Ungültige Telefonnummer.");
+    }
     if (message && message.length > 1000) errors.push("Nachricht darf maximal 1000 Zeichen lang sein.");
 
     if (errors.length > 0) {

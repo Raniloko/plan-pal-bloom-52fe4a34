@@ -4,12 +4,17 @@ import RestaurantTable from "./RestaurantTable";
 
 /**
  * SVG Floor plan for the "VIP-Raum".
- * 2 large VIP tables.
+ * 6 tables: 101 (left), 102+103 (right stacked), 104+105+106 (bottom row).
+ * Matches the reference image exactly.
  */
 
 const DEFAULT_VIP_TABLES: Record<string, TableData> = {
-  vip1: { id: "vip1", title: "VIP 1", status: "free" },
-  vip2: { id: "vip2", title: "VIP 2", status: "free" },
+  vip1: { id: "vip1", title: "101", status: "free" },
+  vip2: { id: "vip2", title: "102", status: "free" },
+  vip3: { id: "vip3", title: "103", status: "free" },
+  vip4: { id: "vip4", title: "104", status: "free" },
+  vip5: { id: "vip5", title: "105", status: "free" },
+  vip6: { id: "vip6", title: "106", status: "free" },
 };
 
 const VipFloorPlan = ({ tables: tablesProp, onTableClick, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
@@ -22,7 +27,7 @@ const VipFloorPlan = ({ tables: tablesProp, onTableClick, showLabels = true, zoo
       overflow: "auto",
     }}>
       <svg
-        viewBox="0 0 700 500"
+        viewBox="0 0 900 700"
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 w-full h-full"
         style={{
@@ -58,37 +63,56 @@ const VipFloorPlan = ({ tables: tablesProp, onTableClick, showLabels = true, zoo
           @keyframes statusFade { 0% { opacity: 0.3; } 100% { opacity: 1; } }
         `}</style>
 
-        {/* Room border */}
-        <rect x={10} y={10} width={680} height={480} rx={4} fill="none" stroke="#444" strokeWidth={3} />
+        {/* Room walls */}
+        <rect x={10} y={10} width={880} height={680} rx={4} fill="none" stroke="#444" strokeWidth={3} />
 
-        {/* VIP label */}
-        <text x={350} y={50} textAnchor="middle" fontSize={18} fontWeight={700} fill="rgba(255,255,255,0.15)"
-          fontFamily="'DM Sans', sans-serif" letterSpacing="0.15em">VIP RAUM</text>
+        {/* Top wall extension (corridor entrance) */}
+        <rect x={400} y={10} width={8} height={120} fill="#444" />
+        <rect x={400} y={10} width={200} height={8} fill="#444" />
+        <rect x={592} y={10} width={8} height={120} fill="#444" />
 
-        {/* Door indicator */}
-        <rect x={10} y={200} width={6} height={80} rx={2} fill="#666" />
-        <text x={3} y={245} textAnchor="middle" fontSize={8} fill="#888"
-          fontFamily="'DM Sans', sans-serif" transform="rotate(-90, 3, 245)">Eingang</text>
+        {/* Right wall partition */}
+        <rect x={620} y={10} width={8} height={200} fill="#444" />
 
-        {/* VIP Table 1 - Large table, left side */}
+        {/* ═══ TABLE 101 – left center ═══ */}
         <RestaurantTable id="vip1" data={tables.vip1} onClick={() => click("vip1")}
-          cx={230} cy={220} tw={80} th={50}
-          seats={{ top: 3, right: 1, bottom: 3, left: 1 }}
+          cx={280} cy={250} tw={48} th={48}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* VIP Table 2 - Large table, right side */}
+        {/* ═══ TABLE 102 – right top ═══ */}
         <RestaurantTable id="vip2" data={tables.vip2} onClick={() => click("vip2")}
-          cx={480} cy={220} tw={80} th={50}
-          seats={{ top: 3, right: 1, bottom: 3, left: 1 }}
+          cx={720} cy={180} tw={48} th={48}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* Decorative elements - Sofa/couch along back wall */}
-        <rect x={100} y={400} width={500} height={20} rx={4} fill="#2a2a2a" stroke="#444" strokeWidth={1} />
-        <text x={350} y={414} textAnchor="middle" fontSize={9} fill="#555"
-          fontFamily="'DM Sans', sans-serif">Lounge</text>
+        {/* ═══ TABLE 103 – right below 102 ═══ */}
+        <RestaurantTable id="vip3" data={tables.vip3} onClick={() => click("vip3")}
+          cx={720} cy={340} tw={48} th={48}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        {/* ═══ BOTTOM ROW: 106, 105, 104 (left to right) ═══ */}
+        <RestaurantTable id="vip6" data={tables.vip6} onClick={() => click("vip6")}
+          cx={350} cy={530} tw={48} th={48}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        <RestaurantTable id="vip5" data={tables.vip5} onClick={() => click("vip5")}
+          cx={540} cy={530} tw={48} th={48}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        <RestaurantTable id="vip4" data={tables.vip4} onClick={() => click("vip4")}
+          cx={720} cy={530} tw={48} th={48}
+          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        {/* Bottom bar/counter */}
+        <rect x={200} y={630} width={600} height={12} rx={4} fill="#2a2a2a" stroke="#444" strokeWidth={1} />
 
         {/* ─── RONDO LOGO ─── */}
-        <image href="/images/rondo-logo.png" x={520} y={410} width={140} height={70}
+        <image href="/images/rondo-logo.png" x={20} y={580} width={160} height={80}
           style={{ opacity: 0.85 } as React.CSSProperties} />
       </svg>
     </div>
