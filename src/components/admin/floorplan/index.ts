@@ -1,6 +1,7 @@
 export { default as RondoFloorPlan } from "./RondoFloorPlan";
 export { default as FensterFloorPlan } from "./FensterFloorPlan";
 export { default as BillardFloorPlan } from "./BillardFloorPlan";
+export { default as VipFloorPlan } from "./VipFloorPlan";
 export { default as BillardTable } from "./BillardTable";
 export { default as RestaurantTable } from "./RestaurantTable";
 export { default as AreaPlaceholder } from "./AreaPlaceholder";
