@@ -55,6 +55,9 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   t52: "hauptbereich",
   t53: "hauptbereich",
   t54: "hauptbereich",
+  t55: "hauptbereich",
+  t56: "hauptbereich",
+  t57: "hauptbereich",
   t58: "hauptbereich",
   t59: "hauptbereich",
   t60: "hauptbereich",
@@ -65,14 +68,14 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   t65: "hauptbereich",
   t66: "hauptbereich",
   t67: "hauptbereich",
-  b1: "hauptbereich",
-  b2: "hauptbereich",
-  b3: "hauptbereich",
+  // Billard 1-3: shown in BOTH hauptbereich and billard (unified bt prefix)
+  bt1: "hauptbereich", bt2: "hauptbereich", bt3: "hauptbereich",
+  // Billard 4-8: billard area only
+  bt4: "billard", bt5: "billard", bt6: "billard",
+  bt7: "billard", bt8: "billard",
   // Fensterbereich (101-106)
   f1: "fenster", f2: "fenster", f3: "fenster",
   f4: "fenster", f5: "fenster", f6: "fenster",
-  // Billard area (1-8)
-  bt1: "billard", bt2: "billard", bt3: "billard",
-  bt4: "billard", bt5: "billard", bt6: "billard",
-  bt7: "billard", bt8: "billard",
+  // VIP
+  vip1: "vip", vip2: "vip",
 };

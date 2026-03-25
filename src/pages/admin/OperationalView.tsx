@@ -212,8 +212,8 @@ const OperationalView = () => {
       if (!unit) return;
       const name = unit.name.toLowerCase();
       let fpId = "";
-      if (name.startsWith("billard") && unit.area === "hauptbereich") fpId = "b" + name.replace("billard ", "").trim();
-      else if (name.startsWith("billard") && unit.area === "billard") fpId = "bt" + name.replace("billard ", "").trim();
+      if (name.startsWith("billard")) fpId = "bt" + name.replace("billard ", "").trim();
+      else if (name.startsWith("vip")) fpId = "vip" + name.replace("vip ", "").trim();
       else if (name.startsWith("tisch f")) fpId = "f" + name.replace("tisch f", "").trim();
       else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
       if (!fpId) return;
@@ -229,8 +229,8 @@ const OperationalView = () => {
       if (u.status !== "blocked") return;
       const name = u.name.toLowerCase();
       let fpId = "";
-      if (name.startsWith("billard") && u.area === "hauptbereich") fpId = "b" + name.replace("billard ", "").trim();
-      else if (name.startsWith("billard") && u.area === "billard") fpId = "bt" + name.replace("billard ", "").trim();
+      if (name.startsWith("billard")) fpId = "bt" + name.replace("billard ", "").trim();
+      else if (name.startsWith("vip")) fpId = "vip" + name.replace("vip ", "").trim();
       else if (name.startsWith("tisch f")) fpId = "f" + name.replace("tisch f", "").trim();
       else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
