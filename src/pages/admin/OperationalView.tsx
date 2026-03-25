@@ -10,13 +10,10 @@ import {
   ReservationPanel,
   OperationalSlidePanel,
   SettingsDialog,
-  StatsPanel,
   NotificationsPanel,
-  ActivityLogPanel,
 } from "@/components/admin/operational";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
-import { Toaster } from "sonner";
 
 interface Reservation {
   id: string;
@@ -68,12 +65,9 @@ const OperationalView = () => {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // New state for topbar features
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [activityLogOpen, setActivityLogOpen] = useState(false);
 
   const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
@@ -90,7 +84,6 @@ const OperationalView = () => {
       setUnits((d.units as Unit[]) || []);
       setWaitlist((d.waitlist as WaitlistEntry[]) || []);
 
-      // Load duration setting
       const settingsRes = await supabase.functions.invoke("admin-actions", {
         body: { action: "get_settings" },
       });
@@ -114,18 +107,20 @@ const OperationalView = () => {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
+  // Include cancelled in rows for "Achtung" tab
   const rows: ResRow[] = useMemo(() => {
     const now = new Date();
     return reservations
-      .filter(r => r.status !== "cancelled" && r.status !== "checked_out")
+      .filter(r => r.status !== "checked_out")
       .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
       .map(r => {
         const unit = r.unit_id ? units.find(u => u.id === r.unit_id) : undefined;
         const [h, m] = r.reservation_time.split(":").map(Number);
         const start = new Date(dateStr); start.setHours(h, m);
         const isCheckedIn = r.status === "checked_in";
+        const isCancelled = r.status === "cancelled";
         const minutesOverdue = (now.getTime() - start.getTime()) / 60000;
-        const isOverdue = !isCheckedIn && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
+        const isOverdue = !isCheckedIn && !isCancelled && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
 
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
@@ -152,16 +147,23 @@ const OperationalView = () => {
       });
   }, [reservations, units, dateStr]);
 
-  const totalGuests = rows.reduce((s, r) => s + r.guests, 0);
+  const totalGuests = rows.filter(r => r.status !== "cancelled").reduce((s, r) => s + r.guests, 0);
+
+  // Billard availability
+  const billardAvailable = useMemo(() => {
+    const total = 8;
+    const occupiedBillard = reservations.filter(r =>
+      r.zone === "billard" && r.status !== "cancelled" && r.status !== "checked_out"
+    ).length;
+    return { free: Math.max(0, total - occupiedBillard), total };
+  }, [reservations]);
 
   // Toast notification for overdue reservations
   const notifiedOverdueRef = useRef<Set<string>>(new Set());
-  // Toast notification for exceeded duration (seated guests)
   const notifiedExceededRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const now = new Date();
-    // Overdue: not checked in
     const overdueRows = rows.filter(r => r.overdue);
     overdueRows.forEach(r => {
       if (!notifiedOverdueRef.current.has(r.id)) {
@@ -176,7 +178,6 @@ const OperationalView = () => {
       if (!overdueRows.find(r => r.id === id)) notifiedOverdueRef.current.delete(id);
     });
 
-    // Exceeded duration: checked in guests past their time
     const seatedRows = rows.filter(r => r.status === "checked_in");
     seatedRows.forEach(r => {
       const [h, m] = r.time.split(":").map(Number);
@@ -197,22 +198,16 @@ const OperationalView = () => {
     });
   }, [rows, durationMin, dateStr]);
 
-  // Auto-refresh every 30s for overdue detection
   useEffect(() => {
     const interval = setInterval(() => load(), 30000);
     return () => clearInterval(interval);
   }, [load]);
 
-  // Stats counts
-  const confirmedCount = reservations.filter(r => r.status === "confirmed").length;
-  const pendingCount = reservations.filter(r => r.status === "pending").length;
-  const checkedInCount = reservations.filter(r => r.status === "checked_in").length;
-  const cancelledCount = reservations.filter(r => r.status === "cancelled").length;
-
   const floorTables = useMemo(() => {
     const map: Record<string, TableData> = {};
     reservations.forEach(r => {
       if (!r.unit_id) return;
+      if (r.status === "cancelled" || r.status === "checked_out") return;
       const unit = units.find(u => u.id === r.unit_id);
       if (!unit) return;
       const name = unit.name.toLowerCase();
@@ -241,9 +236,8 @@ const OperationalView = () => {
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
     return map;
-  }, [reservations, units, dateStr]);
+  }, [reservations, units]);
 
-  // Map unit area to reservation zone
   const areaToZone = (area: string): string => {
     const map: Record<string, string> = { billard: "billard", kicker: "billard", dart: "billard", restaurant: "hauptbereich" };
     return map[area] || area;
@@ -252,6 +246,10 @@ const OperationalView = () => {
   const handleTableClick = (_id: string, data: TableData) => {
     const unit = units.find(u => u.name.toLowerCase() === data.title.toLowerCase());
     const reservation = data.reservationId ? reservations.find(r => r.id === data.reservationId) : undefined;
+    // Get all reservations for this unit today
+    const unitDayReservations = unit
+      ? reservations.filter(r => r.unit_id === unit.id && r.status !== "checked_out")
+      : [];
     setPanelData({
       tableLabel: data.title,
       guest: data.guest, startTime: data.startTime, endTime: data.endTime,
@@ -260,6 +258,11 @@ const OperationalView = () => {
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
       zone: reservation?.zone || (unit ? areaToZone(unit.area) : undefined),
+      unitDayReservations: unitDayReservations.map(r => ({
+        id: r.id, customer_name: r.customer_name, customer_phone: r.customer_phone,
+        customer_email: r.customer_email, reservation_time: r.reservation_time,
+        guest_count: r.guest_count, status: r.status,
+      })),
     });
     setSelectedRowId(null);
     setPanelOpen(true);
@@ -308,14 +311,12 @@ const OperationalView = () => {
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
     }}>
       <OperationalTopbar
-        totalReservations={rows.length}
+        totalReservations={rows.filter(r => r.status !== "cancelled").length}
         totalGuests={totalGuests}
         selectedDate={selectedDate}
         onDateChange={setSelectedDate}
         onOpenSettings={() => setSettingsOpen(true)}
-        onOpenStats={() => setStatsOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
-        onOpenActivityLog={() => setActivityLogOpen(true)}
       />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -327,6 +328,7 @@ const OperationalView = () => {
           waitlist={waitlist}
           onRefreshWaitlist={load}
           durationMin={durationMin}
+          billardAvailable={billardAvailable}
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -356,14 +358,7 @@ const OperationalView = () => {
       />
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <StatsPanel
-        open={statsOpen} onClose={() => setStatsOpen(false)}
-        totalReservations={rows.length} totalGuests={totalGuests}
-        confirmedCount={confirmedCount} pendingCount={pendingCount}
-        checkedInCount={checkedInCount} cancelledCount={cancelledCount}
-      />
       <NotificationsPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-      <ActivityLogPanel open={activityLogOpen} onClose={() => setActivityLogOpen(false)} />
     </div>
   );
 };
