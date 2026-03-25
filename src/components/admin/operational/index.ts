@@ -6,6 +6,4 @@ export { OperationalSlidePanel } from "./OperationalSlidePanel";
 export type { PanelData } from "./OperationalSlidePanel";
 export { default as BookingForm } from "./BookingForm";
 export { SettingsDialog } from "./SettingsDialog";
-export { StatsPanel } from "./StatsPanel";
 export { NotificationsPanel } from "./NotificationsPanel";
-export { ActivityLogPanel } from "./ActivityLogPanel";

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
-import { TableTimeline } from "./TableTimeline";
 
 const BILLARD_PRICE_PER_MIN = 0.23;
 
@@ -49,6 +48,16 @@ const BillardLiveTimer = ({ startTime }: { startTime?: string }) => {
   );
 };
 
+interface UnitDayReservation {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  reservation_time: string;
+  guest_count: number;
+  status: string;
+}
+
 export interface PanelData {
   tableLabel: string;
   areaName?: string;
@@ -63,6 +72,7 @@ export interface PanelData {
   customerEmail?: string;
   customerPhone?: string;
   zone?: string;
+  unitDayReservations?: UnitDayReservation[];
 }
 
 interface UnitOption {
@@ -97,6 +107,13 @@ const STATUS_PILL: Record<string, React.CSSProperties> = {
   Gesperrt: { background: "#fde8e8", color: "#cc2222", border: "1px solid #d8a0a0" },
 };
 
+const STATUS_LABEL: Record<string, { text: string; color: string }> = {
+  checked_in: { text: "Anwesend", color: "#2a7a2a" },
+  confirmed: { text: "Bestätigt", color: "#3a7bd5" },
+  pending: { text: "Ausstehend", color: "#e07820" },
+  cancelled: { text: "Storniert", color: "#cc2222" },
+};
+
 const adminAction = async (body: Record<string, unknown>) => {
   const res = await supabase.functions.invoke("admin-actions", { body });
   if (res.error) throw res.error;
@@ -114,7 +131,6 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [showBillardCheckout, setShowBillardCheckout] = useState(false);
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
 
-  // Detect if this is a billard unit
   const isBillardUnit = !!(data?.zone === "billard" || data?.tableLabel?.toLowerCase().includes("billard"));
 
   useEffect(() => {
@@ -126,11 +142,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     }
   }, [open, data]);
 
-  // Load available units for assignment dropdown
   useEffect(() => {
     if (!open) return;
     supabase.from("units").select("id, name, area, status").order("position_index").then(({ data: u }) => {
-      // Filter out kicker and dart units
       const filtered = ((u as UnitOption[]) || []).filter(unit => {
         const lower = unit.name.toLowerCase();
         return !lower.startsWith("kicker") && !lower.startsWith("dart");
@@ -168,7 +182,6 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const handleCheckOut = async () => {
     if (!data?.reservationId) return;
-    // For billard: show price summary dialog first
     if (isBillardUnit && checkedIn) {
       setShowBillardCheckout(true);
       return;
@@ -263,7 +276,6 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
   };
 
-  // Build unit status map from reservations
   const unitStatusMap = new Map<string, "occupied" | "reserved">();
   reservations.forEach(r => {
     if (!r.unit_id) return;
@@ -273,13 +285,11 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     }
   });
 
-  // Group units by area for dropdown
   const groupedUnits = units.reduce<Record<string, UnitOption[]>>((acc, u) => {
     (acc[u.area] = acc[u.area] || []).push(u);
     return acc;
   }, {});
 
-  // Calculate billard checkout values
   const billardCheckoutData = (() => {
     if (!isBillardUnit || !data?.startTime) return null;
     const [h, m] = data.startTime.split(":").map(Number);
@@ -289,6 +299,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     const cost = (elapsedMin * BILLARD_PRICE_PER_MIN).toFixed(2);
     return { elapsedMin, cost };
   })();
+
+  const dayReservations = data?.unitDayReservations || [];
 
   return (
     <>
@@ -373,29 +385,45 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             <BookingForm
               tableLabel={data?.tableLabel}
               initialZone={data?.zone}
+              initialUnitId={data?.unitId}
               onSuccess={() => { setMode("view"); onRefresh(); }}
               onCancel={() => setMode("view")}
             />
           ) : data?.guest ? (
             <div>
-              {/* Table timeline - upcoming reservations for this unit */}
-              {data.unitId && (() => {
-                const tableRes = reservations
-                  .filter(r => r.unit_id === data.unitId && r.customer_name && r.reservation_time)
-                  .map(r => ({
-                    id: r.id,
-                    customer_name: r.customer_name!,
-                    reservation_time: r.reservation_time!,
-                    guest_count: r.guest_count || 0,
-                    status: r.status,
-                  }));
-                return tableRes.length > 0 ? (
-                  <TableTimeline
-                    reservations={tableRes}
-                    currentTime={format(new Date(), "HH:mm")}
-                  />
-                ) : null;
-              })()}
+              {/* Day reservations for this table */}
+              {dayReservations.length > 1 && (
+                <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#333", marginBottom: 8 }}>
+                    Alle Reservierungen heute ({dayReservations.length})
+                  </div>
+                  {dayReservations.map(r => {
+                    const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
+                    const isActive = r.id === data.reservationId;
+                    return (
+                      <div key={r.id} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+                        background: isActive ? "#e8f5e8" : "#fff",
+                        border: `1px solid ${isActive ? "#b8d8b8" : "#eaeaea"}`,
+                        borderRadius: 6, marginBottom: 4,
+                      }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
+                            {r.reservation_time.slice(0, 5)} · {r.customer_name}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#999", display: "flex", gap: 8 }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Reservation card */}
               <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14, marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -459,7 +487,6 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                       </optgroup>
                     ))}
                    </select>
-                   {/* Status legend */}
                    <div style={{ display: "flex", gap: 10, marginTop: 8, fontSize: 10, color: "#777" }}>
                      <span>🟢 Frei</span>
                      <span>🟡 Reserviert</span>
@@ -506,26 +533,39 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", textAlign: "center" }}>
-              {/* Show timeline for free tables that have upcoming reservations */}
-              {data?.unitId && (() => {
-                const tableRes = reservations
-                  .filter(r => r.unit_id === data.unitId && r.customer_name && r.reservation_time)
-                  .map(r => ({
-                    id: r.id,
-                    customer_name: r.customer_name!,
-                    reservation_time: r.reservation_time!,
-                    guest_count: r.guest_count || 0,
-                    status: r.status,
-                  }));
-                return tableRes.length > 0 ? (
-                  <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
-                    <TableTimeline
-                      reservations={tableRes}
-                      currentTime={format(new Date(), "HH:mm")}
-                    />
+              {/* Day reservations for free table */}
+              {dayReservations.length > 0 && (
+                <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
+                  <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#333", marginBottom: 8 }}>
+                      Reservierungen heute ({dayReservations.length})
+                    </div>
+                    {dayReservations.map(r => {
+                      const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
+                      return (
+                        <div key={r.id} style={{
+                          display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+                          background: "#fff", border: "1px solid #eaeaea",
+                          borderRadius: 6, marginBottom: 4,
+                        }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
+                              {r.reservation_time.slice(0, 5)} · {r.customer_name}
+                            </div>
+                            <div style={{ fontSize: 10, color: "#999", display: "flex", gap: 8 }}>
+                              <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
+                              <span>✉ {r.customer_email}</span>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                ) : null;
-              })()}
+                </div>
+              )}
               <CalendarDays size={40} color="#ddd" style={{ marginBottom: 12 }} />
               <span style={{ fontSize: 14, color: "#999" }}>
                 {data?.status === "blocked" ? "Tisch ist gesperrt" : "Aktuell keine Reservierung"}
@@ -533,7 +573,6 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
               <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>
                 {data?.status === "blocked" ? "Dieser Tisch ist aktuell nicht verfügbar" : "Dieser Tisch ist frei verfügbar"}
               </span>
-              {/* Lock/Unlock for free or blocked tables */}
               {data?.unitId && (
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                   <button onClick={handleBlock} disabled={saving} style={{

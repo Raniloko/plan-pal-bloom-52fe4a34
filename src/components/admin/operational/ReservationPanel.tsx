@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send } from "lucide-react";
+import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ export interface ResRow {
   tableRef: string;
   icon: "ob" | "double" | "single" | "chkps" | "none";
   highlighted: boolean;
-  status: "confirmed" | "pending" | "checked_in" | "checked_out";
+  status: "confirmed" | "pending" | "checked_in" | "checked_out" | "cancelled";
   overdue: boolean;
 }
 
@@ -38,11 +38,12 @@ interface Props {
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
   durationMin?: number;
+  billardAvailable?: { free: number; total: number };
 }
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration }: Props) => {
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
   const [notifying, setNotifying] = useState<string | null>(null);
@@ -66,7 +67,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
   const DURATION_MIN = propDuration || 120;
   const platziert = useMemo(() => rows.filter(r => r.status === "checked_in"), [rows]);
   const bevorstehend = useMemo(() => rows.filter(r => (r.status === "confirmed" || r.status === "pending") && !r.overdue), [rows]);
-  const achtung = useMemo(() => rows.filter(r => r.overdue), [rows]);
+  // Achtung: overdue + cancelled
+  const achtung = useMemo(() => rows.filter(r => r.overdue || r.status === "cancelled"), [rows]);
 
   const filtered = subTab === "platziert" ? platziert : subTab === "achtung" ? achtung : bevorstehend;
 
@@ -76,7 +78,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
     { key: "achtung", label: "Achtung", count: achtung.length, color: "#cc5500", icon: <AlertTriangle size={8} /> },
   ];
 
-  const renderIcon = (icon: ResRow["icon"]) => {
+  const renderIcon = (icon: ResRow["icon"], status?: ResRow["status"]) => {
+    if (status === "cancelled") return <Ban size={15} color="#cc2222" />;
     switch (icon) {
       case "ob": return <span style={{ background: "#e07820", color: "#fff", fontSize: 8, fontWeight: 700, padding: "2px 5px", borderRadius: 2 }}>OB</span>;
       case "double": return <CheckCheck size={15} color="#2a7a2a" />;
@@ -122,6 +125,23 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
         }}>+ Neu</button>
       </div>
 
+      {/* Billard availability badge */}
+      {billardAvailable && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, padding: "6px 14px",
+          background: "#1e1e1e", borderBottom: "1px solid #2a2a2a",
+        }}>
+          <span style={{ fontSize: 10, color: "#c9a84c", fontWeight: 700 }}>🎱 Billard</span>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
+            background: billardAvailable.free > 0 ? "#2a7a2a22" : "#cc222222",
+            color: billardAvailable.free > 0 ? "#4ade80" : "#f87171",
+          }}>
+            {billardAvailable.free} von {billardAvailable.total} verfügbar
+          </span>
+        </div>
+      )}
+
       {resTab === "res" ? (
         <>
           {/* Sub-tabs */}
@@ -155,9 +175,9 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
             <span style={{ display: "flex", justifyContent: "center" }}><Bell size={12} color="#888" /></span>
           </div>
 
-          {/* Meal label */}
+          {/* Summary */}
           <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #e0e0e0", gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ABENDESSEN</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ÜBERSICHT</span>
             <span style={{ fontSize: 10, color: "#777" }}>Gesamt {filtered.length}</span>
             <span style={{ fontSize: 10, color: "#777", display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
           </div>
@@ -166,19 +186,21 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           <div style={{ flex: 1, overflowY: "auto" }}>
             {filtered.map(r => {
               const sel = r.id === selectedRowId;
-              const borderL = r.overdue ? "#cc3300" : r.status === "checked_in" ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
-              const bg = sel ? "#eaeaea" : r.overdue ? "#fef2f2" : r.status === "checked_in" ? "#edf4ed" : "#fff";
+              const isCancelled = r.status === "cancelled";
+              const borderL = isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : r.status === "checked_in" ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
+              const bg = sel ? "#eaeaea" : isCancelled ? "#fef2f2" : r.overdue ? "#fef2f2" : r.status === "checked_in" ? "#edf4ed" : "#fff";
               return (
                 <div key={r.id} onClick={() => onRowClick(r)} style={{
                   display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
                   minHeight: 58, borderBottom: "1px solid #e0e0e0",
                   borderLeft: `3px solid ${borderL}`, background: bg,
                   padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
+                  opacity: isCancelled ? 0.6 : 1,
                 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: r.overdue ? "#cc3300" : "#111" }}>{r.time}</div>
-                    <div style={{ fontSize: 10, color: r.overdue ? "#cc3300" : "#999", fontWeight: r.overdue ? 700 : 400 }}>
-                      {r.overdue ? r.offset : r.status === "checked_in" ? (() => {
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : "#111" }}>{r.time}</div>
+                    <div style={{ fontSize: 10, color: isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : "#999", fontWeight: r.overdue ? 700 : 400 }}>
+                      {isCancelled ? "Storniert" : r.overdue ? r.offset : r.status === "checked_in" ? (() => {
                         const [h, m] = r.time.split(":").map(Number);
                         const start = new Date(); start.setHours(h, m, 0, 0);
                         const elapsed = Math.floor((Date.now() - start.getTime()) / 60000);
@@ -193,11 +215,11 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#111", textAlign: "center" }}>{r.guests}</div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: "#111" }}>{r.name}</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: isCancelled ? "#999" : "#111", textDecoration: isCancelled ? "line-through" : "none" }}>{r.name}</div>
                     <div style={{ fontSize: 10, color: "#999" }}>{r.tableRef}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {r.overdue ? <AlertTriangle size={15} color="#cc3300" /> : renderIcon(r.icon)}
+                    {isCancelled ? <Ban size={15} color="#cc2222" /> : r.overdue ? <AlertTriangle size={15} color="#cc3300" /> : renderIcon(r.icon, r.status)}
                   </div>
                 </div>
               );
