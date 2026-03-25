@@ -12,7 +12,6 @@ export interface TableData {
   pax?: number;
   reservationId?: string;
   area?: FloorArea;
-  /** Timestamp when status last changed – used for pulse animation */
   statusChangedAt?: number;
 }
 
@@ -32,12 +31,11 @@ export const STATUS_FILLS = {
   blocked:  { fill: "#cc2222", opacity: 0.5,  numColor: "#fff", chairOpacity: 0.3  },
 } as const;
 
-// Time-slot based color fills
 export const TIME_SLOT_FILLS: Record<string, { fill: string; numColor: string }> = {
-  morning:   { fill: "#f59e0b", numColor: "#fff" },  // 10-14
-  afternoon: { fill: "#3b82f6", numColor: "#fff" },  // 14-18
-  evening:   { fill: "#8b5cf6", numColor: "#fff" },  // 18-22
-  night:     { fill: "#ec4899", numColor: "#fff" },   // 22+
+  morning:   { fill: "#f59e0b", numColor: "#fff" },
+  afternoon: { fill: "#3b82f6", numColor: "#fff" },
+  evening:   { fill: "#8b5cf6", numColor: "#fff" },
+  night:     { fill: "#ec4899", numColor: "#fff" },
 };
 
 export const getTimeSlot = (time?: string): string => {
@@ -49,14 +47,16 @@ export const getTimeSlot = (time?: string): string => {
   return "night";
 };
 
-// Maps SVG table IDs to their floor area
 export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   t10: "hauptbereich",
   t30: "hauptbereich",
-  t50: "hauptbereich",
+  t51: "hauptbereich",
   t52: "hauptbereich",
   t53: "hauptbereich",
   t54: "hauptbereich",
+  t55: "hauptbereich",
+  t56: "hauptbereich",
+  t57: "hauptbereich",
   t59: "hauptbereich",
   t60: "hauptbereich",
   t61: "hauptbereich",
@@ -69,9 +69,11 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   b1: "hauptbereich",
   b2: "hauptbereich",
   b3: "hauptbereich",
-  // Fensterbereich
-  f1: "fenster", f2: "fenster", f3: "fenster", f4: "fenster",
-  f5: "fenster", f6: "fenster", f7: "fenster", f8: "fenster",
-  // Billard area (4-8 only; 1-3 are in hauptbereich)
-  bt4: "billard", bt5: "billard", bt6: "billard", bt7: "billard", bt8: "billard",
+  // Fensterbereich (101-106)
+  f1: "fenster", f2: "fenster", f3: "fenster",
+  f4: "fenster", f5: "fenster", f6: "fenster",
+  // Billard area (1-8)
+  bt1: "billard", bt2: "billard", bt3: "billard",
+  bt4: "billard", bt5: "billard", bt6: "billard",
+  bt7: "billard", bt8: "billard",
 };
