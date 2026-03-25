@@ -106,6 +106,14 @@ Deno.serve(async (req) => {
       case "cancel": {
         const { reservation_id, reason } = body;
         if (!reservation_id) return error("reservation_id required", 400);
+
+        // Fetch reservation data first for the cancellation email
+        const { data: cancelResData } = await supabase
+          .from("reservations")
+          .select("*")
+          .eq("id", reservation_id)
+          .single();
+
         const { error: err } = await supabase
           .from("reservations")
           .update({ status: "cancelled", cancellation_reason: reason || "Admin-Stornierung" })
@@ -113,19 +121,34 @@ Deno.serve(async (req) => {
         if (err) return error(err.message, 500);
         await logActivity(supabase, "cancel", "reservation", reservation_id, reason || "Admin-Stornierung");
 
-        try {
-          const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-          const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-          await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
-            },
-            body: JSON.stringify({ reservation_id, type: "cancellation" }),
-          });
-        } catch (e) {
-          console.error("Email error (non-blocking):", e);
+        // Send cancellation email with full reservation data
+        if (cancelResData) {
+          try {
+            const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+            const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+              },
+              body: JSON.stringify({
+                reservation: {
+                  id: cancelResData.id,
+                  customer_name: cancelResData.customer_name,
+                  customer_email: cancelResData.customer_email,
+                  reservation_date: cancelResData.reservation_date,
+                  reservation_time: cancelResData.reservation_time,
+                  guest_count: cancelResData.guest_count,
+                  zone: cancelResData.zone,
+                },
+                is_cancellation: true,
+                cancel_reason: reason || "Admin-Stornierung",
+              }),
+            });
+          } catch (e) {
+            console.error("Email error (non-blocking):", e);
+          }
         }
 
         return ok({ status: "cancelled" });
