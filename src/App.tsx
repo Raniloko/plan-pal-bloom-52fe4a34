@@ -27,7 +27,7 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith("/admin");
+  const isAdmin = location.pathname.startsWith("/backstage");
 
   return (
     <>
