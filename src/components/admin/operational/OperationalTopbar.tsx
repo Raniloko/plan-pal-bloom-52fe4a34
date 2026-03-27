@@ -128,7 +128,7 @@ export const OperationalTopbar = ({
           </span>
         </div>
         <IcoBtn borderL onClick={onOpenSettings}><Settings size={16} /></IcoBtn>
-        <IcoBtn borderL onClick={async () => { await signOut(); navigate("/admin/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
+        <IcoBtn borderL onClick={async () => { await signOut(); navigate("/backstage/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
       </div>
     </div>
   );
