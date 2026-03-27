@@ -21,7 +21,7 @@ const AdminLogin = () => {
       setError(result.error);
       setLoading(false);
     } else {
-      navigate("/admin", { replace: true });
+      navigate("/backstage", { replace: true });
     }
   };
 
