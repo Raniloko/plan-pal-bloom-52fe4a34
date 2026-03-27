@@ -41,8 +41,8 @@ const AppContent = () => {
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<ProtectedRoute><OperationalView /></ProtectedRoute>} />
+        <Route path="/backstage/login" element={<AdminLogin />} />
+        <Route path="/backstage" element={<ProtectedRoute><OperationalView /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <Footer onOpenCookieSettings={() => setCookieSettingsOpen(true)} />}
