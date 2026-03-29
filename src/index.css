@@ -110,7 +110,7 @@
 
 /* Gold glow backgrounds */
 .gold-glow {
-  background: radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.06) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 218, 0, 0.06) 0%, transparent 70%);
 }
 
 /* Noise/grain texture overlay */
