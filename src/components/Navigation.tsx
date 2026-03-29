@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 
 const navLinks = [
   { to: "/", label: "Startseite" },
@@ -35,10 +35,8 @@ const Navigation = () => {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? "bg-[#111111]/95 backdrop-blur-md" : "bg-[#111111]"
       }`}>
-        {/* Yellow bottom border */}
         <div className="border-b-2 border-primary">
           <div className="container mx-auto px-4 flex items-center justify-between h-16 md:h-20">
-            {/* Left - Hamburger (3 yellow lines) */}
             <button
               onClick={() => setIsOpen(true)}
               className="text-primary hover:text-primary/80 transition-colors z-10"
@@ -47,18 +45,15 @@ const Navigation = () => {
               <Menu size={28} strokeWidth={2.5} />
             </button>
 
-            {/* Center - Logo */}
             <Link to="/" className="absolute left-1/2 -translate-x-1/2">
               <img src="/images/rondo-logo.png" alt="Rondo Sportsbar" className="h-12 md:h-16" />
             </Link>
 
-            {/* Right - empty spacer for balance */}
             <div className="w-7" />
           </div>
         </div>
       </nav>
 
-      {/* ===== YELLOW FULL-SCREEN MENU FROM LEFT ===== */}
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/50 z-[55] transition-opacity duration-300 ${
@@ -73,7 +68,7 @@ const Navigation = () => {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Close button - top left */}
+        {/* Close button */}
         <div className="flex justify-start p-5">
           <button
             onClick={() => setIsOpen(false)}
@@ -84,21 +79,25 @@ const Navigation = () => {
           </button>
         </div>
 
-        {/* "RESERVIERUNG" title at top */}
-        <div className="px-8 mt-8 mb-16">
-          <h2 className="font-display text-4xl md:text-5xl text-primary-foreground font-black italic tracking-wider">
+        {/* "RESERVIERUNG" title - clickable link */}
+        <Link
+          to="/reservierung"
+          onClick={() => setIsOpen(false)}
+          className="block px-8 mt-8 mb-16 group"
+        >
+          <h2 className="font-display text-4xl md:text-5xl text-primary-foreground font-black italic tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
             RESERVIERUNG
           </h2>
-        </div>
+        </Link>
 
-        {/* Nav links - black text on yellow */}
+        {/* Nav links */}
         <div className="flex flex-col items-start gap-4 px-8 flex-1">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               onClick={() => setIsOpen(false)}
-              className={`font-display text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground transition-colors hover:text-primary-foreground/70 ${
+              className={`font-display text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground transition-all duration-300 hover:translate-x-2 hover:text-primary-foreground/70 ${
                 location.pathname === link.to ? "underline underline-offset-4" : ""
               }`}
             >
