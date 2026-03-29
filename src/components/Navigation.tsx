@@ -85,7 +85,7 @@ const Navigation = () => {
           onClick={() => setIsOpen(false)}
           className="block px-8 mt-8 mb-16 group"
         >
-          <h2 className="font-display text-4xl md:text-5xl text-primary-foreground font-black italic tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
+          <h2 className="text-4xl md:text-5xl text-primary-foreground font-bold tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
             RESERVIERUNG
           </h2>
         </Link>
