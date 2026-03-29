@@ -38,7 +38,7 @@ const AppContent = () => {
         <Route path="/speisekarte" element={<Speisekarte />} />
         <Route path="/private-feiern" element={<PrivateFeiern />} />
         <Route path="/kontakt" element={<Kontakt />} />
-        <Route path="/jobs" element={<Jobs />} />
+        {/* Jobs route removed */}
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
         <Route path="/backstage/login" element={<AdminLogin />} />
