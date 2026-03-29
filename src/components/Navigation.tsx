@@ -85,7 +85,7 @@ const Navigation = () => {
           onClick={() => setIsOpen(false)}
           className="block px-8 mt-8 mb-16 group"
         >
-          <h2 className="font-display text-4xl md:text-5xl text-primary-foreground font-black italic tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
+          <h2 className="text-4xl md:text-5xl text-primary-foreground font-bold tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
             RESERVIERUNG
           </h2>
         </Link>
@@ -97,7 +97,7 @@ const Navigation = () => {
               key={link.to}
               to={link.to}
               onClick={() => setIsOpen(false)}
-              className={`font-display text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground transition-all duration-300 hover:translate-x-2 hover:text-primary-foreground/70 ${
+              className={`text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground font-semibold transition-all duration-300 hover:translate-x-2 hover:text-primary-foreground/70 ${
                 location.pathname === link.to ? "underline underline-offset-4" : ""
               }`}
             >

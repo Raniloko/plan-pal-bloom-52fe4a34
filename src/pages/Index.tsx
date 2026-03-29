@@ -24,7 +24,7 @@ const testimonials = [
 const ReservierenButton = ({ to = "/reservierung", className = "", dark = false }: { to?: string; className?: string; dark?: boolean }) => (
   <Link
     to={to}
-    className={`group inline-flex items-center gap-3 border-2 rounded-full pl-8 pr-2 py-2 font-display text-lg uppercase tracking-wider transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ${
+    className={`group inline-flex items-center gap-3 border-2 rounded-full pl-8 pr-2 py-2 font-semibold text-lg uppercase tracking-wider transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ${
       dark
         ? "border-[#111] text-[#111] hover:border-primary hover:text-primary hover:shadow-primary/20"
         : "border-foreground text-foreground hover:border-primary hover:text-primary hover:shadow-primary/30"
@@ -70,7 +70,7 @@ const Index = () => {
 
         <div className="relative z-10 container mx-auto px-6 flex flex-col justify-center" style={{ minHeight: "85vh" }}>
           <h1
-            className="font-display font-black italic leading-[0.85]"
+            className="font-bold leading-[0.9]"
             style={{ fontSize: "clamp(56px, 12vw, 140px)" }}
           >
             <span className="text-primary">RONDO</span>
@@ -88,7 +88,7 @@ const Index = () => {
       {/* ===== 2. WELCOME ===== */}
       <section className="bg-[#000000] py-20 md:py-32">
         <div className="container mx-auto px-6">
-          <h2 className="font-display text-4xl md:text-6xl lg:text-7xl italic">
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold">
             <span className="text-primary">Welcome to</span>
             <br />
             <span className="text-primary">Rondo</span>{" "}
@@ -127,18 +127,9 @@ const Index = () => {
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            {/* Left - Image */}
-            <div className="flex justify-center">
-              <img
-                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/reservierung-element.png"
-                alt="Reservierung"
-                className="w-full max-w-lg h-auto"
-                loading="lazy"
-              />
-            </div>
-            {/* Right - Text */}
-            <div>
-              <h2 className="font-display text-4xl md:text-6xl text-[#111] italic">
+            {/* Text - always first on mobile */}
+            <div className="order-2 md:order-1">
+              <h2 className="text-4xl md:text-6xl text-[#111] font-bold">
                 Reservierung
                 <br />
                 im <span className="text-primary">Rondo</span>
@@ -158,6 +149,15 @@ const Index = () => {
                 <ReservierenButton dark />
               </div>
             </div>
+            {/* Image - below text on mobile, right on desktop */}
+            <div className="flex justify-center order-1 md:order-2">
+              <img
+                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/reservierung-element.png"
+                alt="Reservierung"
+                className="w-full max-w-sm md:max-w-lg h-auto"
+                loading="lazy"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -174,7 +174,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 container mx-auto px-6 py-20 md:py-32 flex flex-col justify-center" style={{ minHeight: "80vh" }}>
           <h2
-            className="font-display font-black italic leading-[0.85]"
+            className="font-bold leading-[0.9]"
             style={{ fontSize: "clamp(48px, 10vw, 110px)" }}
           >
             <span className="text-primary">BILLARD,</span>
@@ -204,7 +204,7 @@ const Index = () => {
       {/* ===== 5. TESTIMONIALS ===== */}
       <section className="bg-white py-20 md:py-28">
         <div className="container mx-auto px-6 max-w-4xl text-center">
-          <h2 className="font-display text-3xl md:text-5xl text-[#111] italic mb-2">
+          <h2 className="text-3xl md:text-5xl text-[#111] font-bold mb-2">
             Was unsere Kunden sagen
           </h2>
           <div className="w-[150px] h-[3px] bg-primary mx-auto my-8" />
@@ -218,7 +218,7 @@ const Index = () => {
                 {testimonials.map((t, i) => (
                   <div key={i} className="w-full flex-shrink-0 px-4">
                     <div className="max-w-2xl mx-auto py-8">
-                      <p className="text-lg md:text-xl text-[#555] italic leading-relaxed">
+                      <p className="text-lg md:text-xl text-[#555] leading-relaxed">
                         "{t.text}"
                       </p>
                       <p className="font-semibold text-[#111] mt-6">{t.author}</p>
@@ -259,30 +259,31 @@ const Index = () => {
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h2 className="font-display text-4xl md:text-6xl text-[#111] italic">
+            {/* Text - always first on mobile */}
+            <div className="order-2 md:order-1">
+              <h2 className="text-4xl md:text-6xl text-[#111] font-bold">
                 Time for
                 <br />
                 some <span className="text-primary">Action</span>
               </h2>
               <div className="w-[150px] h-[3px] bg-primary my-8" />
-              <h3 className="font-display text-2xl text-[#111] mb-6 italic">Unsere Öffnungszeiten</h3>
+              <h3 className="text-2xl text-[#111] mb-6 font-semibold">Unsere Öffnungszeiten</h3>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <span className="text-primary text-lg">▶</span>
-                  <span className="font-display text-xl text-[#111]">Mo – Do: 16 Uhr – 00:00 Uhr</span>
+                  <span className="text-xl text-[#111] font-medium">Mo – Do: 16 Uhr – 00:00 Uhr</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary text-lg">▶</span>
-                  <span className="font-display text-xl text-[#111]">Fr: 16 Uhr – 02 Uhr</span>
+                  <span className="text-xl text-[#111] font-medium">Fr: 16 Uhr – 02 Uhr</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary text-lg">▶</span>
-                  <span className="font-display text-xl text-[#111]">Sa: 14 Uhr – 02 Uhr</span>
+                  <span className="text-xl text-[#111] font-medium">Sa: 14 Uhr – 02 Uhr</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary text-lg">▶</span>
-                  <span className="font-display text-xl text-[#111]">So: 14 Uhr – 00:00 Uhr</span>
+                  <span className="text-xl text-[#111] font-medium">So: 14 Uhr – 00:00 Uhr</span>
                 </li>
               </ul>
               <p className="text-[#555] mt-8">
@@ -294,11 +295,12 @@ const Index = () => {
                 werden über unseren Google Account gepflegt.
               </p>
             </div>
-            <div className="flex justify-center">
+            {/* Image - below text on mobile, right on desktop */}
+            <div className="flex justify-center order-1 md:order-2">
               <img
                 src="/images/time-for-action.png"
                 alt="Time for Action"
-                className="w-full max-w-md h-auto"
+                className="w-full max-w-xs md:max-w-md h-auto"
                 loading="lazy"
               />
             </div>
@@ -315,7 +317,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 container mx-auto px-6 py-20 md:py-32 flex flex-col justify-center" style={{ minHeight: "80vh" }}>
           <h2
-            className="font-display font-black italic leading-[0.85]"
+            className="font-bold leading-[0.9]"
             style={{ fontSize: "clamp(48px, 10vw, 110px)" }}
           >
             <span className="text-primary">PRIVATE</span>
@@ -360,7 +362,7 @@ const Index = () => {
       {/* ===== 9. COME IN - FEEL GOOD ===== */}
       <section className="bg-[#0a0a0a] py-20 md:py-28">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="font-display text-3xl md:text-5xl text-foreground italic">
+          <h2 className="text-3xl md:text-5xl text-foreground font-bold">
             Come in – <span className="text-primary">Feel good</span>
           </h2>
           <div className="w-[150px] h-[3px] bg-primary mx-auto my-8" />
