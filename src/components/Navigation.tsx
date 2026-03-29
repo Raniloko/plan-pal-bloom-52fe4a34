@@ -97,7 +97,7 @@ const Navigation = () => {
               key={link.to}
               to={link.to}
               onClick={() => setIsOpen(false)}
-              className={`font-display text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground transition-all duration-300 hover:translate-x-2 hover:text-primary-foreground/70 ${
+              className={`text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground font-semibold transition-all duration-300 hover:translate-x-2 hover:text-primary-foreground/70 ${
                 location.pathname === link.to ? "underline underline-offset-4" : ""
               }`}
             >
