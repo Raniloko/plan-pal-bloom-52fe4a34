@@ -96,20 +96,33 @@ const Navigation = () => {
 
         {/* Nav links */}
         <div className="flex flex-col items-start gap-5 px-8 flex-1 mt-4">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setIsOpen(false)}
-              className={`font-display text-3xl md:text-4xl uppercase tracking-wider transition-colors ${
-                location.pathname === link.to
-                  ? "text-primary"
-                  : "text-foreground hover:text-primary"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => 
+            link.external ? (
+              <a
+                key={link.to}
+                href={link.external}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsOpen(false)}
+                className="font-display text-3xl md:text-4xl uppercase tracking-wider text-foreground hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsOpen(false)}
+                className={`font-display text-3xl md:text-4xl uppercase tracking-wider transition-colors ${
+                  location.pathname === link.to
+                    ? "text-primary"
+                    : "text-foreground hover:text-primary"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </div>
 
         {/* Social icons */}
