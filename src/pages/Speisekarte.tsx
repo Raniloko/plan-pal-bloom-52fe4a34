@@ -56,7 +56,7 @@ const Speisekarte = () => {
               <AccordionItem
                 key={sIdx}
                 value={`section-${sIdx}`}
-                className="border border-primary rounded-none bg-transparent"
+                className="border border-primary/30 rounded-none bg-transparent"
               >
                 <AccordionTrigger className="px-5 py-4 font-display text-xl md:text-2xl uppercase tracking-wider hover:no-underline hover:text-primary">
                   {section.category}

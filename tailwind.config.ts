@@ -56,8 +56,8 @@ export default {
         "fade-slide-up": { from: { opacity: "0", transform: "translateY(16px)" }, to: { opacity: "1", transform: "translateY(0)" } },
         "count-up": { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
         "pulse-gold": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(201,168,76,0)" },
-          "50%": { boxShadow: "0 0 16px 4px rgba(201,168,76,0.12)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(255,218,0,0)" },
+          "50%": { boxShadow: "0 0 16px 4px rgba(255,218,0,0.12)" },
         },
         "slide-in-right": {
           from: { transform: "translateX(100%)" },

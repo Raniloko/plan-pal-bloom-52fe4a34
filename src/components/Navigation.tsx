@@ -12,6 +12,7 @@ const navLinks = [
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -23,25 +24,33 @@ const Navigation = () => {
     setIsOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled ? "bg-background/95 backdrop-blur-md shadow-lg" : "bg-transparent"
+    }`}>
       <div className="container mx-auto px-4 flex items-center justify-between h-16 md:h-20">
-        {/* Social icons */}
+        {/* Logo - centered */}
+        <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+          <img src="/images/rondo-logo.png" alt="Rondo Sportsbar" className="h-10 md:h-14" />
+        </Link>
+
+        {/* Left side - Social icons */}
         <div className="flex items-center gap-3">
-          <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
-            <Instagram size={22} />
+          <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
+            <Instagram size={20} />
           </a>
-          <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
-            <Facebook size={22} />
+          <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
+            <Facebook size={20} />
           </a>
         </div>
 
-        {/* Logo */}
-        <Link to="/" className="absolute left-1/2 -translate-x-1/2">
-          <img src="/images/rondo-logo.png" alt="Rondo Sportsbar" className="h-12 md:h-16" />
-        </Link>
-
-        {/* Desktop CTA + Hamburger */}
+        {/* Right side - CTA + Hamburger */}
         <div className="flex items-center gap-4">
           <Link
             to="/reservierung"
@@ -61,23 +70,23 @@ const Navigation = () => {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/60 z-[55] transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 bg-black/70 z-[55] transition-opacity duration-300 ease-in-out ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Slide-in Panel */}
+      {/* Slide-in Panel - FROM RIGHT, dark background */}
       <div
-        className={`fixed top-0 left-0 h-[100dvh] w-[320px] max-w-[85vw] bg-primary z-[56] flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 right-0 h-[100dvh] w-[320px] max-w-[85vw] bg-background border-l border-border/20 z-[56] flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Close button */}
-        <div className="flex justify-end p-5">
+        <div className="flex justify-start p-5">
           <button
             onClick={() => setIsOpen(false)}
-            className="text-primary-foreground hover:text-primary-foreground/70 transition-colors"
+            className="text-foreground hover:text-primary transition-colors"
             aria-label="Menü schließen"
           >
             <X size={28} />
@@ -85,7 +94,7 @@ const Navigation = () => {
         </div>
 
         {/* Nav links */}
-        <div className="flex flex-col items-start gap-4 px-8 flex-1">
+        <div className="flex flex-col items-start gap-5 px-8 flex-1 mt-4">
           {navLinks.map((link) => (
             <Link
               key={link.to}
@@ -93,8 +102,8 @@ const Navigation = () => {
               onClick={() => setIsOpen(false)}
               className={`font-display text-3xl md:text-4xl uppercase tracking-wider transition-colors ${
                 location.pathname === link.to
-                  ? "text-background"
-                  : "text-primary-foreground hover:text-background"
+                  ? "text-primary"
+                  : "text-foreground hover:text-primary"
               }`}
             >
               {link.label}
@@ -104,10 +113,10 @@ const Navigation = () => {
 
         {/* Social icons */}
         <div className="flex gap-6 px-8 pb-10">
-          <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-primary-foreground hover:text-background transition-colors">
+          <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
             <Instagram size={24} />
           </a>
-          <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-primary-foreground hover:text-background transition-colors">
+          <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">
             <Facebook size={24} />
           </a>
         </div>
