@@ -103,8 +103,8 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-card-hover:hover {
-  border-color: rgba(201, 168, 76, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(201, 168, 76, 0.05);
+  border-color: rgba(255, 218, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 218, 0, 0.05);
   transform: translateY(-2px);
 }
 
