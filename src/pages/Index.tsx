@@ -20,14 +20,20 @@ const testimonials = [
   },
 ];
 
-/* Pill-shaped CTA button matching original site */
-const ReservierenButton = ({ to = "/reservierung", className = "" }: { to?: string; className?: string }) => (
+/* Pill-shaped CTA button with hover animations */
+const ReservierenButton = ({ to = "/reservierung", className = "", dark = false }: { to?: string; className?: string; dark?: boolean }) => (
   <Link
     to={to}
-    className={`inline-flex items-center gap-3 border-2 border-foreground rounded-full pl-8 pr-2 py-2 font-display text-lg uppercase tracking-wider text-foreground hover:border-primary hover:text-primary transition-all group ${className}`}
+    className={`group inline-flex items-center gap-3 border-2 rounded-full pl-8 pr-2 py-2 font-display text-lg uppercase tracking-wider transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ${
+      dark
+        ? "border-[#111] text-[#111] hover:border-primary hover:text-primary hover:shadow-primary/20"
+        : "border-foreground text-foreground hover:border-primary hover:text-primary hover:shadow-primary/30"
+    } ${className}`}
   >
     RESERVIEREN
-    <span className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+    <span className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:rotate-[-35deg] ${
+      dark ? "bg-[#111] text-white" : "bg-foreground text-background"
+    }`}>
       <ArrowRight size={18} />
     </span>
   </Link>
@@ -56,7 +62,6 @@ const Index = () => {
         className="relative overflow-hidden bg-[#161616]"
         style={{ minHeight: "85vh" }}
       >
-        {/* Background image (smoke/player) */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url(/images/hero-header.png)" }}
@@ -118,63 +123,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ===== 3. APP SECTION - white bg ===== */}
-      <section className="bg-white py-20 md:py-28 relative overflow-visible">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            {/* Left - iPhone mockup */}
-            <div className="flex justify-center md:-mt-40">
-              <img
-                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/rondo-iphone-nfl-small.png"
-                alt="Rondo App"
-                className="max-w-[300px] w-full h-auto"
-                loading="lazy"
-              />
-            </div>
-            {/* Right - Text */}
-            <div>
-              <h2 className="font-display text-4xl md:text-6xl text-[#111] italic">
-                Die Rondo
-                <br />
-                Sportsbar <span className="text-primary">App</span>
-              </h2>
-              <p className="text-[#555] leading-relaxed mt-6 text-sm md:text-base">
-                Hol dir unsere Rondo APP und verpasse keine Aktion mehr.
-                <br />
-                Die APP bietet Dir einen Eventkalender mit dem Du zu unseren Sportereignissen und
-                Events deinen Lieblingsplatz reservieren kannst.
-              </p>
-              <div className="w-[175px] h-[3px] bg-primary my-8" />
-              <img
-                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/qr-code-new.png"
-                alt="QR Code"
-                className="max-w-[200px] h-auto"
-                loading="lazy"
-              />
-              <div className="flex gap-4 mt-6">
-                <a href="https://portal.gastfreund.net/rondo-sportsbar" target="_blank" rel="noopener noreferrer">
-                  <img
-                    src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/rondo-google-play.png"
-                    alt="Google Play"
-                    className="h-10"
-                    loading="lazy"
-                  />
-                </a>
-                <a href="https://portal.gastfreund.net/rondo-sportsbar" target="_blank" rel="noopener noreferrer">
-                  <img
-                    src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/rondo-appstore.png"
-                    alt="App Store"
-                    className="h-10"
-                    loading="lazy"
-                  />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 4. RESERVIERUNG - white bg ===== */}
+      {/* ===== 3. RESERVIERUNG - white bg ===== */}
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -206,22 +155,14 @@ const Index = () => {
                 Tennis oder Handball.
               </p>
               <div className="mt-8">
-                <Link
-                  to="/reservierung"
-                  className="inline-flex items-center gap-3 border-2 border-[#111] rounded-full pl-8 pr-2 py-2 font-display text-lg uppercase tracking-wider text-[#111] hover:border-primary hover:text-primary transition-all group"
-                >
-                  RESERVIEREN
-                  <span className="w-10 h-10 rounded-full bg-[#111] text-white flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                    <ArrowRight size={18} />
-                  </span>
-                </Link>
+                <ReservierenButton dark />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== 5. BILLARD, KICKER ODER DART ===== */}
+      {/* ===== 4. BILLARD, KICKER ODER DART ===== */}
       <section
         className="relative overflow-hidden"
         style={{ minHeight: "80vh" }}
@@ -260,7 +201,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ===== 6. TESTIMONIALS ===== */}
+      {/* ===== 5. TESTIMONIALS ===== */}
       <section className="bg-white py-20 md:py-28">
         <div className="container mx-auto px-6 max-w-4xl text-center">
           <h2 className="font-display text-3xl md:text-5xl text-[#111] italic mb-2">
@@ -289,13 +230,13 @@ const Index = () => {
             </div>
             <button
               onClick={prevTestimonial}
-              className="absolute left-0 top-1/2 -translate-y-1/2 p-2 text-[#111] hover:text-primary transition-colors"
+              className="absolute left-0 top-1/2 -translate-y-1/2 p-2 text-[#111] hover:text-primary transition-colors duration-300 hover:scale-110 active:scale-90"
             >
               <ChevronLeft size={32} />
             </button>
             <button
               onClick={nextTestimonial}
-              className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[#111] hover:text-primary transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[#111] hover:text-primary transition-colors duration-300 hover:scale-110 active:scale-90"
             >
               <ChevronRight size={32} />
             </button>
@@ -304,8 +245,8 @@ const Index = () => {
                 <button
                   key={i}
                   onClick={() => setCurrentTestimonial(i)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    i === currentTestimonial ? "bg-primary" : "bg-[#ccc] hover:bg-[#999]"
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    i === currentTestimonial ? "bg-primary scale-125" : "bg-[#ccc] hover:bg-[#999]"
                   }`}
                 />
               ))}
@@ -314,49 +255,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ===== 7. JOBS ===== */}
-      <section className="bg-white py-16 md:py-24">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="flex justify-center">
-              <img
-                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/jobs-bei-rondo.png"
-                alt="Jobs bei Rondo"
-                className="w-full max-w-md h-auto"
-                loading="lazy"
-              />
-            </div>
-            <div>
-              <h2 className="font-display text-4xl md:text-6xl text-[#111] italic">
-                <span className="text-primary">Jobs</span> bei
-                <br />
-                <span className="text-primary">Rondo</span>
-              </h2>
-              <div className="w-[150px] h-[3px] bg-primary my-8" />
-              <p className="text-[#555] leading-relaxed text-sm md:text-base">
-                Mehr Information zu aktuellen Job-Ausschreibungen findest du in unserer APP. Schau
-                doch mal rein und wir freuen uns schon darauf dich schon bald in unserem Team
-                begrüßen zu dürfen.
-              </p>
-              <div className="mt-8">
-                <a
-                  href="https://portal.gastfreund.net/rondo-sportsbar/346050"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 border-2 border-[#111] rounded-full pl-8 pr-2 py-2 font-display text-lg uppercase tracking-wider text-[#111] hover:border-primary hover:text-primary transition-all group"
-                >
-                  ZU DEN JOBS
-                  <span className="w-10 h-10 rounded-full bg-[#111] text-white flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                    <ArrowRight size={18} />
-                  </span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 8. ÖFFNUNGSZEITEN - white bg ===== */}
+      {/* ===== 6. ÖFFNUNGSZEITEN - white bg ===== */}
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -407,7 +306,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ===== 9. PRIVATE FEIERN - full bg image ===== */}
+      {/* ===== 7. PRIVATE FEIERN - full bg image ===== */}
       <section className="relative overflow-hidden" style={{ minHeight: "80vh" }}>
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -436,14 +335,14 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ===== 10. SOCIAL ICONS - white bg ===== */}
+      {/* ===== 8. SOCIAL ICONS - white bg ===== */}
       <section className="bg-white py-16 text-center">
         <div className="flex justify-center gap-10">
           <a
             href="https://instagram.com/rondosportsbar/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#111] hover:text-primary transition-colors"
+            className="text-[#111] hover:text-primary transition-all duration-300 hover:scale-125 active:scale-95"
           >
             <Instagram size={56} strokeWidth={1.5} />
           </a>
@@ -451,14 +350,14 @@ const Index = () => {
             href="https://facebook.com/Rondosportsbar"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#111] hover:text-primary transition-colors"
+            className="text-[#111] hover:text-primary transition-all duration-300 hover:scale-125 active:scale-95"
           >
             <Facebook size={56} strokeWidth={1.5} />
           </a>
         </div>
       </section>
 
-      {/* ===== 11. COME IN - FEEL GOOD ===== */}
+      {/* ===== 9. COME IN - FEEL GOOD ===== */}
       <section className="bg-[#0a0a0a] py-20 md:py-28">
         <div className="container mx-auto px-6 text-center">
           <h2 className="font-display text-3xl md:text-5xl text-foreground italic">
@@ -474,16 +373,16 @@ const Index = () => {
               { src: "/images/billard-area.jpg", label: "Billard-Area" },
               { src: "/images/tv-area.jpg", label: "TV-Area" },
             ].map((img, i) => (
-              <div key={i} className="text-center">
+              <div key={i} className="text-center group">
                 <div className="overflow-hidden">
                   <img
                     src={img.src}
                     alt={img.label}
-                    className="w-full aspect-[4/3] object-cover hover:scale-105 transition-transform duration-500"
+                    className="w-full aspect-[4/3] object-cover group-hover:scale-110 transition-transform duration-500"
                     loading="lazy"
                   />
                 </div>
-                <p className="text-[#999] text-sm mt-3">{img.label}</p>
+                <p className="text-[#999] text-sm mt-3 group-hover:text-primary transition-colors duration-300">{img.label}</p>
               </div>
             ))}
           </div>
