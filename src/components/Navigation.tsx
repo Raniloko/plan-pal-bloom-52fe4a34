@@ -3,11 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Instagram, Facebook } from "lucide-react";
 
 const navLinks = [
-  { to: "/", label: "Home" },
+  { to: "/", label: "Startseite" },
   { to: "/private-feiern", label: "Private Feiern" },
   { to: "/reservierung", label: "Reservierung" },
   { to: "/speisekarte", label: "Speisekarte" },
   { to: "/kontakt", label: "Kontakt" },
+  { to: "/jobs", label: "Jobs", external: "https://portal.gastfreund.net/rondo-sportsbar/346050" },
 ];
 
 const Navigation = () => {
