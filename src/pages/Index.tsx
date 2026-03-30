@@ -126,10 +126,19 @@ const Index = () => {
       {/* ===== 3. RESERVIERUNG - white bg ===== */}
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            {/* Text - always first on mobile */}
-            <div className="order-2 md:order-1">
-              <h2 className="text-4xl md:text-6xl text-[#111] font-bold">
+          <div className="grid md:grid-cols-2 gap-8 items-end">
+            {/* Image - left on desktop, below text on mobile */}
+            <div className="flex justify-center items-end order-2 md:order-1">
+              <img
+                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/reservierung-element.png"
+                alt="Reservierung"
+                className="w-full max-w-xs md:max-w-sm h-auto object-contain"
+                loading="lazy"
+              />
+            </div>
+            {/* Text - right on desktop */}
+            <div className="order-1 md:order-2">
+              <h2 className="text-4xl md:text-6xl text-[#111] font-bold uppercase">
                 Reservierung
                 <br />
                 im <span className="text-primary">Rondo</span>
@@ -137,9 +146,8 @@ const Index = () => {
               <div className="w-[150px] h-[3px] bg-primary my-8" />
               <p className="text-[#555] leading-relaxed text-sm md:text-base">
                 Du möchtest die Matches deiner Lieblingsmannschaft auf unserem{" "}
-                <strong className="text-[#111]">140-Zoll-LED-Screen</strong> und auf unseren{" "}
-                <strong className="text-[#111]">8 weiteren Screens</strong> genießen? Dann
-                reserviere Dir jetzt deinen Platz in der Sportsbar.
+                140-Zoll-LED-Screen und auf unseren 8 weiteren Screens genießen? Dann
+                reserviere Dir jetzt deinen Platz in der Sporstbar.
                 <br /><br />
                 Rondo steht für Live-Sport und daher übertragen wir fast alle Live-Spiele der
                 Bundesliga, DFB-Pokal, Champions- & Europa-League, Serie A, uvm. so wie auch NFL,
@@ -148,15 +156,6 @@ const Index = () => {
               <div className="mt-8">
                 <ReservierenButton dark />
               </div>
-            </div>
-            {/* Image - below text on mobile, right on desktop */}
-            <div className="flex justify-center order-1 md:order-2">
-              <img
-                src="https://www.rondo-sportsbar.de/wp-content/uploads/2021/07/reservierung-element.png"
-                alt="Reservierung"
-                className="w-full max-w-sm md:max-w-lg h-auto"
-                loading="lazy"
-              />
             </div>
           </div>
         </div>
