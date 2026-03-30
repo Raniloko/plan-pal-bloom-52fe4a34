@@ -257,16 +257,16 @@ const Index = () => {
       {/* ===== 6. ÖFFNUNGSZEITEN - white bg ===== */}
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            {/* Text - always first on mobile */}
-            <div className="order-2 md:order-1">
-              <h2 className="text-4xl md:text-6xl text-[#111] font-bold">
+          <div className="grid md:grid-cols-2 gap-8 items-end">
+            {/* Text - left */}
+            <div className="order-1">
+              <h2 className="text-4xl md:text-6xl text-[#111] font-bold uppercase">
                 Time for
                 <br />
                 some <span className="text-primary">Action</span>
               </h2>
               <div className="w-[150px] h-[3px] bg-primary my-8" />
-              <h3 className="text-2xl text-[#111] mb-6 font-semibold">Unsere Öffnungszeiten</h3>
+              <h3 className="text-2xl text-[#111] mb-6 font-semibold uppercase">Unsere Öffnungszeiten</h3>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <span className="text-primary text-lg">▶</span>
@@ -294,12 +294,12 @@ const Index = () => {
                 werden über unseren Google Account gepflegt.
               </p>
             </div>
-            {/* Image - below text on mobile, right on desktop */}
-            <div className="flex justify-center order-1 md:order-2">
+            {/* Image - right, aligned to bottom */}
+            <div className="flex justify-center items-end order-2">
               <img
                 src="/images/time-for-action.png"
                 alt="Time for Action"
-                className="w-full max-w-xs md:max-w-md h-auto"
+                className="w-full max-w-xs md:max-w-sm h-auto object-contain"
                 loading="lazy"
               />
             </div>
