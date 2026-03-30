@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Menu, Instagram, Facebook } from "lucide-react";
 
 const navLinks = [
   { to: "/", label: "Startseite" },
@@ -37,19 +37,37 @@ const Navigation = () => {
       }`}>
         <div className="border-b-2 border-primary">
           <div className="container mx-auto px-4 flex items-center justify-between h-16 md:h-20">
-            <button
-              onClick={() => setIsOpen(true)}
-              className="text-primary hover:text-primary/80 transition-colors z-10"
-              aria-label="Menü öffnen"
-            >
-              <Menu size={28} strokeWidth={2.5} />
-            </button>
+            {/* Left: Social icons */}
+            <div className="flex items-center gap-3 z-10">
+              <a href="https://instagram.com/rondosportsbar/" target="_blank" rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 transition-colors">
+                <Instagram size={24} strokeWidth={2} />
+              </a>
+              <a href="https://facebook.com/Rondosportsbar" target="_blank" rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 transition-colors">
+                <Facebook size={24} strokeWidth={2} />
+              </a>
+            </div>
 
+            {/* Center: Logo */}
             <Link to="/" className="absolute left-1/2 -translate-x-1/2">
               <img src="/images/rondo-logo.png" alt="Rondo Sportsbar" className="h-12 md:h-16" />
             </Link>
 
-            <div className="w-7" />
+            {/* Right: Reservierung button + Hamburger */}
+            <div className="flex items-center gap-3 z-10">
+              <Link to="/reservierung"
+                className="hidden sm:inline-flex items-center border border-primary text-primary rounded-full px-4 py-1.5 text-sm font-semibold uppercase tracking-wider hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+                Reservierung
+              </Link>
+              <button
+                onClick={() => setIsOpen(true)}
+                className="text-foreground hover:text-primary transition-colors"
+                aria-label="Menü öffnen"
+              >
+                <Menu size={28} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -83,9 +101,9 @@ const Navigation = () => {
         <Link
           to="/reservierung"
           onClick={() => setIsOpen(false)}
-          className="block px-8 mt-8 mb-16 group"
+          className="block px-8 mt-6 mb-12 group"
         >
-          <h2 className="text-4xl md:text-5xl text-primary-foreground font-bold tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
+          <h2 className="text-2xl md:text-3xl text-primary-foreground font-bold tracking-wider transition-all duration-300 group-hover:translate-x-2 group-hover:text-primary-foreground/80">
             RESERVIERUNG
           </h2>
         </Link>
