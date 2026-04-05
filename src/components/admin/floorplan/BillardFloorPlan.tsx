@@ -67,36 +67,36 @@ const BillardFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showL
         <rect x={6} y={6} width={1088} height={588} rx={4} fill="none" stroke="#444" strokeWidth={3} />
 
         {/* ═══ ROW 1: Billard 1–5 ═══ */}
-        <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")}
+        <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")} onDrop={(resId) => drop("bt1", resId)}}
           x={30} y={60} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt2" data={tables.bt2} onClick={() => click("bt2")}
+        <BillardTable id="bt2" data={tables.bt2} onClick={() => click("bt2")} onDrop={(resId) => drop("bt2", resId)}}
           x={240} y={60} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")}
+        <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")} onDrop={(resId) => drop("bt3", resId)}}
           x={450} y={60} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt4" data={tables.bt4} onClick={() => click("bt4")}
+        <BillardTable id="bt4" data={tables.bt4} onClick={() => click("bt4")} onDrop={(resId) => drop("bt4", resId)}}
           x={660} y={60} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt5" data={tables.bt5} onClick={() => click("bt5")}
+        <BillardTable id="bt5" data={tables.bt5} onClick={() => click("bt5")} onDrop={(resId) => drop("bt5", resId)}}
           x={870} y={60} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ ROW 2: Billard 6–8 ═══ */}
-        <BillardTable id="bt6" data={tables.bt6} onClick={() => click("bt6")}
+        <BillardTable id="bt6" data={tables.bt6} onClick={() => click("bt6")} onDrop={(resId) => drop("bt6", resId)}}
           x={140} y={330} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt7" data={tables.bt7} onClick={() => click("bt7")}
+        <BillardTable id="bt7" data={tables.bt7} onClick={() => click("bt7")} onDrop={(resId) => drop("bt7", resId)}}
           x={400} y={330} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt8" data={tables.bt8} onClick={() => click("bt8")}
+        <BillardTable id="bt8" data={tables.bt8} onClick={() => click("bt8")} onDrop={(resId) => drop("bt8", resId)}}
           x={660} y={330} w={190} h={130}
           showLabels={showLabels} colorMode={colorMode} />
 

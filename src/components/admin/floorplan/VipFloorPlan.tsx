@@ -98,35 +98,35 @@ const VipFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showLabel
         <text x={515} y={623} textAnchor="middle" fontSize={8} fill="#888" fontFamily="'DM Sans', sans-serif">Sitzbank</text>
 
         {/* ═══ TABLE 101 – left center ═══ */}
-        <RestaurantTable id="vip1" data={tables.vip1} onClick={() => click("vip1")}
+        <RestaurantTable id="vip1" data={tables.vip1} onClick={() => click("vip1")} onDrop={(resId) => drop("vip1", resId)}}
           cx={220} cy={230} tw={48} th={48}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ TABLE 102 – right top ═══ */}
-        <RestaurantTable id="vip2" data={tables.vip2} onClick={() => click("vip2")}
+        <RestaurantTable id="vip2" data={tables.vip2} onClick={() => click("vip2")} onDrop={(resId) => drop("vip2", resId)}}
           cx={730} cy={200} tw={48} th={48}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ TABLE 103 – right below 102 ═══ */}
-        <RestaurantTable id="vip3" data={tables.vip3} onClick={() => click("vip3")}
+        <RestaurantTable id="vip3" data={tables.vip3} onClick={() => click("vip3")} onDrop={(resId) => drop("vip3", resId)}}
           cx={730} cy={370} tw={48} th={48}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ BOTTOM ROW: 106, 105, 104 (left to right) ═══ */}
-        <RestaurantTable id="vip6" data={tables.vip6} onClick={() => click("vip6")}
+        <RestaurantTable id="vip6" data={tables.vip6} onClick={() => click("vip6")} onDrop={(resId) => drop("vip6", resId)}}
           cx={340} cy={530} tw={48} th={48}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="vip5" data={tables.vip5} onClick={() => click("vip5")}
+        <RestaurantTable id="vip5" data={tables.vip5} onClick={() => click("vip5")} onDrop={(resId) => drop("vip5", resId)}}
           cx={530} cy={530} tw={48} th={48}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="vip4" data={tables.vip4} onClick={() => click("vip4")}
+        <RestaurantTable id="vip4" data={tables.vip4} onClick={() => click("vip4")} onDrop={(resId) => drop("vip4", resId)}}
           cx={710} cy={530} tw={48} th={48}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
