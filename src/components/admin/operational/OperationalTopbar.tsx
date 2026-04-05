@@ -18,6 +18,7 @@ interface Props {
   onDateChange: (date: Date) => void;
   onOpenSettings: () => void;
   onOpenNotifications: () => void;
+  isMobile?: boolean;
 }
 
 const Div = () => <div style={{ width: 1, alignSelf: "stretch", background: "#2a2a2a" }} />;
@@ -37,7 +38,7 @@ const IcoBtn = ({ children, borderL, onClick, active }: { children: React.ReactN
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenSettings, onOpenNotifications,
+  onOpenSettings, onOpenNotifications, isMobile = false,
 }: Props) => {
   const [time, setTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -62,13 +63,13 @@ export const OperationalTopbar = ({
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", height: 52, minHeight: 52,
+      display: "flex", alignItems: "center", height: isMobile ? 44 : 52, minHeight: isMobile ? 44 : 52,
       background: "#111111", borderBottom: "1px solid #2a2a2a",
       fontFamily: "'DM Sans', sans-serif",
     }}>
       {/* Logo */}
-      <div style={{ padding: "0 12px", display: "flex", alignItems: "center", height: "100%" }}>
-        <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: 28 }} />
+      <div style={{ padding: isMobile ? "0 8px" : "0 12px", display: "flex", alignItems: "center", height: "100%" }}>
+        <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: isMobile ? 22 : 28 }} />
       </div>
       <Div />
 
@@ -85,14 +86,14 @@ export const OperationalTopbar = ({
               }
             }}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "0 12px", height: "100%",
-              fontSize: 13, fontWeight: 600,
+              display: "flex", alignItems: "center", gap: isMobile ? 4 : 6, padding: isMobile ? "0 6px" : "0 12px", height: "100%",
+              fontSize: isMobile ? 11 : 13, fontWeight: 600,
               color: isToday(selectedDate) ? "#4ade80" : "#fff",
               background: "transparent", border: "none",
               borderRight: "1px solid #2a2a2a", cursor: "pointer",
             }}
           >
-            <CalendarDays size={14} /> Jetzt
+            <CalendarDays size={isMobile ? 12 : 14} /> {isMobile ? "" : "Jetzt"}
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start" style={{ zIndex: 9999 }}>
@@ -109,24 +110,28 @@ export const OperationalTopbar = ({
       {/* Date nav */}
       <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
         <button onClick={() => onDateChange(subDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronLeft size={14} /></button>
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", padding: "0 4px", whiteSpace: "nowrap" }}>{shortDate}</span>
+        <span style={{ fontSize: isMobile ? 11 : 14, fontWeight: 600, color: "#fff", padding: "0 2px", whiteSpace: "nowrap" }}>{isMobile ? format(selectedDate, "d.MM", { locale: de }) : shortDate}</span>
         <button onClick={() => onDateChange(addDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronRight size={14} /></button>
       </div>
 
-      {/* Time */}
-      <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", padding: "0 12px", fontVariantNumeric: "tabular-nums", fontFamily: "monospace" }}>{time}</span>
-      </div>
+      {/* Time - hide on mobile */}
+      {!isMobile && (
+        <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", padding: "0 12px", fontVariantNumeric: "tabular-nums", fontFamily: "monospace" }}>{time}</span>
+        </div>
+      )}
 
       {/* Right icons */}
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", height: "100%" }}>
         <IcoBtn borderL onClick={onOpenNotifications}><Bell size={16} /></IcoBtn>
-        <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
-          <Users size={14} style={{ color: "#666", marginRight: 6 }} />
-          <span style={{ fontSize: 13, color: "#888" }}>
-            <span style={{ fontWeight: 700, color: "#fff" }}>{totalReservations}</span>/{totalGuests}
-          </span>
-        </div>
+        {!isMobile && (
+          <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
+            <Users size={14} style={{ color: "#666", marginRight: 6 }} />
+            <span style={{ fontSize: 13, color: "#888" }}>
+              <span style={{ fontWeight: 700, color: "#fff" }}>{totalReservations}</span>/{totalGuests}
+            </span>
+          </div>
+        )}
         <IcoBtn borderL onClick={onOpenSettings}><Settings size={16} /></IcoBtn>
         <IcoBtn borderL onClick={async () => { await signOut(); navigate("/backstage/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
       </div>

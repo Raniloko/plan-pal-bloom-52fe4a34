@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
@@ -52,6 +53,8 @@ interface WaitlistEntry {
 }
 
 const OperationalView = () => {
+  const isMobile = useIsMobile();
+  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
   const [showLabels, setShowLabels] = useState(true);
   const [zoom, setZoom] = useState(1);
@@ -317,36 +320,63 @@ const OperationalView = () => {
         onDateChange={setSelectedDate}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
+        isMobile={isMobile}
       />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <ReservationPanel
-          rows={rows} totalGuests={totalGuests}
-          selectedRowId={selectedRowId}
-          onRowClick={handleRowClick}
-          onNewClick={handleNewReservation}
-          waitlist={waitlist}
-          onRefreshWaitlist={load}
-          durationMin={durationMin}
-          billardAvailable={billardAvailable}
-        />
-
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <OperationalAreaTabs
-            activeArea={activeArea} onAreaChange={setActiveArea}
-            showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)}
-            zoom={zoom} onZoomChange={setZoom}
-            colorMode={colorMode} onColorModeChange={setColorMode}
-            viewMode={viewMode} onViewModeChange={setViewMode}
-          />
-          <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-            {viewMode === "list" ? (
-              <UnitListView tables={floorTables} onTableClick={handleTableClick} />
-            ) : (
-              <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
-            )}
-          </div>
+      {/* Mobile tab bar */}
+      {isMobile && (
+        <div style={{
+          display: "flex", height: 40, background: "#1e1e1e", borderBottom: "1px solid #2a2a2a",
+        }}>
+          <button onClick={() => setMobileTab("list")} style={{
+            flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+            background: mobileTab === "list" ? "rgba(255,255,255,0.1)" : "transparent",
+            color: mobileTab === "list" ? "#fff" : "#666",
+            borderBottom: mobileTab === "list" ? "2px solid #c9a84c" : "2px solid transparent",
+          }}>Reservierungen</button>
+          <button onClick={() => setMobileTab("map")} style={{
+            flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+            background: mobileTab === "map" ? "rgba(255,255,255,0.1)" : "transparent",
+            color: mobileTab === "map" ? "#fff" : "#666",
+            borderBottom: mobileTab === "map" ? "2px solid #c9a84c" : "2px solid transparent",
+          }}>Grundriss</button>
         </div>
+      )}
+
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* On mobile show only the active tab */}
+        {(!isMobile || mobileTab === "list") && (
+          <ReservationPanel
+            rows={rows} totalGuests={totalGuests}
+            selectedRowId={selectedRowId}
+            onRowClick={handleRowClick}
+            onNewClick={handleNewReservation}
+            waitlist={waitlist}
+            onRefreshWaitlist={load}
+            durationMin={durationMin}
+            billardAvailable={billardAvailable}
+            isMobile={isMobile}
+          />
+        )}
+
+        {(!isMobile || mobileTab === "map") && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <OperationalAreaTabs
+              activeArea={activeArea} onAreaChange={setActiveArea}
+              showLabels={showLabels} onToggleLabels={() => setShowLabels(v => !v)}
+              zoom={zoom} onZoomChange={setZoom}
+              colorMode={colorMode} onColorModeChange={setColorMode}
+              viewMode={viewMode} onViewModeChange={setViewMode}
+            />
+            <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+              {viewMode === "list" ? (
+                <UnitListView tables={floorTables} onTableClick={handleTableClick} />
+              ) : (
+                <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <OperationalSlidePanel
@@ -355,6 +385,7 @@ const OperationalView = () => {
         onBookNew={handleNewReservation}
         onRefresh={load}
         reservations={reservations.map(r => ({ id: r.id, unit_id: r.unit_id, status: r.status, customer_name: r.customer_name, reservation_time: r.reservation_time, guest_count: r.guest_count }))}
+        isMobile={isMobile}
       />
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
