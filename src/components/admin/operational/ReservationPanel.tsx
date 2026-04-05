@@ -180,11 +180,17 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
               const borderL = isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : r.status === "checked_in" ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
               const bg = sel ? "#eaeaea" : isCancelled ? "#fef2f2" : r.overdue ? "#fef2f2" : r.status === "checked_in" ? "#edf4ed" : "#fff";
               return (
-                <div key={r.id} onClick={() => onRowClick(r)} style={{
+                <div key={r.id} onClick={() => onRowClick(r)}
+                  draggable={!isCancelled && r.status !== "checked_in"}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("reservationId", r.id);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  style={{
                   display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
                   minHeight: 58, borderBottom: "1px solid #e0e0e0",
                   borderLeft: `3px solid ${borderL}`, background: bg,
-                  padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
+                  padding: "0 14px 0 11px", alignItems: "center", cursor: isCancelled ? "default" : "grab",
                   opacity: isCancelled ? 0.6 : 1,
                 }}>
                   <div>

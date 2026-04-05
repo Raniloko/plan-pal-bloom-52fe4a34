@@ -5,6 +5,7 @@ interface BillardTableProps {
   id: string;
   data: TableData;
   onClick: () => void;
+  onDrop?: (reservationId: string) => void;
   x: number;
   y: number;
   w: number;
@@ -17,8 +18,9 @@ interface BillardTableProps {
   colorMode?: "status" | "timeSlot";
 }
 
-const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "#7a4e1a", strokeWidth = 5, dimmed = false, showLabels = true, colorMode = "status" }: BillardTableProps) => {
+const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeColor = "#7a4e1a", strokeWidth = 5, dimmed = false, showLabels = true, colorMode = "status" }: BillardTableProps) => {
   const [hovered, setHovered] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
   const isFree = data.status === "free";
@@ -65,7 +67,15 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
       transform={rotation ? `rotate(${rotation.angle}, ${rotation.cx}, ${rotation.cy})` : undefined}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setDragOver(false); }}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const resId = e.dataTransfer.getData("reservationId");
+        if (resId && onDrop) onDrop(resId);
+      }}
       style={{
         cursor: dimmed ? "default" : "pointer",
         opacity: groupOpacity,
@@ -96,11 +106,19 @@ const BillardTable = ({ id, data, onClick, x, y, w, h, rotation, strokeColor = "
           fill="rgba(0,0,0,0.3)" />
       )}
 
+      {/* Drag-over highlight */}
+      {dragOver && !dimmed && (
+        <rect x={x - 4} y={y - 4} width={w + 8} height={h + 8} rx={8}
+          fill="none" stroke="#c9a84c" strokeWidth={3} strokeDasharray="6 3"
+          style={{ animation: "pulseRing 1s ease-out infinite" }}
+        />
+      )}
+
       {/* Outer frame */}
       <rect x={x} y={y} width={w} height={h} rx={6}
         fill={tsFill ? tsFill.fill : "#1c6e2a"}
-        stroke={hovered && !dimmed ? "rgba(255,255,255,0.4)" : sc}
-        strokeWidth={hovered && !dimmed ? sw + 1 : sw}
+        stroke={dragOver && !dimmed ? "#c9a84c" : hovered && !dimmed ? "rgba(255,255,255,0.4)" : sc}
+        strokeWidth={dragOver && !dimmed ? sw + 2 : hovered && !dimmed ? sw + 1 : sw}
         filter={hovered && !dimmed ? "url(#tableGlow)" : isPresent && !dimmed ? "url(#pulseGlow)" : undefined}
         className={isPresent ? "status-transition" : undefined}
       />

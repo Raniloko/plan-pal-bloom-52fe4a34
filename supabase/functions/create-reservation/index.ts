@@ -121,9 +121,13 @@ Deno.serve(async (req) => {
       .single();
     const durMin = settingsData?.value ? Number(settingsData.value) : 120;
 
+    // For billard zone: use shorter overlap window since billard uses live-timer (actual duration varies)
+    // Admin/walk-in bookings on billard should not be blocked by the fixed 2h duration
+    const overlapDur = zone === "billard" ? Math.min(durMin, 30) : durMin;
+
     const [newH, newM] = time.split(":").map(Number);
     const newStart = newH * 60 + newM;
-    const newEnd = newStart + durMin;
+    const newEnd = newStart + overlapDur;
 
     // If a specific unit_id is provided, check for overlapping reservations on that unit
     if (unit_id) {
@@ -137,7 +141,7 @@ Deno.serve(async (req) => {
       const overlapping = (unitConflicts || []).filter(c => {
         const [ch, cm] = c.reservation_time.split(":").map(Number);
         const cStart = ch * 60 + cm;
-        const cEnd = cStart + durMin;
+        const cEnd = cStart + overlapDur;
         return newStart < cEnd && newEnd > cStart;
       });
 
@@ -169,7 +173,7 @@ Deno.serve(async (req) => {
     const overlappingCount = (existingRes || []).filter(r => {
       const [rH, rM] = r.reservation_time.split(":").map(Number);
       const rStart = rH * 60 + rM;
-      const rEnd = rStart + durMin;
+      const rEnd = rStart + overlapDur;
       return newStart < rEnd && newEnd > rStart;
     }).length;
 

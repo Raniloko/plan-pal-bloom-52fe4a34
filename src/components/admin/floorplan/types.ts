@@ -18,6 +18,7 @@ export interface TableData {
 export interface FloorPlanProps {
   tables: Record<string, TableData>;
   onTableClick?: (tableId: string, data: TableData) => void;
+  onTableDrop?: (tableId: string, data: TableData, reservationId: string) => void;
   activeArea?: FloorArea;
   showLabels?: boolean;
   zoom?: number;

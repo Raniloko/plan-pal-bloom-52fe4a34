@@ -41,18 +41,19 @@ const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> =
   },
 };
 
-const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
+const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
+  const drop = (id: string, resId: string) => onTableDrop?.(id, tables[id], resId);
 
   if (activeArea === "fenster") {
-    return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+    return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
   if (activeArea === "billard") {
-    return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+    return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
   if (activeArea === "vip") {
-    return <VipFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+    return <VipFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
@@ -105,7 +106,7 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         {/* ─── TOP-LEFT: Tisch 10 enclosure ─── */}
         <rect x={10} y={10} width={150} height={280} fill="none" stroke="#555" strokeWidth={2.5} />
 
-        <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")}
+        <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")} onDrop={(resId) => drop("t10", resId)}
           cx={85} cy={120} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
@@ -115,17 +116,17 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <rect x={290} y={50} width={70} height={100} rx={3} fill="#222" stroke="#333" strokeWidth={1.5} />
 
         {/* ─── BILLARD 1 & 2 (top center, side by side) ─── */}
-        <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")}
+        <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")} onDrop={(resId) => drop("bt1", resId)}
           x={420} y={40} w={210} h={140}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt2" data={tables.bt2} onClick={() => click("bt2")}
+        <BillardTable id="bt2" data={tables.bt2} onClick={() => click("bt2")} onDrop={(resId) => drop("bt2", resId)}
           x={680} y={40} w={210} h={140}
           showLabels={showLabels} colorMode={colorMode} />
 
 
         {/* ─── BILLARD 3 (rotated ~45°, right side) ─── */}
-        <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")}
+        <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")} onDrop={(resId) => drop("bt3", resId)}
           x={900} y={180} w={180} h={130}
           rotation={{ angle: -45, cx: 990, cy: 245 }}
           showLabels={showLabels} colorMode={colorMode} />
@@ -134,17 +135,17 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <rect x={350} y={290} width={400} height={8} rx={3} fill="#444" stroke="#555" strokeWidth={1} />
 
         {/* ═══ MIDDLE ROW: Tisch 52, 53, 54 ═══ */}
-        <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")}
+        <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")} onDrop={(resId) => drop("t52", resId)}
           cx={310} cy={380} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t53" data={tables.t53} onClick={() => click("t53")}
+        <RestaurantTable id="t53" data={tables.t53} onClick={() => click("t53")} onDrop={(resId) => drop("t53", resId)}
           cx={470} cy={380} tw={56} th={40}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t54" data={tables.t54} onClick={() => click("t54")}
+        <RestaurantTable id="t54" data={tables.t54} onClick={() => click("t54")} onDrop={(resId) => drop("t54", resId)}
           cx={680} cy={380} tw={110} th={42}
           seats={{ top: 3, right: 2, bottom: 3, left: 2 }}
           showLabels={showLabels} colorMode={colorMode} />
@@ -153,28 +154,28 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
         <rect x={10} y={430} width={150} height={170} fill="none" stroke="#555" strokeWidth={2.5} />
         <line x1={90} y1={290} x2={160} y2={430} stroke="#555" strokeWidth={2.5} />
 
-        <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")}
+        <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")} onDrop={(resId) => drop("t30", resId)}
           cx={85} cy={515} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ LOWER ROW: 51, 50, 58, 59 ═══ */}
-        <RestaurantTable id="t51" data={tables.t51} onClick={() => click("t51")}
+        <RestaurantTable id="t51" data={tables.t51} onClick={() => click("t51")} onDrop={(resId) => drop("t51", resId)}
           cx={310} cy={520} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t50" data={tables.t50} onClick={() => click("t50")}
+        <RestaurantTable id="t50" data={tables.t50} onClick={() => click("t50")} onDrop={(resId) => drop("t50", resId)}
           cx={470} cy={520} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t58" data={tables.t58} onClick={() => click("t58")}
+        <RestaurantTable id="t58" data={tables.t58} onClick={() => click("t58")} onDrop={(resId) => drop("t58", resId)}
           cx={700} cy={520} tw={50} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t59" data={tables.t59} onClick={() => click("t59")}
+        <RestaurantTable id="t59" data={tables.t59} onClick={() => click("t59")} onDrop={(resId) => drop("t59", resId)}
           cx={1050} cy={520} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
@@ -184,43 +185,43 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabe
               fill="rgba(12,12,14,0.85)" stroke="#333" strokeWidth={2} />
 
         {/* ─── Row 1: 61, 60, 67, 66 ─── */}
-        <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")}
+        <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")} onDrop={(resId) => drop("t61", resId)}
           cx={440} cy={700} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t60" data={tables.t60} onClick={() => click("t60")}
+        <RestaurantTable id="t60" data={tables.t60} onClick={() => click("t60")} onDrop={(resId) => drop("t60", resId)}
           cx={610} cy={700} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t67" data={tables.t67} onClick={() => click("t67")}
+        <RestaurantTable id="t67" data={tables.t67} onClick={() => click("t67")} onDrop={(resId) => drop("t67", resId)}
           cx={820} cy={700} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t66" data={tables.t66} onClick={() => click("t66")}
+        <RestaurantTable id="t66" data={tables.t66} onClick={() => click("t66")} onDrop={(resId) => drop("t66", resId)}
           cx={1040} cy={700} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── Row 2: 62, 63, 64, 65 ─── */}
-        <RestaurantTable id="t62" data={tables.t62} onClick={() => click("t62")}
+        <RestaurantTable id="t62" data={tables.t62} onClick={() => click("t62")} onDrop={(resId) => drop("t62", resId)}
           cx={440} cy={840} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t63" data={tables.t63} onClick={() => click("t63")}
+        <RestaurantTable id="t63" data={tables.t63} onClick={() => click("t63")} onDrop={(resId) => drop("t63", resId)}
           cx={610} cy={840} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t64" data={tables.t64} onClick={() => click("t64")}
+        <RestaurantTable id="t64" data={tables.t64} onClick={() => click("t64")} onDrop={(resId) => drop("t64", resId)}
           cx={820} cy={840} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t65" data={tables.t65} onClick={() => click("t65")}
+        <RestaurantTable id="t65" data={tables.t65} onClick={() => click("t65")} onDrop={(resId) => drop("t65", resId)}
           cx={1040} cy={840} tw={48} th={40}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />

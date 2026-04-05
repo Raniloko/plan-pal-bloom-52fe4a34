@@ -5,6 +5,7 @@ interface RestaurantTableProps {
   id: string;
   data: TableData;
   onClick: () => void;
+  onDrop?: (reservationId: string) => void;
   cx: number;
   cy: number;
   tw: number;
@@ -15,8 +16,9 @@ interface RestaurantTableProps {
   colorMode?: "status" | "timeSlot";
 }
 
-const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = false, showLabels = true, colorMode = "status" }: RestaurantTableProps) => {
+const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dimmed = false, showLabels = true, colorMode = "status" }: RestaurantTableProps) => {
   const [hovered, setHovered] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const s = STATUS_FILLS[data.status] || STATUS_FILLS.free;
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
@@ -85,7 +87,15 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = fa
       id={id}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setDragOver(false); }}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const resId = e.dataTransfer.getData("reservationId");
+        if (resId && onDrop) onDrop(resId);
+      }}
       style={{
         cursor: dimmed ? "default" : "pointer",
         opacity: groupOpacity,
@@ -129,12 +139,21 @@ const RestaurantTable = ({ id, data, onClick, cx, cy, tw, th, seats, dimmed = fa
         />
       ))}
 
+      {/* Drag-over highlight */}
+      {dragOver && !dimmed && (
+        <rect
+          x={cx - halfW - 8} y={cy - halfH - 8} width={tableW + 16} height={tableH + 16} rx={8}
+          fill="none" stroke="#c9a84c" strokeWidth={3} strokeDasharray="6 3"
+          style={{ animation: "pulseRing 1s ease-out infinite" }}
+        />
+      )}
+
       {/* Table body */}
       <rect
         x={cx - halfW} y={cy - halfH} width={tableW} height={tableH} rx={5}
         fill={fillColor} opacity={s.opacity}
-        stroke={hovered && !dimmed ? "rgba(255,255,255,0.5)" : strokeCol}
-        strokeWidth={hovered && !dimmed ? 1.8 : 1.2}
+        stroke={dragOver && !dimmed ? "#c9a84c" : hovered && !dimmed ? "rgba(255,255,255,0.5)" : strokeCol}
+        strokeWidth={dragOver && !dimmed ? 2.5 : hovered && !dimmed ? 1.8 : 1.2}
         filter={hovered && !dimmed ? "url(#tableGlow)" : isPresent && !dimmed ? "url(#pulseGlow)" : undefined}
         className={isPresent ? "status-transition" : undefined}
       />
