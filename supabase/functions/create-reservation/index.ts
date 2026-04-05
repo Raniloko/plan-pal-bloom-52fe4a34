@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const VALID_ZONES = ["hauptbereich", "billard", "vip", "podest", "fenster"];
 const VALID_OCCASIONS = ["sport", "feier", "essen", "billard", "sonstiges"];
-// Accept any valid 15-min interval time (HH:MM)
+
 function isValidTime(t: string): boolean {
   if (!/^\d{2}:\d{2}$/.test(t)) return false;
   const [h, m] = t.split(":").map(Number);
@@ -23,10 +23,9 @@ const ZONE_CAPACITY: Record<string, number> = {
   podest: 1,
 };
 
-// Simple in-memory rate limiting (per function instance)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 5;
-const RATE_WINDOW_MS = 3600000; // 1 hour
+const RATE_WINDOW_MS = 3600000;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -61,7 +60,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Rate limiting
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
     if (isRateLimited(ip)) {
       return new Response(
@@ -71,18 +69,15 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { date, time, guests, zone, anlass, name, email, phone, message, honeypot } = body;
+    const { date, time, guests, zone, anlass, name, email, phone, message, honeypot, unit_id } = body;
 
-    // Honeypot check
     if (honeypot && honeypot.trim() !== "") {
-      // Silently accept but don't save (bot detected)
       return new Response(
         JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Detect admin/walk-in requests (placeholder email)
     const isAdminBooking = sanitize(email) === "walkin@intern.local";
 
     const errors: string[] = [];
@@ -92,14 +87,12 @@ Deno.serve(async (req) => {
     if (!guests || guests < 1 || guests > 50) errors.push("Personenanzahl muss zwischen 1 und 50 liegen.");
     if (!zone || !VALID_ZONES.includes(zone)) errors.push("Ungültiger Bereich.");
     
-    // Validate occasion: can be comma-separated, each part must be valid or start with "sonstiges:"
     const anlassParts = (anlass || "").split(",").map((s: string) => s.trim()).filter(Boolean);
     const validAnlass = anlassParts.length > 0 && anlassParts.every((p: string) => 
       VALID_OCCASIONS.includes(p) || p.startsWith("sonstiges:")
     );
     if (!validAnlass) errors.push("Ungültiger Anlass.");
     if (!name || sanitize(name).length < 2 || sanitize(name).length > 100) errors.push("Name muss 2-100 Zeichen lang sein.");
-    // Relax email/phone validation for admin walk-in bookings
     if (!isAdminBooking) {
       if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
       if (!phone || sanitize(phone).length < 5 || sanitize(phone).length > 30) errors.push("Ungültige Telefonnummer.");
@@ -128,7 +121,36 @@ Deno.serve(async (req) => {
       .single();
     const durMin = settingsData?.value ? Number(settingsData.value) : 120;
 
-    // Fetch all active reservations for this zone on the same date
+    const [newH, newM] = time.split(":").map(Number);
+    const newStart = newH * 60 + newM;
+    const newEnd = newStart + durMin;
+
+    // If a specific unit_id is provided, check for overlapping reservations on that unit
+    if (unit_id) {
+      const { data: unitConflicts } = await supabase
+        .from("reservations")
+        .select("id, customer_name, reservation_time")
+        .eq("unit_id", unit_id)
+        .eq("reservation_date", date)
+        .not("status", "in", '("cancelled","checked_out")');
+
+      const overlapping = (unitConflicts || []).filter(c => {
+        const [ch, cm] = c.reservation_time.split(":").map(Number);
+        const cStart = ch * 60 + cm;
+        const cEnd = cStart + durMin;
+        return newStart < cEnd && newEnd > cStart;
+      });
+
+      if (overlapping.length > 0) {
+        const c = overlapping[0];
+        return new Response(
+          JSON.stringify({ error: `Dieser Tisch ist bereits um ${c.reservation_time.slice(0, 5)} an ${c.customer_name} vergeben. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit.` }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Zone capacity check
     const { data: existingRes, error: availabilityError } = await supabase
       .from("reservations")
       .select("id, reservation_time")
@@ -143,11 +165,6 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Check time-based overlap: count reservations whose duration window overlaps with the new one
-    const [newH, newM] = time.split(":").map(Number);
-    const newStart = newH * 60 + newM;
-    const newEnd = newStart + durMin;
 
     const overlappingCount = (existingRes || []).filter(r => {
       const [rH, rM] = r.reservation_time.split(":").map(Number);
@@ -191,7 +208,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send confirmation email (fire-and-forget, don't block reservation)
+    // Send confirmation email (fire-and-forget)
     try {
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
