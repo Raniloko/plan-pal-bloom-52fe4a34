@@ -101,11 +101,10 @@ const OperationalView = () => {
 
   useEffect(() => {
     load();
+    // Only subscribe to units (non-PII) via Realtime; reservations/waitlist/notifications removed for security
     const ch = supabase
       .channel("op-view")
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "units" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "waitlist" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load]);
