@@ -17,9 +17,10 @@ const DEFAULT_VIP_TABLES: Record<string, TableData> = {
   vip6: { id: "vip6", title: "106", status: "free" },
 };
 
-const VipFloorPlan = ({ tables: tablesProp, onTableClick, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
+const VipFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_VIP_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
+  const drop = (id: string, resId: string) => onTableDrop?.(id, tables[id], resId);
 
   return (
     <div className="relative w-full h-full min-h-[400px]" style={{

@@ -19,9 +19,10 @@ const DEFAULT_FENSTER_TABLES: Record<string, TableData> = {
   t57: { id: "t57", title: "Tisch 57", status: "free" },
 };
 
-const FensterFloorPlan = ({ tables: tablesProp, onTableClick, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
+const FensterFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_FENSTER_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
+  const drop = (id: string, resId: string) => onTableDrop?.(id, tables[id], resId);
 
   return (
     <div className="relative w-full h-full min-h-[400px]" style={{
