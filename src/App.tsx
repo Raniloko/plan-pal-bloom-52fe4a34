@@ -16,6 +16,8 @@ import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import Jobs from "./pages/Jobs";
+import ReservierungAendern from "./pages/ReservierungAendern";
+import ReservierungStornieren from "./pages/ReservierungStornieren";
 import OperationalView from "./pages/admin/OperationalView";
 import AdminLogin from "./pages/admin/AdminLogin";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -41,6 +43,8 @@ const AppContent = () => {
         {/* Jobs route removed */}
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
+        <Route path="/reservierung/aendern" element={<ReservierungAendern />} />
+        <Route path="/reservierung/stornieren" element={<ReservierungStornieren />} />
         <Route path="/backstage/login" element={<AdminLogin />} />
         <Route path="/backstage" element={<ProtectedRoute><OperationalView /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
