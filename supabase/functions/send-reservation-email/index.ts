@@ -213,8 +213,10 @@ Deno.serve(async (req) => {
       cancellationToken = tokenData?.cancellation_token || "";
     }
     
-    const cancelUrl = `${SUPABASE_URL}/functions/v1/cancel-reservation?id=${reservation.id}&token=${cancellationToken}`;
-    const modifyUrl = `${SUPABASE_URL}/functions/v1/modify-reservation?id=${reservation.id}&token=${cancellationToken}`;
+    // Use app URLs instead of raw Edge Function URLs
+    const APP_URL = "https://plan-pal-bloom.lovable.app";
+    const cancelUrl = `${APP_URL}/reservierung/stornieren?id=${reservation.id}&token=${cancellationToken}`;
+    const modifyUrl = `${APP_URL}/reservierung/aendern?id=${reservation.id}&token=${cancellationToken}`;
 
     let html: string;
     let subjectPrefix: string;
