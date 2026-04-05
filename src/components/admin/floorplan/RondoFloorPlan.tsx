@@ -41,18 +41,19 @@ const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> =
   },
 };
 
-const RondoFloorPlan = ({ tables: tablesProp, onTableClick, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
+const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
+  const drop = (id: string, resId: string) => onTableDrop?.(id, tables[id], resId);
 
   if (activeArea === "fenster") {
-    return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+    return <FensterFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
   if (activeArea === "billard") {
-    return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+    return <BillardFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
   if (activeArea === "vip") {
-    return <VipFloorPlan tables={tablesProp} onTableClick={onTableClick} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+    return <VipFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
