@@ -74,6 +74,7 @@ export interface PanelData {
   customerPhone?: string;
   zone?: string;
   unitDayReservations?: UnitDayReservation[];
+  allReservationsForUnit?: UnitDayReservation[];
 }
 
 interface UnitOption {
