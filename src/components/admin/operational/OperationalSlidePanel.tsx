@@ -5,7 +5,6 @@ import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOu
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
-import { TableTimeline } from "./TableTimeline";
 
 const BILLARD_PRICE_PER_MIN = 0.23;
 
@@ -371,10 +370,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
           }}><ChevronRight size={14} /></button>
         </div>
 
-        {/* Timeline bar for today */}
-        {isToday && browseDateReservations.length > 0 && (
-          <TableTimeline reservations={browseDateReservations} currentTime={currentTime} />
-        )}
+        {/* Reservation list only - timeline bar removed */}
 
         {/* Reservation count */}
         <div style={{ fontSize: 11, fontWeight: 700, color: "#333", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
