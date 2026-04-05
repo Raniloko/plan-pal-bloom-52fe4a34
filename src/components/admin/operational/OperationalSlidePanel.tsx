@@ -132,7 +132,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [assignedUnitId, setAssignedUnitId] = useState<string>("");
   const [showBillardCheckout, setShowBillardCheckout] = useState(false);
+  const [browseDate, setBrowseDate] = useState(new Date());
+  const [browseDateReservations, setBrowseDateReservations] = useState<UnitDayReservation[]>([]);
+  const [loadingBrowse, setLoadingBrowse] = useState(false);
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
+  const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
+  const isToday = format(browseDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
   const isBillardUnit = !!(data?.zone === "billard" || data?.tableLabel?.toLowerCase().includes("billard"));
 
