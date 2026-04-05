@@ -200,8 +200,9 @@ const OperationalView = () => {
     });
   }, [rows, durationMin, dateStr]);
 
+  // Faster polling to compensate for Realtime removal on PII tables
   useEffect(() => {
-    const interval = setInterval(() => load(), 30000);
+    const interval = setInterval(() => load(), 15000);
     return () => clearInterval(interval);
   }, [load]);
 
