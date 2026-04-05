@@ -620,39 +620,10 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", textAlign: "center" }}>
-              {/* Day reservations for free table */}
-              {dayReservations.length > 0 && (
-                <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
-                  <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#333", marginBottom: 8 }}>
-                      Reservierungen heute ({dayReservations.length})
-                    </div>
-                    {dayReservations.map(r => {
-                      const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
-                      return (
-                        <div key={r.id} style={{
-                          display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                          background: "#fff", border: "1px solid #eaeaea",
-                          borderRadius: 6, marginBottom: 4,
-                        }}>
-                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
-                              {r.reservation_time.slice(0, 5)} · {r.customer_name}
-                            </div>
-                            <div style={{ fontSize: 10, color: "#999", display: "flex", gap: 8 }}>
-                              <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
-                              <span>✉ {r.customer_email}</span>
-                            </div>
-                          </div>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* Date-browsable reservations for free table */}
+              <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
+                {renderDateReservationBlock()}
+              </div>
               <CalendarDays size={40} color="#ddd" style={{ marginBottom: 12 }} />
               <span style={{ fontSize: 14, color: "#999" }}>
                 {data?.status === "blocked" ? "Tisch ist gesperrt" : "Aktuell keine Reservierung"}
