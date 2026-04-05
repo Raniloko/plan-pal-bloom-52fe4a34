@@ -64,12 +64,6 @@ const ReservierungAendern = () => {
 
   const loadReservation = async () => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/modify-reservation?id=${id}&token=${token}`,
-        { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
-      );
-      // We need the data, not the HTML page. Let's use a JSON endpoint instead.
-      // Actually, let's call the Edge Function with a special header to get JSON
       const jsonRes = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/modify-reservation`,
         {

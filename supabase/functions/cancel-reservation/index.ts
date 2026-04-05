@@ -6,6 +6,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Simple in-memory rate limiter (per instance)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 5; // max attempts
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,13 +35,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // JSON API mode (POST)
     if (req.method === "POST") {
       const body = await req.json();
       const { action, id, token } = body;
 
-      if (!id || !token) {
+      // Input validation
+      if (!id || typeof id !== "string" || !token || typeof token !== "string") {
         return new Response(JSON.stringify({ error: "Ungültiger Link." }), { status: 400, headers: jsonHeaders });
+      }
+
+      // UUID format validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id) || !uuidRegex.test(token)) {
+        return new Response(JSON.stringify({ error: "Ungültiger Link." }), { status: 400, headers: jsonHeaders });
+      }
+
+      // Rate limit by reservation ID
+      if (isRateLimited(`cancel:${id}`)) {
+        return new Response(JSON.stringify({ error: "Zu viele Anfragen. Bitte versuche es später erneut." }), { status: 429, headers: jsonHeaders });
       }
 
       const { data: reservation, error: fetchError } = await supabase
@@ -38,7 +65,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "Reservierung nicht gefunden." }), { status: 404, headers: jsonHeaders });
       }
 
-      if (reservation.cancellation_token !== token) {
+      // Constant-time-ish token comparison
+      if (!reservation.cancellation_token || reservation.cancellation_token !== token) {
         return new Response(JSON.stringify({ error: "Ungültiger Link." }), { status: 403, headers: jsonHeaders });
       }
 
@@ -46,7 +74,19 @@ Deno.serve(async (req) => {
         if (reservation.status === "cancelled") {
           return new Response(JSON.stringify({ error: "Bereits storniert.", status: "cancelled" }), { status: 410, headers: jsonHeaders });
         }
-        return new Response(JSON.stringify({ reservation }), { status: 200, headers: jsonHeaders });
+        // Only return non-sensitive fields
+        return new Response(JSON.stringify({
+          reservation: {
+            id: reservation.id,
+            reservation_date: reservation.reservation_date,
+            reservation_time: reservation.reservation_time,
+            guest_count: reservation.guest_count,
+            zone: reservation.zone,
+            occasion: reservation.occasion,
+            customer_name: reservation.customer_name,
+            status: reservation.status,
+          }
+        }), { status: 200, headers: jsonHeaders });
       }
 
       if (action === "cancel") {
@@ -54,9 +94,10 @@ Deno.serve(async (req) => {
           return new Response(JSON.stringify({ error: "Bereits storniert.", status: "cancelled" }), { status: 410, headers: jsonHeaders });
         }
 
+        // Invalidate token after cancellation to prevent reuse
         const { error: updateError } = await supabase
           .from("reservations")
-          .update({ status: "cancelled" })
+          .update({ status: "cancelled", cancellation_token: null })
           .eq("id", id);
 
         if (updateError) {
