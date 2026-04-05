@@ -147,8 +147,41 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       setCheckedIn(data?.status === "present");
       setMode("view");
       setAssignedUnitId(data?.unitId || "");
+      setBrowseDate(new Date());
+      setBrowseDateReservations(data?.unitDayReservations || []);
     }
   }, [open, data]);
+
+  // Fetch reservations for a different date when browsing
+  useEffect(() => {
+    if (!open || !data?.unitId) return;
+    const dateStr = format(browseDate, "yyyy-MM-dd");
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    if (dateStr === todayStr) {
+      setBrowseDateReservations(data?.unitDayReservations || []);
+      return;
+    }
+    setLoadingBrowse(true);
+    supabase.functions.invoke("admin-actions", {
+      body: { action: "fetch_dashboard", date: dateStr },
+    }).then(res => {
+      if (res.data?.reservations) {
+        const filtered = (res.data.reservations as any[]).filter(
+          (r: any) => r.unit_id === data.unitId && r.status !== "checked_out"
+        ).map((r: any) => ({
+          id: r.id,
+          customer_name: r.customer_name,
+          customer_phone: r.customer_phone,
+          customer_email: r.customer_email,
+          reservation_time: r.reservation_time,
+          guest_count: r.guest_count,
+          status: r.status,
+        }));
+        setBrowseDateReservations(filtered);
+      }
+      setLoadingBrowse(false);
+    }).catch(() => setLoadingBrowse(false));
+  }, [browseDate, open, data?.unitId]);
 
   useEffect(() => {
     if (!open) return;
