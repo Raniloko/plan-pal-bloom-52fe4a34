@@ -98,6 +98,7 @@ interface Props {
   onBookNew: () => void;
   onRefresh: () => void;
   reservations?: ReservationRef[];
+  isMobile?: boolean;
 }
 
 const STATUS_PILL: Record<string, React.CSSProperties> = {
@@ -121,7 +122,7 @@ const adminAction = async (body: Record<string, unknown>) => {
   return res.data;
 };
 
-export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [] }: Props) => {
+export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [], isMobile = false }: Props) => {
   const [notes, setNotes] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
   const [mode, setMode] = useState<"view" | "book">("view");
@@ -349,8 +350,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       )}
       {open && <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 199 }} />}
       <div style={{
-        position: "fixed", top: 0, right: open ? 0 : -460, height: "100%", width: 420,
-        background: "#fff", borderLeft: "1px solid #ddd", zIndex: 200,
+        position: "fixed", top: 0, right: open ? 0 : (isMobile ? "-100%" : -460), height: "100%",
+        width: isMobile ? "100%" : 420,
+        background: "#fff", borderLeft: isMobile ? "none" : "1px solid #ddd", zIndex: 200,
         transition: "right 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",
         display: "flex", flexDirection: "column",
         fontFamily: "'DM Sans', sans-serif",

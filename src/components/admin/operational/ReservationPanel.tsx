@@ -40,11 +40,12 @@ interface Props {
   onRefreshWaitlist: () => void;
   durationMin?: number;
   billardAvailable?: { free: number; total: number };
+  isMobile?: boolean;
 }
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable }: Props) => {
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
   const [notifying, setNotifying] = useState<string | null>(null);
@@ -97,7 +98,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
 
   return (
     <div style={{
-      width: 390, minWidth: 390, background: "#f2f2f2", borderRight: "1px solid #ddd",
+      width: isMobile ? "100%" : 390, minWidth: isMobile ? undefined : 390, background: "#f2f2f2",
+      borderRight: isMobile ? "none" : "1px solid #ddd",
       display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif",
     }}>
       {/* Header tabs */}
