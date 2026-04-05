@@ -342,6 +342,81 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   })();
 
   const dayReservations = data?.unitDayReservations || [];
+  const currentTime = format(new Date(), "HH:mm");
+
+  // Browsable date reservation block
+  const renderDateReservationBlock = () => {
+    if (!data?.unitId) return null;
+    return (
+      <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+        {/* Date navigation */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <button onClick={() => setBrowseDate(d => subDays(d, 1))} style={{
+            width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+          }}><ChevronLeft size={14} /></button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>
+              {isToday ? "Heute" : browseDateLabel}
+            </div>
+            {!isToday && (
+              <button onClick={() => setBrowseDate(new Date())} style={{
+                fontSize: 9, color: "#3a7bd5", background: "none", border: "none", cursor: "pointer", fontWeight: 600,
+              }}>↩ Zurück zu heute</button>
+            )}
+          </div>
+          <button onClick={() => setBrowseDate(d => addDays(d, 1))} style={{
+            width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+          }}><ChevronRight size={14} /></button>
+        </div>
+
+        {/* Timeline bar for today */}
+        {isToday && browseDateReservations.length > 0 && (
+          <TableTimeline reservations={browseDateReservations} currentTime={currentTime} />
+        )}
+
+        {/* Reservation count */}
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#333", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+          <CalendarDays size={12} />
+          Reservierungen ({browseDateReservations.length})
+        </div>
+
+        {loadingBrowse ? (
+          <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#999" }}>Laden...</div>
+        ) : browseDateReservations.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#999" }}>
+            Keine Reservierungen{isToday ? " heute" : ""}
+          </div>
+        ) : (
+          browseDateReservations.map(r => {
+            const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
+            const isActive = r.id === data.reservationId;
+            return (
+              <div key={r.id} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+                background: isActive ? "#e8f5e8" : "#fff",
+                border: `1px solid ${isActive ? "#b8d8b8" : "#eaeaea"}`,
+                borderRadius: 6, marginBottom: 4,
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
+                    {r.reservation_time.slice(0, 5)} · {r.customer_name}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#666", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
