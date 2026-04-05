@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { useEffect, useState, useMemo } from "react";
+import { format, addDays, subDays } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
+import { TableTimeline } from "./TableTimeline";
 
 const BILLARD_PRICE_PER_MIN = 0.23;
 
@@ -73,6 +74,7 @@ export interface PanelData {
   customerPhone?: string;
   zone?: string;
   unitDayReservations?: UnitDayReservation[];
+  allReservationsForUnit?: UnitDayReservation[];
 }
 
 interface UnitOption {
@@ -130,7 +132,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [assignedUnitId, setAssignedUnitId] = useState<string>("");
   const [showBillardCheckout, setShowBillardCheckout] = useState(false);
+  const [browseDate, setBrowseDate] = useState(new Date());
+  const [browseDateReservations, setBrowseDateReservations] = useState<UnitDayReservation[]>([]);
+  const [loadingBrowse, setLoadingBrowse] = useState(false);
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
+  const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
+  const isToday = format(browseDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
   const isBillardUnit = !!(data?.zone === "billard" || data?.tableLabel?.toLowerCase().includes("billard"));
 
@@ -140,8 +147,41 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       setCheckedIn(data?.status === "present");
       setMode("view");
       setAssignedUnitId(data?.unitId || "");
+      setBrowseDate(new Date());
+      setBrowseDateReservations(data?.unitDayReservations || []);
     }
   }, [open, data]);
+
+  // Fetch reservations for a different date when browsing
+  useEffect(() => {
+    if (!open || !data?.unitId) return;
+    const dateStr = format(browseDate, "yyyy-MM-dd");
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    if (dateStr === todayStr) {
+      setBrowseDateReservations(data?.unitDayReservations || []);
+      return;
+    }
+    setLoadingBrowse(true);
+    supabase.functions.invoke("admin-actions", {
+      body: { action: "fetch_dashboard", date: dateStr },
+    }).then(res => {
+      if (res.data?.reservations) {
+        const filtered = (res.data.reservations as any[]).filter(
+          (r: any) => r.unit_id === data.unitId && r.status !== "checked_out"
+        ).map((r: any) => ({
+          id: r.id,
+          customer_name: r.customer_name,
+          customer_phone: r.customer_phone,
+          customer_email: r.customer_email,
+          reservation_time: r.reservation_time,
+          guest_count: r.guest_count,
+          status: r.status,
+        }));
+        setBrowseDateReservations(filtered);
+      }
+      setLoadingBrowse(false);
+    }).catch(() => setLoadingBrowse(false));
+  }, [browseDate, open, data?.unitId]);
 
   useEffect(() => {
     if (!open) return;
@@ -302,6 +342,81 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   })();
 
   const dayReservations = data?.unitDayReservations || [];
+  const currentTime = format(new Date(), "HH:mm");
+
+  // Browsable date reservation block
+  const renderDateReservationBlock = () => {
+    if (!data?.unitId) return null;
+    return (
+      <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+        {/* Date navigation */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <button onClick={() => setBrowseDate(d => subDays(d, 1))} style={{
+            width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+          }}><ChevronLeft size={14} /></button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>
+              {isToday ? "Heute" : browseDateLabel}
+            </div>
+            {!isToday && (
+              <button onClick={() => setBrowseDate(new Date())} style={{
+                fontSize: 9, color: "#3a7bd5", background: "none", border: "none", cursor: "pointer", fontWeight: 600,
+              }}>↩ Zurück zu heute</button>
+            )}
+          </div>
+          <button onClick={() => setBrowseDate(d => addDays(d, 1))} style={{
+            width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+          }}><ChevronRight size={14} /></button>
+        </div>
+
+        {/* Timeline bar for today */}
+        {isToday && browseDateReservations.length > 0 && (
+          <TableTimeline reservations={browseDateReservations} currentTime={currentTime} />
+        )}
+
+        {/* Reservation count */}
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#333", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+          <CalendarDays size={12} />
+          Reservierungen ({browseDateReservations.length})
+        </div>
+
+        {loadingBrowse ? (
+          <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#999" }}>Laden...</div>
+        ) : browseDateReservations.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#999" }}>
+            Keine Reservierungen{isToday ? " heute" : ""}
+          </div>
+        ) : (
+          browseDateReservations.map(r => {
+            const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
+            const isActive = r.id === data.reservationId;
+            return (
+              <div key={r.id} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+                background: isActive ? "#e8f5e8" : "#fff",
+                border: `1px solid ${isActive ? "#b8d8b8" : "#eaeaea"}`,
+                borderRadius: 6, marginBottom: 4,
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
+                    {r.reservation_time.slice(0, 5)} · {r.customer_name}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#666", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -393,38 +508,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             />
           ) : data?.guest ? (
             <div>
-              {/* Day reservations for this table */}
-              {dayReservations.length > 1 && (
-                <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#333", marginBottom: 8 }}>
-                    Alle Reservierungen heute ({dayReservations.length})
-                  </div>
-                  {dayReservations.map(r => {
-                    const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
-                    const isActive = r.id === data.reservationId;
-                    return (
-                      <div key={r.id} style={{
-                        display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                        background: isActive ? "#e8f5e8" : "#fff",
-                        border: `1px solid ${isActive ? "#b8d8b8" : "#eaeaea"}`,
-                        borderRadius: 6, marginBottom: 4,
-                      }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
-                            {r.reservation_time.slice(0, 5)} · {r.customer_name}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#999", display: "flex", gap: 8 }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
-                            <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Date-browsable reservations for this table */}
+              {renderDateReservationBlock()}
 
               {/* Reservation card */}
               <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14, marginBottom: 12 }}>
@@ -535,39 +620,10 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0", textAlign: "center" }}>
-              {/* Day reservations for free table */}
-              {dayReservations.length > 0 && (
-                <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
-                  <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#333", marginBottom: 8 }}>
-                      Reservierungen heute ({dayReservations.length})
-                    </div>
-                    {dayReservations.map(r => {
-                      const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
-                      return (
-                        <div key={r.id} style={{
-                          display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                          background: "#fff", border: "1px solid #eaeaea",
-                          borderRadius: 6, marginBottom: 4,
-                        }}>
-                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
-                              {r.reservation_time.slice(0, 5)} · {r.customer_name}
-                            </div>
-                            <div style={{ fontSize: 10, color: "#999", display: "flex", gap: 8 }}>
-                              <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
-                              <span>✉ {r.customer_email}</span>
-                            </div>
-                          </div>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* Date-browsable reservations for free table */}
+              <div style={{ width: "100%", textAlign: "left", marginBottom: 16 }}>
+                {renderDateReservationBlock()}
+              </div>
               <CalendarDays size={40} color="#ddd" style={{ marginBottom: 12 }} />
               <span style={{ fontSize: 14, color: "#999" }}>
                 {data?.status === "blocked" ? "Tisch ist gesperrt" : "Aktuell keine Reservierung"}
