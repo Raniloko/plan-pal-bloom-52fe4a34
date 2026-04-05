@@ -228,13 +228,16 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
             <Clock size={12} color="#e07820" />
             <span style={{ fontSize: 11, fontWeight: 700, color: "#333" }}>WARTELISTE</span>
             <span style={{ fontSize: 10, color: "#777" }}>{waitlist.length} Einträge</span>
+            <span style={{ marginLeft: "auto" }}>
+              <LegendDialog />
+            </span>
           </div>
 
           {/* Column header */}
           <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 60px 36px", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>ZEIT</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>NAME / BEREICH</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>STATUS</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ZEIT</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>NAME / BEREICH</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>STATUS</span>
             <span />
           </div>
 
@@ -259,11 +262,11 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                   }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{w.desired_time?.slice(0, 5)}</div>
-                      <div style={{ fontSize: 10, color: "#999" }}>{w.desired_date}</div>
+                      <div style={{ fontSize: 10, color: "#666" }}>{w.desired_date}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: "#111" }}>{w.guest_name}</div>
-                      <div style={{ fontSize: 10, color: "#999" }}>{areaLabel(w.area)} · {w.guest_phone}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>{w.guest_name}</div>
+                      <div style={{ fontSize: 10, color: "#666" }}>{areaLabel(w.area)} · {w.guest_phone}</div>
                     </div>
                     <div>
                       <span style={{
