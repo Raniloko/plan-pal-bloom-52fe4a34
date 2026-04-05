@@ -508,38 +508,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             />
           ) : data?.guest ? (
             <div>
-              {/* Day reservations for this table */}
-              {dayReservations.length > 1 && (
-                <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#333", marginBottom: 8 }}>
-                    Alle Reservierungen heute ({dayReservations.length})
-                  </div>
-                  {dayReservations.map(r => {
-                    const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
-                    const isActive = r.id === data.reservationId;
-                    return (
-                      <div key={r.id} style={{
-                        display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                        background: isActive ? "#e8f5e8" : "#fff",
-                        border: `1px solid ${isActive ? "#b8d8b8" : "#eaeaea"}`,
-                        borderRadius: 6, marginBottom: 4,
-                      }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
-                            {r.reservation_time.slice(0, 5)} · {r.customer_name}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#999", display: "flex", gap: 8 }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
-                            <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Phone size={9} /> {r.customer_phone}</span>
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Date-browsable reservations for this table */}
+              {renderDateReservationBlock()}
 
               {/* Reservation card */}
               <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14, marginBottom: 12 }}>
