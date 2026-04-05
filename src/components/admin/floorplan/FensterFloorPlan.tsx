@@ -74,16 +74,16 @@ const FensterFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showL
         <rect x={290} y={50} width={70} height={100} rx={3} fill="#222" stroke="#333" strokeWidth={1.5} />
 
         {/* ─── BILLARD 1 & 2 (top center, side by side) ─── */}
-        <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")} onDrop={(resId) => drop("bt1", resId)}}
+        <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")} onDrop={(resId) => drop("bt1", resId)}
           x={420} y={40} w={210} h={140}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <BillardTable id="bt2" data={tables.bt2} onClick={() => click("bt2")} onDrop={(resId) => drop("bt2", resId)}}
+        <BillardTable id="bt2" data={tables.bt2} onClick={() => click("bt2")} onDrop={(resId) => drop("bt2", resId)}
           x={680} y={40} w={210} h={140}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── BILLARD 3 (rotated ~45°, right side) ─── */}
-        <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")} onDrop={(resId) => drop("bt3", resId)}}
+        <BillardTable id="bt3" data={tables.bt3} onClick={() => click("bt3")} onDrop={(resId) => drop("bt3", resId)}
           x={900} y={180} w={180} h={130}
           rotation={{ angle: -45, cx: 990, cy: 245 }}
           showLabels={showLabels} colorMode={colorMode} />
@@ -92,17 +92,17 @@ const FensterFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showL
         <rect x={350} y={290} width={400} height={8} rx={3} fill="#444" stroke="#555" strokeWidth={1} />
 
         {/* ═══ TISCH 55, 56, 57 – right side, vertical column behind Billard 3 ═══ */}
-        <RestaurantTable id="t55" data={tables.t55} onClick={() => click("t55")} onDrop={(resId) => drop("t55", resId)}}
+        <RestaurantTable id="t55" data={tables.t55} onClick={() => click("t55")} onDrop={(resId) => drop("t55", resId)}
           cx={1050} cy={420} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t56" data={tables.t56} onClick={() => click("t56")} onDrop={(resId) => drop("t56", resId)}}
+        <RestaurantTable id="t56" data={tables.t56} onClick={() => click("t56")} onDrop={(resId) => drop("t56", resId)}
           cx={1050} cy={560} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        <RestaurantTable id="t57" data={tables.t57} onClick={() => click("t57")} onDrop={(resId) => drop("t57", resId)}}
+        <RestaurantTable id="t57" data={tables.t57} onClick={() => click("t57")} onDrop={(resId) => drop("t57", resId)}
           cx={1050} cy={700} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
