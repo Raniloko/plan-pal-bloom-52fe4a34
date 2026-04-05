@@ -499,6 +499,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
               tableLabel={data?.tableLabel}
               initialZone={data?.zone}
               initialUnitId={data?.unitId}
+              allUnits={units}
+              reservations={reservations}
               onSuccess={() => { setMode("view"); onRefresh(); }}
               onCancel={() => setMode("view")}
             />
