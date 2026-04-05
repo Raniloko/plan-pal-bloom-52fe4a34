@@ -297,6 +297,26 @@ const OperationalView = () => {
 
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
+  // Drag-and-drop: assign reservation to a table
+  const handleTableDrop = async (_tableId: string, tableData: TableData, reservationId: string) => {
+    const unit = units.find(u => u.name.toLowerCase() === tableData.title.toLowerCase());
+    if (!unit) {
+      toast.error("Tisch nicht gefunden");
+      return;
+    }
+    try {
+      const res = await supabase.functions.invoke("admin-actions", {
+        body: { action: "assign_unit", reservation_id: reservationId, unit_id: unit.id },
+      });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`Reservierung auf ${tableData.title} zugewiesen`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler bei der Zuweisung");
+    }
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -372,7 +392,7 @@ const OperationalView = () => {
               {viewMode === "list" ? (
                 <UnitListView tables={floorTables} onTableClick={handleTableClick} />
               ) : (
-                <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
+                <RondoFloorPlan tables={floorTables} onTableClick={handleTableClick} onTableDrop={handleTableDrop} activeArea={activeArea} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />
               )}
             </div>
           </div>
