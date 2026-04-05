@@ -1,25 +1,46 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check, Timer } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
+interface UnitOption {
+  id: string;
+  name: string;
+  area: string;
+  status: string | null;
+}
+
+interface ReservationRef {
+  id: string;
+  unit_id: string | null;
+  status: string;
+  customer_name?: string;
+  reservation_time?: string;
+  guest_count?: number;
+}
+
 interface Props {
   tableLabel?: string;
   initialZone?: string;
   initialUnitId?: string;
+  allUnits?: UnitOption[];
+  reservations?: ReservationRef[];
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-const ZONES = [
-  { value: "hauptbereich", label: "Hauptbereich" },
-  { value: "billard", label: "Billard" },
-  { value: "fenster", label: "Fensterbereich" },
-  { value: "vip", label: "VIP Raum" },
-  { value: "podest", label: "Podest" },
-];
+const ZONE_FOR_AREA: Record<string, string> = {
+  billard: "billard",
+  kicker: "billard",
+  dart: "billard",
+  restaurant: "hauptbereich",
+  hauptbereich: "hauptbereich",
+  fenster: "fenster",
+  vip: "vip",
+  podest: "podest",
+};
 
 const OCCASIONS = [
   { value: "essen", label: "Essen" },
@@ -38,7 +59,7 @@ const getNextQuarterHour = (): string => {
   return `${String(h % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCancel }: Props) => {
+const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], reservations = [], onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const defaultTime = getNextQuarterHour();
@@ -51,7 +72,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCanc
   const [pax, setPax] = useState(2);
   const [date, setDate] = useState(todayStr);
   const [startTime, setStartTime] = useState(smartDefault);
-  const [zone, setZone] = useState(initialZone || "hauptbereich");
+  const [selectedUnitId, setSelectedUnitId] = useState(initialUnitId || "");
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
   const [sonstigesText, setSonstigesText] = useState("");
   const [note, setNote] = useState("");
@@ -59,10 +80,43 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCanc
   const [success, setSuccess] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
 
+  // Derive zone from selected unit
+  const zone = useMemo(() => {
+    if (selectedUnitId) {
+      const unit = allUnits.find(u => u.id === selectedUnitId);
+      if (unit) return ZONE_FOR_AREA[unit.area] || unit.area;
+    }
+    return initialZone || "hauptbereich";
+  }, [selectedUnitId, allUnits, initialZone]);
+
   const isBillard = zone === "billard";
 
+  // Group units by area for the dropdown
+  const groupedUnits = useMemo(() => {
+    const groups: Record<string, UnitOption[]> = {};
+    allUnits.filter(u => {
+      const lower = u.name.toLowerCase();
+      return !lower.startsWith("kicker") && !lower.startsWith("dart");
+    }).forEach(u => {
+      (groups[u.area] = groups[u.area] || []).push(u);
+    });
+    return groups;
+  }, [allUnits]);
+
+  // Build unit status map for icons in dropdown
+  const unitStatusMap = useMemo(() => {
+    const map = new Map<string, "occupied" | "reserved">();
+    reservations.forEach(r => {
+      if (!r.unit_id) return;
+      if (r.status === "checked_in") map.set(r.unit_id, "occupied");
+      else if ((r.status === "confirmed" || r.status === "pending") && !map.has(r.unit_id)) {
+        map.set(r.unit_id, "reserved");
+      }
+    });
+    return map;
+  }, [reservations]);
+
   const handleSubmit = async () => {
-    // Only name is softly required for admin bookings
     if (!guest.trim()) {
       toast.error("Bitte mindestens einen Gastnamen eingeben");
       return;
@@ -79,6 +133,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCanc
           date,
           time: startTime,
           zone,
+          unit_id: selectedUnitId || undefined,
           anlass: occasion.includes("sonstiges") && sonstigesText.trim()
             ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim()}`].join(", ")
             : occasion.join(", "),
@@ -94,11 +149,11 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCanc
         return;
       }
 
-      // If initialUnitId is set, auto-assign the unit
-      if (initialUnitId && body?.reservation_id) {
+      // Auto-assign unit if selected
+      if (selectedUnitId && body?.reservation_id) {
         try {
           await supabase.functions.invoke("admin-actions", {
-            body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: initialUnitId },
+            body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: selectedUnitId },
           });
         } catch { /* silent - unit assignment is best-effort */ }
       }
@@ -194,37 +249,63 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, onSuccess, onCanc
           </select>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <div>
-          <label style={labelStyle}>Bereich</label>
-          <select value={zone} onChange={e => setZone(e.target.value)} style={inputStyle}>
-            {ZONES.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>Anlass (Mehrfachauswahl)</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {OCCASIONS.map(o => {
-              const selected = occasion.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => setOccasion(prev =>
-                    selected ? prev.filter(x => x !== o.value) : [...prev, o.value]
-                  )}
-                  style={{
-                    padding: "4px 10px", fontSize: 11, borderRadius: 4,
-                    border: selected ? "1.5px solid #c9a84c" : "1px solid #ddd",
-                    background: selected ? "#c9a84c22" : "#fff",
-                    color: selected ? "#111" : "#666",
-                    cursor: "pointer", fontWeight: selected ? 700 : 400,
-                    fontFamily: "'DM Sans', sans-serif",
-                  }}
-                >{o.label}</button>
-              );
-            })}
+
+      {/* Table (Unit) selector - replaces zone selector */}
+      <div>
+        <label style={labelStyle}>Tisch zuweisen</label>
+        <select
+          value={selectedUnitId}
+          onChange={e => setSelectedUnitId(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">— Kein Tisch (automatisch) —</option>
+          {Object.entries(groupedUnits).map(([area, areaUnits]) => (
+            <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
+              {areaUnits.map(u => {
+                const resStatus = unitStatusMap.get(u.id);
+                const statusIcon = resStatus === "occupied" ? "🔴" : resStatus === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                return (
+                  <option key={u.id} value={u.id}>{statusIcon} {u.name}</option>
+                );
+              })}
+            </optgroup>
+          ))}
+        </select>
+        {selectedUnitId && (
+          <div style={{ fontSize: 10, color: "#999", marginTop: 3 }}>
+            Bereich: {zone.charAt(0).toUpperCase() + zone.slice(1)} (automatisch erkannt)
           </div>
+        )}
+        {!selectedUnitId && !initialZone && (
+          <div style={{ fontSize: 10, color: "#e07820", marginTop: 3 }}>
+            Ohne Tisch wird der Bereich "Hauptbereich" verwendet
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label style={labelStyle}>Anlass (Mehrfachauswahl)</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {OCCASIONS.map(o => {
+            const selected = occasion.includes(o.value);
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => setOccasion(prev =>
+                  selected ? prev.filter(x => x !== o.value) : [...prev, o.value]
+                )}
+                style={{
+                  padding: "4px 10px", fontSize: 11, borderRadius: 4,
+                  border: selected ? "1.5px solid #c9a84c" : "1px solid #ddd",
+                  background: selected ? "#c9a84c22" : "#fff",
+                  color: selected ? "#111" : "#666",
+                  cursor: "pointer", fontWeight: selected ? 700 : 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >{o.label}</button>
+            );
+          })}
         </div>
       </div>
       {occasion.includes("sonstiges") && (
