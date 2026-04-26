@@ -1,6 +1,6 @@
 export type TableStatus = "free" | "reserved" | "present" | "blocked";
 
-export type FloorArea = "all" | "hauptbereich" | "fenster" | "billard" | "vip" | "podest";
+export type FloorArea = "all" | "hauptbereich" | "fenster" | "billard" | "vip" | "podest" | "salitos";
 
 export interface TableData {
   id: string;
@@ -79,4 +79,9 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   f4: "fenster", f5: "fenster", f6: "fenster",
   // VIP (101-106)
   vip1: "vip", vip2: "vip", vip3: "vip", vip4: "vip", vip5: "vip", vip6: "vip",
+  // Salitos Lounge / Outdoor
+  s201: "salitos", s202: "salitos", s203: "salitos", s204: "salitos",
+  s205: "salitos", s206: "salitos", s207: "salitos", s208: "salitos",
+  s209: "salitos", s210: "salitos", s211: "salitos", s212: "salitos",
+  s213: "salitos", s214: "salitos", s215: "salitos",
 };
