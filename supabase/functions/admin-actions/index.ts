@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         const newStatus = checked_in ? "confirmed" : "checked_in";
         const { error: err } = await supabase
           .from("reservations")
-          .update({ status: newStatus })
+          .update({ status: newStatus, cancellation_token: null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
         await logActivity(supabase, checked_in ? "check_out" : "check_in", "reservation", reservation_id);
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
         if (!reservation_id) return error("reservation_id required", 400);
         const { error: err } = await supabase
           .from("reservations")
-          .update({ status: "checked_out", unit_id: null })
+          .update({ status: "checked_out", unit_id: null, cancellation_token: null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
         await logActivity(supabase, "check_out", "reservation", reservation_id);
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
         const { error: err } = await supabase
           .from("reservations")
-          .update({ status: "cancelled", cancellation_reason: reason || "Admin-Stornierung" })
+          .update({ status: "cancelled", cancellation_reason: reason || "Admin-Stornierung", cancellation_token: null })
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
         await logActivity(supabase, "cancel", "reservation", reservation_id, reason || "Admin-Stornierung");
@@ -325,6 +325,8 @@ Deno.serve(async (req) => {
         for (const key of ["guest_count", "reservation_time", "reservation_date", "zone", "occasion", "message", "status", "unit_id"]) {
           if (updates[key] !== undefined) allowed[key] = updates[key];
         }
+        // Invalidate customer self-service token whenever the team modifies a reservation
+        allowed.cancellation_token = null;
         const { error: err } = await supabase
           .from("reservations")
           .update(allowed)
