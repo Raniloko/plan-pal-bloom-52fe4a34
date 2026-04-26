@@ -107,17 +107,15 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
         {/* ═══ OUTER ROOM WALLS ═══ */}
         <rect x={10} y={10} width={1180} height={930} rx={4} fill="none" stroke="#444" strokeWidth={3} />
 
-        {/* ─── TOP-LEFT: Tisch 10 enclosure ─── */}
-        <rect x={10} y={10} width={150} height={280} fill="none" stroke="#555" strokeWidth={2.5} />
-
+        {/* ─── TOP-LEFT: Tisch 10 (freistehend, keine Trennwand) ─── */}
         <RestaurantTable id="t10" data={tables.t10} onClick={() => click("t10")} onDrop={(resId) => drop("t10", resId)}
           cx={85} cy={120} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── DARK SCREENS (top, left of billard) ─── */}
-        <rect x={200} y={50} width={70} height={100} rx={3} fill="#222" stroke="#333" strokeWidth={1.5} />
-        <rect x={290} y={50} width={70} height={100} rx={3} fill="#222" stroke="#333" strokeWidth={1.5} />
+        {/* ─── DARK SCREENS / TVs (top, left of billard) ─── */}
+        <rect x={210} y={60} width={90} height={170} rx={3} fill="#3a3a3a" stroke="#4a4a4a" strokeWidth={1.5} />
+        <rect x={320} y={60} width={90} height={170} rx={3} fill="#3a3a3a" stroke="#4a4a4a" strokeWidth={1.5} />
 
         {/* ─── BILLARD 1 & 2 (top center, side by side) ─── */}
         <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")} onDrop={(resId) => drop("bt1", resId)}
@@ -135,103 +133,125 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           rotation={{ angle: -45, cx: 990, cy: 245 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── Horizontal bar/counter (between billard and tables) ─── */}
-        <rect x={350} y={290} width={400} height={8} rx={3} fill="#444" stroke="#555" strokeWidth={1} />
+        {/* ─── Bonsai-Pflanze (rechts oben, neben Billard 3) ─── */}
+        <g opacity={0.85}>
+          <circle cx={1140} cy={210} r={22} fill="#2d5a2d" />
+          <circle cx={1128} cy={198} r={14} fill="#3a7a3a" />
+          <circle cx={1152} cy={202} r={13} fill="#3a7a3a" />
+          <circle cx={1140} cy={222} r={12} fill="#4a8a4a" />
+          <rect x={1136} y={228} width={8} height={10} fill="#4a3020" />
+        </g>
+
+        {/* ─── Horizontal counter/bar (zwischen Billard und Tischen) ─── */}
+        <rect x={300} y={355} width={520} height={14} rx={3} fill="#bdbdc4" opacity={0.55} stroke="#888" strokeWidth={0.8} />
 
         {/* ═══ MIDDLE ROW: Tisch 52, 53, 54 ═══ */}
         <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")} onDrop={(resId) => drop("t52", resId)}
-          cx={310} cy={380} tw={44} th={44}
+          cx={330} cy={430} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t53" data={tables.t53} onClick={() => click("t53")} onDrop={(resId) => drop("t53", resId)}
-          cx={470} cy={380} tw={56} th={40}
+          cx={510} cy={430} tw={64} th={42}
           seats={{ top: 2, right: 1, bottom: 2, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t54" data={tables.t54} onClick={() => click("t54")} onDrop={(resId) => drop("t54", resId)}
-          cx={680} cy={380} tw={110} th={42}
-          seats={{ top: 3, right: 2, bottom: 3, left: 2 }}
+          cx={745} cy={430} tw={170} th={44}
+          seats={{ top: 4, right: 1, bottom: 4, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── LEFT ENCLOSURE: Tisch 30 ─── */}
-        <rect x={10} y={430} width={150} height={170} fill="none" stroke="#555" strokeWidth={2.5} />
-        <line x1={90} y1={290} x2={160} y2={430} stroke="#555" strokeWidth={2.5} />
-
+        {/* ─── LEFT: Tisch 30 (freistehend, keine Trennwand) ─── */}
         <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")} onDrop={(resId) => drop("t30", resId)}
-          cx={85} cy={515} tw={44} th={44}
+          cx={120} cy={580} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ LOWER ROW: 51, 50, 58, 59 ═══ */}
         <RestaurantTable id="t51" data={tables.t51} onClick={() => click("t51")} onDrop={(resId) => drop("t51", resId)}
-          cx={310} cy={520} tw={44} th={44}
+          cx={330} cy={585} tw={44} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t50" data={tables.t50} onClick={() => click("t50")} onDrop={(resId) => drop("t50", resId)}
-          cx={470} cy={520} tw={44} th={44}
+          cx={470} cy={585} tw={44} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t58" data={tables.t58} onClick={() => click("t58")} onDrop={(resId) => drop("t58", resId)}
-          cx={700} cy={520} tw={50} th={44}
+          cx={780} cy={585} tw={50} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t59" data={tables.t59} onClick={() => click("t59")} onDrop={(resId) => drop("t59", resId)}
-          cx={1050} cy={520} tw={44} th={44}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          cx={1080} cy={585} tw={36} th={42}
+          seats={{ top: 1, right: 0, bottom: 1, left: 0 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ═══ BOTTOM ENCLOSED AREA (tables 60-67) ═══ */}
-        <rect x={340} y={620} width={850} height={310} rx={4}
-              fill="rgba(12,12,14,0.85)" stroke="#333" strokeWidth={2} />
+        {/* ═══ BOTTOM ENCLOSED AREA (tables 60-67) ═══
+            Dezente graue Box mit offenem Eingang oben-links (diagonale Schnittkante).
+        */}
+        {/* Diagonal-Linie vom Logo-Bereich nach oben zum Eingang */}
+        <line x1={300} y1={870} x2={620} y2={650} stroke="#444" strokeWidth={2.5} />
+        {/* Box als einzelne Linien (oben mit Lücke für Eingang) */}
+        <line x1={620} y1={650} x2={1190} y2={650} stroke="#444" strokeWidth={2.5} />
+        <line x1={1190} y1={650} x2={1190} y2={935} stroke="#444" strokeWidth={2.5} />
+        <line x1={1190} y1={935} x2={300} y2={935} stroke="#444" strokeWidth={2.5} />
+        <rect x={300} y={650} width={890} height={285}
+              fill="rgba(20,20,24,0.55)" pointerEvents="none" />
+
+        {/* ─── Pflanze (zwischen Logo und Box) ─── */}
+        <g opacity={0.9}>
+          <circle cx={530} cy={870} r={22} fill="#3a7a3a" />
+          <circle cx={518} cy={858} r={14} fill="#4a9a4a" />
+          <circle cx={542} cy={862} r={13} fill="#4a9a4a" />
+          <circle cx={530} cy={882} r={12} fill="#5aaa5a" />
+        </g>
 
         {/* ─── Row 1: 61, 60, 67, 66 ─── */}
         <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")} onDrop={(resId) => drop("t61", resId)}
-          cx={440} cy={700} tw={48} th={40}
+          cx={680} cy={730} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t60" data={tables.t60} onClick={() => click("t60")} onDrop={(resId) => drop("t60", resId)}
-          cx={610} cy={700} tw={48} th={40}
+          cx={840} cy={730} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t67" data={tables.t67} onClick={() => click("t67")} onDrop={(resId) => drop("t67", resId)}
-          cx={820} cy={700} tw={48} th={40}
+          cx={1000} cy={730} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t66" data={tables.t66} onClick={() => click("t66")} onDrop={(resId) => drop("t66", resId)}
-          cx={1040} cy={700} tw={48} th={40}
+          cx={1140} cy={730} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── Row 2: 62, 63, 64, 65 ─── */}
         <RestaurantTable id="t62" data={tables.t62} onClick={() => click("t62")} onDrop={(resId) => drop("t62", resId)}
-          cx={440} cy={840} tw={48} th={40}
+          cx={680} cy={870} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t63" data={tables.t63} onClick={() => click("t63")} onDrop={(resId) => drop("t63", resId)}
-          cx={610} cy={840} tw={48} th={40}
+          cx={840} cy={870} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t64" data={tables.t64} onClick={() => click("t64")} onDrop={(resId) => drop("t64", resId)}
-          cx={820} cy={840} tw={48} th={40}
+          cx={1000} cy={870} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         <RestaurantTable id="t65" data={tables.t65} onClick={() => click("t65")} onDrop={(resId) => drop("t65", resId)}
-          cx={1040} cy={840} tw={48} th={40}
+          cx={1140} cy={870} tw={48} th={42}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── RONDO LOGO (bottom left) ─── */}
-        <image href="/images/rondo-logo.png" x={30} y={720} width={230} height={120}
+        <image href="/images/rondo-logo.png" x={40} y={770} width={230} height={120}
           style={{ opacity: 0.9 } as React.CSSProperties} />
 
       </svg>
