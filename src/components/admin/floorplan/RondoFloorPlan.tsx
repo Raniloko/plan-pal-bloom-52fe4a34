@@ -152,20 +152,7 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           seats={{ top: 4, right: 1, bottom: 4, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── LEFT: Tisch 30 mit L-förmiger Trennwand (wie im Referenzbild) ─── */}
-        <g>
-          {/* Geschlossene Trennwand/Nische um Tisch 30 */}
-          <rect
-            x={30}
-            y={510}
-            width={200}
-            height={170}
-            rx={4}
-            fill="#1a1a1f"
-            stroke="#7a7a82"
-            strokeWidth={3}
-          />
-        </g>
+        {/* ─── LEFT: Tisch 30 (freistehend, ohne Umrandung) ─── */}
         <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")} onDrop={(resId) => drop("t30", resId)}
           cx={120} cy={580} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
