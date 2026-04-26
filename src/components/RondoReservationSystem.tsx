@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
 type ReservationZone = "hauptbereich" | "billard" | "vip" | "podest" | "fenster" | "";
@@ -54,8 +54,8 @@ const ZONE_CAPACITY: Record<ZoneKey, number> = {
   hauptbereich: 7,
   fenster: 5,
   billard: 8,
-  vip: 1,
-  podest: 1,
+  vip: 6,
+  podest: 8,
 };
 
 const STEPS = [
@@ -319,7 +319,7 @@ const RondoReservationSystem = () => {
                   onChange={(e) => setData({ ...data, date: e.target.value, time: "", zone: "" })}
                   className="w-full bg-muted border border-border rounded-md px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <p className="text-xs text-muted-foreground mt-2">Belegte Zeiten werden automatisch gesperrt.</p>
+                <p className="text-xs text-muted-foreground mt-2">Bitte wähle ein Datum für deine Reservierung.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Uhrzeit</label>
@@ -331,7 +331,7 @@ const RondoReservationSystem = () => {
                   <>
                     {availabilityLoading && (
                       <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                        <Loader2 size={14} className="animate-spin" /> Verfügbarkeit wird aktualisiert...
+                        <Loader2 size={14} className="animate-spin" /> Lädt...
                       </p>
                     )}
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
@@ -355,7 +355,7 @@ const RondoReservationSystem = () => {
                         );
                       })}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Ausgegraute Uhrzeiten sind belegt oder bereits vorbei.</p>
+                    <p className="text-xs text-muted-foreground mt-2">Wähle deine gewünschte Uhrzeit.</p>
                   </>
                 )}
               </div>
@@ -393,7 +393,7 @@ const RondoReservationSystem = () => {
 
             {data.time && (
               <div className="mb-4 bg-muted border border-border rounded-lg px-4 py-3 text-sm text-muted-foreground">
-                Verfügbarkeit für <span className="text-foreground font-semibold">{data.date}</span> um <span className="text-foreground font-semibold">{data.time} Uhr</span>
+                Reservierung für <span className="text-foreground font-semibold">{data.date}</span> um <span className="text-foreground font-semibold">{data.time} Uhr</span>
               </div>
             )}
 
@@ -431,22 +431,11 @@ const RondoReservationSystem = () => {
                   >
                     <p className="font-semibold">{z.label}</p>
                     <p className="text-xs text-muted-foreground">{z.desc}</p>
-                    {data.time && (
-                      <p className={`text-xs mt-2 ${isFull ? "text-destructive" : "text-muted-foreground"}`}>
-                        {booked}/{capacity} belegt {isFull ? "· nicht verfügbar" : "· verfügbar"}
-                      </p>
-                    )}
                   </button>
                 );
               })}
             </div>
 
-            {data.time && (
-              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-2">
-                <AlertTriangle size={14} className="text-primary" />
-                Voll belegte Bereiche sind deaktiviert und nicht auswählbar.
-              </p>
-            )}
           </div>
         )}
 
