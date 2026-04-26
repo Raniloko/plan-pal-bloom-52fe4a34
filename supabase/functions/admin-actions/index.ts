@@ -23,8 +23,11 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    // Public actions that don't require auth
-    const PUBLIC_ACTIONS = ["check_login_attempts", "log_login_attempt", "get_settings"];
+    // Public actions that don't require auth.
+    // NOTE: `log_login_attempt` is intentionally NOT public — exposing it
+    // would let attackers log fake failed attempts to lock out any admin.
+    // It is now invoked internally by `check_login_attempts` instead.
+    const PUBLIC_ACTIONS = ["check_login_attempts", "get_settings"];
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -370,8 +373,19 @@ Deno.serve(async (req) => {
       }
 
       case "check_login_attempts": {
-        const { email } = body;
+        const { email, log_attempt, success } = body;
         if (!email) return error("email required", 400);
+
+        // If the caller wants to log the current attempt, do it server-side
+        // here so it cannot be invoked as a separate public action.
+        if (log_attempt !== undefined) {
+          await supabase.from("login_attempts").insert({ email, success: !!success });
+          if (success) {
+            const cutoffOld = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoffOld);
+          }
+        }
+
         const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const { data: attempts } = await supabase
           .from("login_attempts")
@@ -391,10 +405,11 @@ Deno.serve(async (req) => {
       }
 
       case "log_login_attempt": {
+        // Now requires admin auth (no longer in PUBLIC_ACTIONS).
+        // Kept for backwards compatibility / direct admin tooling.
         const { email, success } = body;
         if (!email) return error("email required", 400);
         await supabase.from("login_attempts").insert({ email, success: !!success });
-        // On success, clean old failed attempts for this email
         if (success) {
           const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoff);

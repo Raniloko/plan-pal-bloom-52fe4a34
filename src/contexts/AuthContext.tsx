@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    // Check brute-force via edge function first
+    // Check brute-force lockout first (no logging yet)
     try {
       const checkRes = await supabase.functions.invoke("admin-actions", {
         body: { action: "check_login_attempts", email },
@@ -98,10 +98,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    // Log attempt
+    // Log this attempt (server-side, via the same public action so it cannot
+    // be invoked independently to spam fake failures).
     try {
       await supabase.functions.invoke("admin-actions", {
-        body: { action: "log_login_attempt", email, success: !error },
+        body: {
+          action: "check_login_attempts",
+          email,
+          log_attempt: true,
+          success: !error,
+        },
       });
     } catch { /* non-blocking */ }
 
