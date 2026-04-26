@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   );
 
   const email = "admin@admin.de";
-  const password = "Admin1234!";
+  const password = "Rondo-Admin-2026";
 
   // Try to find existing user
   const { data: list } = await supabase.auth.admin.listUsers();
