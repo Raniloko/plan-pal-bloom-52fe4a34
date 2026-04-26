@@ -154,11 +154,15 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
 
         {/* ─── LEFT: Tisch 30 mit L-förmiger Trennwand (wie im Referenzbild) ─── */}
         <g>
-          {/* L-förmige Trennwand um Tisch 30 (offen nach rechts) */}
-          <path
-            d="M 10 510 L 230 510 L 230 660 L 75 660 L 75 760 L 10 760"
-            fill="none"
-            stroke="#6a6a72"
+          {/* Geschlossene Trennwand/Nische um Tisch 30 */}
+          <rect
+            x={30}
+            y={510}
+            width={200}
+            height={170}
+            rx={4}
+            fill="#1a1a1f"
+            stroke="#7a7a82"
             strokeWidth={3}
           />
         </g>
