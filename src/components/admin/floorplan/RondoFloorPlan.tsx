@@ -5,6 +5,7 @@ import RestaurantTable from "./RestaurantTable";
 import FensterFloorPlan from "./FensterFloorPlan";
 import BillardFloorPlan from "./BillardFloorPlan";
 import VipFloorPlan from "./VipFloorPlan";
+import SalitosFloorPlan from "./SalitosFloorPlan";
 import AreaPlaceholder from "./AreaPlaceholder";
 
 const DEFAULT_TABLES: Record<string, TableData> = {
@@ -54,6 +55,9 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
   }
   if (activeArea === "vip") {
     return <VipFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
+  }
+  if (activeArea === "salitos") {
+    return <SalitosFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
   }
 
   const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
