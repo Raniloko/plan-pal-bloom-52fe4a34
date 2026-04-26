@@ -339,10 +339,16 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   }, {});
 
   const billardCheckoutData = (() => {
-    if (!isBillardUnit || !data?.startTime) return null;
-    const [h, m] = data.startTime.split(":").map(Number);
-    const start = new Date();
-    start.setHours(h, m, 0, 0);
+    if (!isBillardUnit) return null;
+    let start: Date | null = null;
+    if (data?.checkedInAt) {
+      start = new Date(data.checkedInAt);
+    } else if (data?.startTime) {
+      const [h, m] = data.startTime.split(":").map(Number);
+      start = new Date();
+      start.setHours(h, m, 0, 0);
+    }
+    if (!start) return null;
     const elapsedMin = Math.max(1, Math.floor((Date.now() - start.getTime()) / 60000));
     const cost = (elapsedMin * BILLARD_PRICE_PER_MIN).toFixed(2);
     return { elapsedMin, cost };
@@ -536,7 +542,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
                 {/* Live billard timer for checked-in billard guests */}
                 {checkedIn && isBillardUnit && data?.unitId && (
-                  <BillardLiveTimer startTime={data.startTime} />
+                  <BillardLiveTimer startTime={data.startTime} checkedInAt={data.checkedInAt} />
                 )}
 
                 <div style={{ display: "flex", gap: 6 }}>
