@@ -1,0 +1,1 @@
+ALTER TABLE public.reservations ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMP WITH TIME ZONE;

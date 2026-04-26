@@ -8,18 +8,25 @@ import BookingForm from "./BookingForm";
 
 const BILLARD_PRICE_PER_MIN = 0.23;
 
-/** Live counter that ticks every second showing elapsed minutes & running cost */
-const BillardLiveTimer = ({ startTime }: { startTime?: string }) => {
+/** Live counter that ticks every second showing elapsed minutes & running cost.
+ *  Counts from the actual check-in moment (checkedInAt) when available,
+ *  otherwise falls back to the booked start time. */
+const BillardLiveTimer = ({ startTime, checkedInAt }: { startTime?: string; checkedInAt?: string | null }) => {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
   }, []);
 
-  if (!startTime) return null;
-  const [h, m] = startTime.split(":").map(Number);
-  const start = new Date();
-  start.setHours(h, m, 0, 0);
+  let start: Date | null = null;
+  if (checkedInAt) {
+    start = new Date(checkedInAt);
+  } else if (startTime) {
+    const [h, m] = startTime.split(":").map(Number);
+    start = new Date();
+    start.setHours(h, m, 0, 0);
+  }
+  if (!start) return null;
   const elapsedSec = Math.max(0, Math.floor((now - start.getTime()) / 1000));
   const elapsedMin = Math.floor(elapsedSec / 60);
   const secs = elapsedSec % 60;
@@ -72,6 +79,7 @@ export interface PanelData {
   customerEmail?: string;
   customerPhone?: string;
   zone?: string;
+  checkedInAt?: string | null;
   unitDayReservations?: UnitDayReservation[];
   allReservationsForUnit?: UnitDayReservation[];
 }
@@ -331,10 +339,16 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   }, {});
 
   const billardCheckoutData = (() => {
-    if (!isBillardUnit || !data?.startTime) return null;
-    const [h, m] = data.startTime.split(":").map(Number);
-    const start = new Date();
-    start.setHours(h, m, 0, 0);
+    if (!isBillardUnit) return null;
+    let start: Date | null = null;
+    if (data?.checkedInAt) {
+      start = new Date(data.checkedInAt);
+    } else if (data?.startTime) {
+      const [h, m] = data.startTime.split(":").map(Number);
+      start = new Date();
+      start.setHours(h, m, 0, 0);
+    }
+    if (!start) return null;
     const elapsedMin = Math.max(1, Math.floor((Date.now() - start.getTime()) / 60000));
     const cost = (elapsedMin * BILLARD_PRICE_PER_MIN).toFixed(2);
     return { elapsedMin, cost };
@@ -528,7 +542,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
                 {/* Live billard timer for checked-in billard guests */}
                 {checkedIn && isBillardUnit && data?.unitId && (
-                  <BillardLiveTimer startTime={data.startTime} />
+                  <BillardLiveTimer startTime={data.startTime} checkedInAt={data.checkedInAt} />
                 )}
 
                 <div style={{ display: "flex", gap: 6 }}>

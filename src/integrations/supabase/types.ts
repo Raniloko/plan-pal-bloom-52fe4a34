@@ -142,6 +142,7 @@ export type Database = {
         Row: {
           cancellation_reason: string | null
           cancellation_token: string | null
+          checked_in_at: string | null
           created_at: string
           customer_email: string
           customer_name: string
@@ -161,6 +162,7 @@ export type Database = {
         Insert: {
           cancellation_reason?: string | null
           cancellation_token?: string | null
+          checked_in_at?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
@@ -180,6 +182,7 @@ export type Database = {
         Update: {
           cancellation_reason?: string | null
           cancellation_token?: string | null
+          checked_in_at?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string

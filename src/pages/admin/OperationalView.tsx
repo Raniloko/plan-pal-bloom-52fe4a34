@@ -29,6 +29,7 @@ interface Reservation {
   occasion: string;
   message: string | null;
   unit_id: string | null;
+  checked_in_at?: string | null;
 }
 
 interface Unit {
@@ -261,6 +262,7 @@ const OperationalView = () => {
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
       zone: reservation?.zone || (unit ? areaToZone(unit.area) : undefined),
+      checkedInAt: reservation?.checked_in_at ?? null,
       unitDayReservations: unitDayReservations.map(r => ({
         id: r.id, customer_name: r.customer_name, customer_phone: r.customer_phone,
         customer_email: r.customer_email, reservation_time: r.reservation_time,
@@ -284,6 +286,7 @@ const OperationalView = () => {
       zone: reservation?.zone,
       unitId: unit?.id,
       unitNotes: unit?.notes || "",
+      checkedInAt: reservation?.checked_in_at ?? null,
     });
     setSelectedRowId(row.id);
     setPanelOpen(true);
