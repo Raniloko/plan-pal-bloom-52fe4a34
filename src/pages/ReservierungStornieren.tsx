@@ -14,7 +14,7 @@ function formatDate(dateStr: string): string {
   return `${d}.${m}.${y}`;
 }
 
-type ViewState = "loading" | "confirm" | "success" | "error" | "already";
+type ViewState = "loading" | "confirm" | "success" | "error" | "already" | "handled";
 
 const ReservierungStornieren = () => {
   const [searchParams] = useSearchParams();
@@ -55,6 +55,11 @@ const ReservierungStornieren = () => {
           setView("already");
           return;
         }
+        // 403 = token wurde vom Rondo Team invalidiert (Reservierung wurde bereits bearbeitet)
+        if (res.status === 403) {
+          setView("handled");
+          return;
+        }
         setErrorMsg(err?.error || "Reservierung nicht gefunden.");
         setView("error");
         return;
@@ -86,6 +91,14 @@ const ReservierungStornieren = () => {
 
       if (!res.ok) {
         const err = await res.json().catch(() => null);
+        if (err?.status === "cancelled") {
+          setView("already");
+          return;
+        }
+        if (res.status === 403) {
+          setView("handled");
+          return;
+        }
         setErrorMsg(err?.error || "Stornierung fehlgeschlagen.");
         setView("error");
         return;
@@ -140,6 +153,18 @@ const ReservierungStornieren = () => {
             <div style={iconStyle("#fef2f2", "#fecaca", "#dc2626")}>✕</div>
             <h2 style={h2Style}>Bereits storniert</h2>
             <p style={pStyle}>Diese Reservierung wurde bereits storniert.</p>
+          </>
+        )}
+
+        {view === "handled" && (
+          <>
+            <div style={iconStyle("#eff6ff", "#bfdbfe", "#2563eb")}>i</div>
+            <h2 style={h2Style}>Bereits vom Team bearbeitet</h2>
+            <p style={pStyle}>
+              Diese Reservierung wurde bereits vom Rondo Team bearbeitet und kann hier nicht mehr geändert oder storniert werden.
+              <br /><br />
+              Bitte kontaktiere uns telefonisch, falls du Änderungen vornehmen möchtest.
+            </p>
           </>
         )}
 
