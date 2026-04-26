@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
         .update({
           status: "cancelled",
           cancellation_reason: `Automatisch storniert – nicht eingecheckt nach ${thresholdMin} Min.`,
+          cancellation_token: null,
         })
         .eq("id", r.id);
 
