@@ -67,72 +67,63 @@ const VipFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, showLabel
         {/* ══════ ROOM OUTER WALLS ══════ */}
         <rect x={30} y={20} width={840} height={660} rx={4} fill="none" stroke="#555" strokeWidth={3} />
 
-        {/* ══════ TOP CORRIDOR / ENTRANCE ══════ */}
-        {/* Left corridor wall */}
-        <rect x={380} y={20} width={8} height={130} fill="#555" />
-        {/* Top corridor ceiling */}
-        <rect x={380} y={20} width={230} height={8} fill="#555" />
-        {/* Right corridor wall */}
-        <rect x={602} y={20} width={8} height={130} fill="#555" />
+        {/* ══════ BENCH SEATING (3 Bänke: oben, rechts, unten) ══════ */}
+        {/* Top bench – along upper wall (behind tables 101, 102) */}
+        <rect x={140} y={38} width={620} height={22} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
+        <text x={450} y={53} textAnchor="middle" fontSize={9} fill="#888" fontFamily="'DM Sans', sans-serif">Sitzbank</text>
 
-        {/* ══════ RIGHT WALL PARTITION ══════ */}
-        <rect x={640} y={20} width={8} height={180} fill="#555" />
+        {/* Right bench – along right wall (behind tables 103, 104) */}
+        <rect x={800} y={140} width={22} height={420} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
+        <text x={811} y={350} textAnchor="middle" fontSize={9} fill="#888" fontFamily="'DM Sans', sans-serif"
+          transform="rotate(-90, 811, 350)">Sitzbank</text>
 
-        {/* ══════ BENCH SEATING (Sitzbänke) ══════ */}
-        {/* Back wall bench – left side (behind tables 101) */}
-        <rect x={40} y={30} width={330} height={18} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
-        <text x={205} y={43} textAnchor="middle" fontSize={8} fill="#888" fontFamily="'DM Sans', sans-serif">Sitzbank</text>
+        {/* Bottom bench – along lower wall (behind tables 105, 106) */}
+        <rect x={140} y={640} width={620} height={22} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
+        <text x={450} y={655} textAnchor="middle" fontSize={9} fill="#888" fontFamily="'DM Sans', sans-serif">Sitzbank</text>
 
-        {/* Left wall bench (behind table 101) */}
-        <rect x={40} y={48} width={18} height={280} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
-        <text x={49} y={190} textAnchor="middle" fontSize={8} fill="#888" fontFamily="'DM Sans', sans-serif"
-          transform="rotate(-90, 49, 190)">Sitzbank</text>
+        {/* ══════ TABLES — ALONG BENCHES ══════
+            Bench-side seat count = 0 (bench replaces chairs).
+            Total seats per table:  101=3, 102=4, 103=2, 104=4, 105=2, 106=4
+        */}
 
-        {/* Right wall bench (behind tables 102, 103) */}
-        <rect x={812} y={30} width={18} height={380} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
-        <text x={821} y={220} textAnchor="middle" fontSize={8} fill="#888" fontFamily="'DM Sans', sans-serif"
-          transform="rotate(-90, 821, 220)">Sitzbank</text>
-
-        {/* Bottom wall bench (behind tables 104, 105, 106) */}
-        <rect x={250} y={610} width={530} height={18} rx={3} fill="#3a3a3a" stroke="#555" strokeWidth={1} />
-        <text x={515} y={623} textAnchor="middle" fontSize={8} fill="#888" fontFamily="'DM Sans', sans-serif">Sitzbank</text>
-
-        {/* ═══ TABLE 101 – left center ═══ */}
+        {/* TABLE 101 – top bench, left (3 seats: 0 top + 1 left + 1 right + 1 bottom) */}
         <RestaurantTable id="vip1" data={tables.vip1} onClick={() => click("vip1")} onDrop={(resId) => drop("vip1", resId)}
-          cx={220} cy={230} tw={48} th={48}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          cx={290} cy={120} tw={56} th={48}
+          seats={{ top: 0, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ═══ TABLE 102 – right top ═══ */}
+        {/* TABLE 102 – top bench, right (4 seats: 0 top + 1 left + 1 right + 2 bottom) */}
         <RestaurantTable id="vip2" data={tables.vip2} onClick={() => click("vip2")} onDrop={(resId) => drop("vip2", resId)}
-          cx={730} cy={200} tw={48} th={48}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          cx={610} cy={120} tw={56} th={48}
+          seats={{ top: 0, right: 1, bottom: 2, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ═══ TABLE 103 – right below 102 ═══ */}
+        {/* TABLE 103 – right bench, top (2 seats: 1 top + 0 right + 1 bottom + 0 left) */}
         <RestaurantTable id="vip3" data={tables.vip3} onClick={() => click("vip3")} onDrop={(resId) => drop("vip3", resId)}
-          cx={730} cy={370} tw={48} th={48}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          cx={730} cy={250} tw={48} th={56}
+          seats={{ top: 1, right: 0, bottom: 1, left: 0 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ═══ BOTTOM ROW: 106, 105, 104 (left to right) ═══ */}
-        <RestaurantTable id="vip6" data={tables.vip6} onClick={() => click("vip6")} onDrop={(resId) => drop("vip6", resId)}
-          cx={340} cy={530} tw={48} th={48}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          showLabels={showLabels} colorMode={colorMode} />
-
-        <RestaurantTable id="vip5" data={tables.vip5} onClick={() => click("vip5")} onDrop={(resId) => drop("vip5", resId)}
-          cx={530} cy={530} tw={48} th={48}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
-          showLabels={showLabels} colorMode={colorMode} />
-
+        {/* TABLE 104 – right bench, bottom (4 seats: 1 top + 0 right + 1 bottom + 2 left) */}
         <RestaurantTable id="vip4" data={tables.vip4} onClick={() => click("vip4")} onDrop={(resId) => drop("vip4", resId)}
-          cx={710} cy={530} tw={48} th={48}
-          seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
+          cx={730} cy={450} tw={48} th={56}
+          seats={{ top: 1, right: 0, bottom: 1, left: 2 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        {/* TABLE 105 – bottom bench, right (2 seats: 1 top + 1 left + 0 bottom + 0 right) */}
+        <RestaurantTable id="vip5" data={tables.vip5} onClick={() => click("vip5")} onDrop={(resId) => drop("vip5", resId)}
+          cx={580} cy={560} tw={56} th={48}
+          seats={{ top: 1, right: 0, bottom: 0, left: 1 }}
+          showLabels={showLabels} colorMode={colorMode} />
+
+        {/* TABLE 106 – bottom bench, left (4 seats: 2 top + 1 left + 0 bottom + 1 right) */}
+        <RestaurantTable id="vip6" data={tables.vip6} onClick={() => click("vip6")} onDrop={(resId) => drop("vip6", resId)}
+          cx={310} cy={560} tw={56} th={48}
+          seats={{ top: 2, right: 1, bottom: 0, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ─── RONDO LOGO ─── */}
-        <image href="/images/rondo-logo.png" x={40} y={580} width={160} height={80}
+        <image href="/images/rondo-logo.png" x={40} y={600} width={140} height={70}
           style={{ opacity: 0.85 } as React.CSSProperties} />
       </svg>
     </div>
