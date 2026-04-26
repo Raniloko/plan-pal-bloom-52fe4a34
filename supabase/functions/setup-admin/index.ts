@@ -12,12 +12,59 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, email, password, role } = await req.json();
+    // ── Authorization gate ────────────────────────────────────────────
+    // This function exposes privileged actions (creating admins / resetting
+    // passwords). To prevent anonymous abuse we require either:
+    //   (a) a request signed with a shared bootstrap secret, OR
+    //   (b) a JWT belonging to an existing admin user.
+    // ──────────────────────────────────────────────────────────────────
+    const SETUP_SECRET = Deno.env.get("SETUP_ADMIN_SECRET");
+    const providedSecret = req.headers.get("x-setup-admin-secret");
+    const authHeader = req.headers.get("Authorization");
 
-    const supabase = createClient(
+    const supabaseService = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    let authorized = false;
+
+    // (a) Bootstrap secret path
+    if (SETUP_SECRET && providedSecret && providedSecret === SETUP_SECRET) {
+      authorized = true;
+    }
+
+    // (b) Existing-admin JWT path
+    if (!authorized && authHeader?.startsWith("Bearer ")) {
+      const anon = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await anon.auth.getClaims(token);
+      if (!claimsError && claimsData?.claims?.sub) {
+        const userId = claimsData.claims.sub as string;
+        const { data: roleData } = await supabaseService
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (roleData) authorized = true;
+      }
+    }
+
+    if (!authorized) {
+      return new Response(
+        JSON.stringify({ error: "Nicht autorisiert" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { action, email, password, role } = await req.json();
+
+    const supabase = supabaseService;
 
     if (action === "create_admin") {
       if (!email || !password) {
