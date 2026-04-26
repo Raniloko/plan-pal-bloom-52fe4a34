@@ -135,7 +135,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
           zone,
           unit_id: selectedUnitId || undefined,
           anlass: occasion.includes("sonstiges") && sonstigesText.trim()
-            ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim()}`].join(", ")
+            ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim().replace(/,/g, ";")}`].join(", ")
             : occasion.join(", "),
           message: (isWalkIn ? "Walk-in Gast. " : "") + (isBillard ? "Billard – Abrechnung per Live-Timer (0,23 €/Min). " : "") + (note.trim() || ""),
           honeypot: "",
