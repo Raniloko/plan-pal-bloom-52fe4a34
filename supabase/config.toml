@@ -1,8 +1,5 @@
 project_id = "euciggcpwyuctelogciv"
 
-[functions.bootstrap-admin-once]
-verify_jwt = false
-
 [functions.create-reservation]
 verify_jwt = false
 
