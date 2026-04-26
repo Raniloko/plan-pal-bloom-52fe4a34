@@ -19,8 +19,8 @@ const ZONE_CAPACITY: Record<string, number> = {
   hauptbereich: 7,
   fenster: 5,
   billard: 8,
-  vip: 1,
-  podest: 1,
+  vip: 6,
+  podest: 8,
 };
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
