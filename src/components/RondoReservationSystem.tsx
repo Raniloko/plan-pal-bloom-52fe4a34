@@ -54,8 +54,8 @@ const ZONE_CAPACITY: Record<ZoneKey, number> = {
   hauptbereich: 7,
   fenster: 5,
   billard: 8,
-  vip: 1,
-  podest: 1,
+  vip: 6,
+  podest: 8,
 };
 
 const STEPS = [
