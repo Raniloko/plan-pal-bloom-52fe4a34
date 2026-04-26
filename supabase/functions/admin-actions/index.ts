@@ -85,9 +85,15 @@ Deno.serve(async (req) => {
         const { reservation_id, checked_in } = body;
         if (!reservation_id) return error("reservation_id required", 400);
         const newStatus = checked_in ? "confirmed" : "checked_in";
+        const updatePayload: Record<string, unknown> = {
+          status: newStatus,
+          cancellation_token: null,
+          // Set check-in timestamp on check-in, clear it on undo
+          checked_in_at: checked_in ? null : new Date().toISOString(),
+        };
         const { error: err } = await supabase
           .from("reservations")
-          .update({ status: newStatus, cancellation_token: null })
+          .update(updatePayload)
           .eq("id", reservation_id);
         if (err) return error(err.message, 500);
         await logActivity(supabase, checked_in ? "check_out" : "check_in", "reservation", reservation_id);
