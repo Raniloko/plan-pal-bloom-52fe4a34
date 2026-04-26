@@ -188,8 +188,8 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           width={590}
           height={275}
           rx={4}
-          fill="#1a1a1f"
-          stroke="#7a7a82"
+          fill="none"
+          stroke="#444"
           strokeWidth={3}
         />
 
@@ -235,8 +235,8 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── RONDO LOGO (bottom left) ─── */}
-        <image href="/images/rondo-logo.png" x={40} y={770} width={230} height={120}
+        {/* ─── RONDO LOGO (bottom left) – matched to 75 Zoll position ─── */}
+        <image href="/images/rondo-logo.png" x={30} y={720} width={230} height={120}
           style={{ opacity: 0.9 } as React.CSSProperties} />
 
       </svg>
