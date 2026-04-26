@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     const validAnlass = anlassParts.length > 0 && anlassParts.every((p: string) => 
       VALID_OCCASIONS.includes(p) || p.startsWith("sonstiges:")
     );
-    if (!validAnlass) errors.push("Ungültiger Anlass.");
+    if (!isAdminBooking && !validAnlass) errors.push("Ungültiger Anlass.");
     if (!name || sanitize(name).length < 2 || sanitize(name).length > 100) errors.push("Name muss 2-100 Zeichen lang sein.");
     if (!isAdminBooking) {
       if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
