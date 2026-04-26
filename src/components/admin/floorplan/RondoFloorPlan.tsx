@@ -133,15 +133,6 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           rotation={{ angle: -45, cx: 990, cy: 245 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── Bonsai-Pflanze (rechts oben, neben Billard 3) ─── */}
-        <g opacity={0.85}>
-          <circle cx={1140} cy={210} r={22} fill="#2d5a2d" />
-          <circle cx={1128} cy={198} r={14} fill="#3a7a3a" />
-          <circle cx={1152} cy={202} r={13} fill="#3a7a3a" />
-          <circle cx={1140} cy={222} r={12} fill="#4a8a4a" />
-          <rect x={1136} y={228} width={8} height={10} fill="#4a3020" />
-        </g>
-
         {/* ─── Horizontal counter/bar (zwischen Billard und Tischen) ─── */}
         <rect x={300} y={355} width={520} height={14} rx={3} fill="#bdbdc4" opacity={0.55} stroke="#888" strokeWidth={0.8} />
 
@@ -161,7 +152,16 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           seats={{ top: 4, right: 1, bottom: 4, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── LEFT: Tisch 30 (freistehend, keine Trennwand) ─── */}
+        {/* ─── LEFT: Tisch 30 mit L-förmiger Trennwand (wie im Referenzbild) ─── */}
+        <g>
+          {/* L-förmige Trennwand um Tisch 30 (offen nach rechts) */}
+          <path
+            d="M 10 510 L 230 510 L 230 660 L 75 660 L 75 760 L 10 760"
+            fill="none"
+            stroke="#6a6a72"
+            strokeWidth={3}
+          />
+        </g>
         <RestaurantTable id="t30" data={tables.t30} onClick={() => click("t30")} onDrop={(resId) => drop("t30", resId)}
           cx={120} cy={580} tw={44} th={44}
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
@@ -189,24 +189,18 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           showLabels={showLabels} colorMode={colorMode} />
 
         {/* ═══ BOTTOM ENCLOSED AREA (tables 60-67) ═══
-            Dezente graue Box mit offenem Eingang oben-links (diagonale Schnittkante).
+            Klarer rechteckiger Rahmen mit dunklem Hintergrund, wie im Referenzbild.
         */}
-        {/* Diagonal-Linie vom Logo-Bereich nach oben zum Eingang */}
-        <line x1={300} y1={870} x2={620} y2={650} stroke="#444" strokeWidth={2.5} />
-        {/* Box als einzelne Linien (oben mit Lücke für Eingang) */}
-        <line x1={620} y1={650} x2={1190} y2={650} stroke="#444" strokeWidth={2.5} />
-        <line x1={1190} y1={650} x2={1190} y2={935} stroke="#444" strokeWidth={2.5} />
-        <line x1={1190} y1={935} x2={300} y2={935} stroke="#444" strokeWidth={2.5} />
-        <rect x={300} y={650} width={890} height={285}
-              fill="rgba(20,20,24,0.55)" pointerEvents="none" />
-
-        {/* ─── Pflanze (zwischen Logo und Box) ─── */}
-        <g opacity={0.9}>
-          <circle cx={530} cy={870} r={22} fill="#3a7a3a" />
-          <circle cx={518} cy={858} r={14} fill="#4a9a4a" />
-          <circle cx={542} cy={862} r={13} fill="#4a9a4a" />
-          <circle cx={530} cy={882} r={12} fill="#5aaa5a" />
-        </g>
+        <rect
+          x={600}
+          y={660}
+          width={590}
+          height={275}
+          rx={4}
+          fill="#1a1a1f"
+          stroke="#7a7a82"
+          strokeWidth={3}
+        />
 
         {/* ─── Row 1: 61, 60, 67, 66 ─── */}
         <RestaurantTable id="t61" data={tables.t61} onClick={() => click("t61")} onDrop={(resId) => drop("t61", resId)}
