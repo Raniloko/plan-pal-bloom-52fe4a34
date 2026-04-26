@@ -113,9 +113,9 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── DARK SCREENS / TVs (top, left of billard) ─── */}
-        <rect x={210} y={60} width={90} height={170} rx={3} fill="#3a3a3a" stroke="#4a4a4a" strokeWidth={1.5} />
-        <rect x={320} y={60} width={90} height={170} rx={3} fill="#3a3a3a" stroke="#4a4a4a" strokeWidth={1.5} />
+        {/* ─── DARK SCREENS / TVs (top, left of billard) – matched to 75 Zoll style ─── */}
+        <rect x={230} y={50} width={70} height={100} rx={3} fill="#222" stroke="#333" strokeWidth={1.5} />
+        <rect x={320} y={50} width={70} height={100} rx={3} fill="#222" stroke="#333" strokeWidth={1.5} />
 
         {/* ─── BILLARD 1 & 2 (top center, side by side) ─── */}
         <BillardTable id="bt1" data={tables.bt1} onClick={() => click("bt1")} onDrop={(resId) => drop("bt1", resId)}
@@ -133,8 +133,8 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           rotation={{ angle: -45, cx: 990, cy: 245 }}
           showLabels={showLabels} colorMode={colorMode} />
 
-        {/* ─── Horizontal counter/bar (zwischen Billard und Tischen) ─── */}
-        <rect x={300} y={355} width={520} height={14} rx={3} fill="#bdbdc4" opacity={0.55} stroke="#888" strokeWidth={0.8} />
+        {/* ─── Horizontal bar/counter (matched to 75 Zoll style) ─── */}
+        <rect x={350} y={290} width={400} height={8} rx={3} fill="#444" stroke="#555" strokeWidth={1} />
 
         {/* ═══ MIDDLE ROW: Tisch 52, 53, 54 ═══ */}
         <RestaurantTable id="t52" data={tables.t52} onClick={() => click("t52")} onDrop={(resId) => drop("t52", resId)}
