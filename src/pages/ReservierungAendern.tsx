@@ -32,7 +32,7 @@ function formatDate(dateStr: string): string {
   return `${d}.${m}.${y}`;
 }
 
-type ViewState = "loading" | "form" | "success" | "error";
+type ViewState = "loading" | "form" | "success" | "error" | "handled";
 
 const ReservierungAendern = () => {
   const [searchParams] = useSearchParams();
@@ -77,6 +77,11 @@ const ReservierungAendern = () => {
 
       if (!jsonRes.ok) {
         const err = await jsonRes.json().catch(() => null);
+        // 403 = token vom Rondo Team invalidiert; 410 = bereits storniert
+        if (jsonRes.status === 403 || jsonRes.status === 410 || err?.status === "cancelled") {
+          setView("handled");
+          return;
+        }
         setErrorMsg(err?.error || "Reservierung nicht gefunden.");
         setView("error");
         return;
@@ -125,6 +130,10 @@ const ReservierungAendern = () => {
 
       if (!res.ok) {
         const err = await res.json().catch(() => null);
+        if (res.status === 403 || res.status === 410 || err?.status === "cancelled") {
+          setView("handled");
+          return;
+        }
         setErrorMsg(err?.error || "Änderung fehlgeschlagen.");
         setView("error");
         return;
@@ -178,6 +187,19 @@ const ReservierungAendern = () => {
             <div style={iconCircle("#fef2f2", "#fecaca", "#dc2626")}>✕</div>
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Fehler</h2>
             <p style={{ color: "#666", fontSize: 13, lineHeight: 1.5 }}>{errorMsg}</p>
+            <button onClick={handleCancel} style={secondaryBtnStyle}>Zurück zur Startseite</button>
+          </div>
+        )}
+
+        {view === "handled" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={iconCircle("#eff6ff", "#bfdbfe", "#2563eb")}>i</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Bereits vom Team bearbeitet</h2>
+            <p style={{ color: "#666", fontSize: 13, lineHeight: 1.5 }}>
+              Diese Reservierung wurde bereits vom Rondo Team bearbeitet und kann hier nicht mehr geändert oder storniert werden.
+              <br /><br />
+              Bitte kontaktiere uns telefonisch, falls du noch Änderungen vornehmen möchtest.
+            </p>
             <button onClick={handleCancel} style={secondaryBtnStyle}>Zurück zur Startseite</button>
           </div>
         )}
