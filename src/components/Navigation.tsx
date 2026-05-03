@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Menu } from "lucide-react";
+import { Instagram, Facebook } from "lucide-react";
 
 const dummyLinks = [
   { label: "Startseite" },
@@ -13,6 +13,17 @@ const dummyLinks = [
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  let closeTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  const openMenu = () => {
+    if (closeTimeout) clearTimeout(closeTimeout);
+    setIsOpen(true);
+  };
+  const closeMenu = () => setIsOpen(false);
+  const delayedClose = () => {
+    if (closeTimeout) clearTimeout(closeTimeout);
+    closeTimeout = setTimeout(() => setIsOpen(false), 300);
+  };
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -52,11 +63,13 @@ const Navigation = () => {
             {/* Right: Hamburger */}
             <div className="flex items-center gap-3 z-10">
               <button
-                onClick={() => setIsOpen(true)}
-                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => (isOpen ? closeMenu() : openMenu())}
+                onMouseEnter={openMenu}
+                onMouseLeave={delayedClose}
+                className={`lines-button relative w-[44px] h-[44px] flex items-center justify-center ${isOpen ? "is-active" : ""}`}
                 aria-label="Menü öffnen"
               >
-                <Menu size={28} strokeWidth={2.5} />
+                <span className="lines" />
               </button>
             </div>
           </div>
@@ -68,43 +81,31 @@ const Navigation = () => {
         className={`fixed inset-0 bg-black/50 z-[55] transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        onClick={() => setIsOpen(false)}
+        onClick={closeMenu}
+        onMouseEnter={delayedClose}
       />
 
-      {/* Yellow slide-in panel */}
+      {/* Slide-in panel (right) */}
       <div
-        className={`fixed top-0 left-0 h-[100dvh] w-[85vw] max-w-[400px] bg-primary z-[60] flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        onMouseEnter={openMenu}
+        onMouseLeave={delayedClose}
+        className={`fixed top-0 right-0 h-[100dvh] w-[85vw] max-w-[320px] bg-[#000] z-[60] flex flex-col pt-24 px-8 transition-transform duration-[400ms] ease-[cubic-bezier(0.77,0,0.18,1)] ${
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex justify-start p-5">
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-primary-foreground hover:text-primary-foreground/70 transition-colors"
-            aria-label="Menü schließen"
-          >
-            <Menu size={28} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div className="block px-8 mt-6 mb-12">
-          <h2 className="text-2xl md:text-3xl text-primary-foreground font-bold tracking-wider">
-            RESERVIERUNG
-          </h2>
-        </div>
-
-        <div className="flex flex-col items-start gap-4 px-8 flex-1">
+        <ul className={`side-menu-list list-none p-0 m-0 ${isOpen ? "is-open" : ""}`}>
           {dummyLinks.map((link) => (
-            <button
-              key={link.label}
-              type="button"
-              onClick={(e) => e.preventDefault()}
-              className="text-2xl md:text-3xl uppercase tracking-wider text-primary-foreground font-semibold transition-all duration-300 hover:translate-x-2 hover:text-primary-foreground/70 cursor-default text-left"
-            >
-              {link.label}
-            </button>
+            <li key={link.label} className="my-5">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="text-white text-[22px] no-underline hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </>
   );
