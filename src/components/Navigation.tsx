@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { Instagram, Facebook, Menu, X } from "lucide-react";
 
 const menuLinks = [
