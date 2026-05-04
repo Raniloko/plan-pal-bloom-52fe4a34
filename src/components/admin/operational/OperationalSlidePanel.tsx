@@ -192,7 +192,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   useEffect(() => {
     if (!open) return;
-    supabase.from("units").select("id, name, area, status").order("position_index").then(({ data: u }) => {
+    supabase.from("units").select("id, name, area, status, capacity").order("position_index").then(({ data: u }) => {
       const filtered = ((u as UnitOption[]) || []).filter(unit => {
         const lower = unit.name.toLowerCase();
         return !lower.startsWith("kicker") && !lower.startsWith("dart");
