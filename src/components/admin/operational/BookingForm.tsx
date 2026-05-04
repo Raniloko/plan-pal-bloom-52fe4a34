@@ -328,7 +328,24 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
         </div>
       </div>
 
-      {/* Table (Unit) selector - replaces zone selector */}
+      {/* Zone selector */}
+      <div>
+        <label style={labelStyle}>Bereich *</label>
+        <select
+          value={selectedUnitId ? zone : selectedZone}
+          onChange={e => {
+            setSelectedZone(e.target.value);
+            setSelectedUnitId(""); // reset table when zone changes
+          }}
+          style={inputStyle}
+        >
+          {ZONE_OPTIONS.map(z => (
+            <option key={z.value} value={z.value}>{z.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table (Unit) selector */}
       <div>
         <label style={labelStyle}>Tisch zuweisen</label>
         <select
@@ -336,27 +353,23 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
           onChange={e => setSelectedUnitId(e.target.value)}
           style={inputStyle}
         >
-          <option value="">— Kein Tisch (automatisch) —</option>
+          <option value="">— Automatisch passenden Tisch wählen —</option>
           {Object.entries(groupedUnits).map(([area, areaUnits]) => (
             <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
               {areaUnits.map(u => {
                 const resStatus = unitStatusMap.get(u.id);
                 const statusIcon = resStatus === "occupied" ? "🔴" : resStatus === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                const cap = u.capacity ?? 4;
                 return (
-                  <option key={u.id} value={u.id}>{statusIcon} {u.name}</option>
+                  <option key={u.id} value={u.id}>{statusIcon} {u.name} ({cap}P.)</option>
                 );
               })}
             </optgroup>
           ))}
         </select>
-        {selectedUnitId && (
-          <div style={{ fontSize: 10, color: "#999", marginTop: 3 }}>
-            Bereich: {zone.charAt(0).toUpperCase() + zone.slice(1)} (automatisch erkannt)
-          </div>
-        )}
-        {!selectedUnitId && !initialZone && (
+        {!selectedUnitId && (
           <div style={{ fontSize: 10, color: "#e07820", marginTop: 3 }}>
-            Ohne Tisch wird der Bereich "Hauptbereich" verwendet
+            Es wird automatisch der kleinste freie Tisch ≥ {pax} Personen im Bereich "{zone}" gewählt.
           </div>
         )}
       </div>
