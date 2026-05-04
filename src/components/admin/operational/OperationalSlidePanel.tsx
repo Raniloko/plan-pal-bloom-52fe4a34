@@ -89,6 +89,7 @@ interface UnitOption {
   name: string;
   area: string;
   status: string | null;
+  capacity?: number | null;
 }
 
 interface ReservationRef {
