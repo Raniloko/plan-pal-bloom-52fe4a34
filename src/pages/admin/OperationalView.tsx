@@ -38,6 +38,7 @@ interface Unit {
   area: string;
   status: string | null;
   notes: string | null;
+  capacity?: number | null;
 }
 
 interface WaitlistEntry {

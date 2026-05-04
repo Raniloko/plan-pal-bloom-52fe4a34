@@ -10,6 +10,7 @@ interface UnitOption {
   name: string;
   area: string;
   status: string | null;
+  capacity?: number | null;
 }
 
 interface ReservationRef {
@@ -42,6 +43,26 @@ const ZONE_FOR_AREA: Record<string, string> = {
   podest: "podest",
 };
 
+const ZONE_OPTIONS: { value: string; label: string }[] = [
+  { value: "hauptbereich", label: "Hauptbereich (140 Zoll)" },
+  { value: "fenster", label: "Fenster (75 Zoll)" },
+  { value: "vip", label: "VIP" },
+  { value: "podest", label: "Podest" },
+  { value: "billard", label: "Billard" },
+];
+
+/** Normalize an arbitrary time string to strict "HH:MM" (15-min aligned). */
+const normalizeTime = (raw: string): string => {
+  if (!raw) return "00:00";
+  const m = raw.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return "00:00";
+  let h = Math.max(0, Math.min(23, parseInt(m[1], 10)));
+  let min = Math.max(0, Math.min(59, parseInt(m[2], 10)));
+  // round down to nearest quarter
+  min = Math.floor(min / 15) * 15;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+};
+
 const OCCASIONS = [
   { value: "essen", label: "Essen" },
   { value: "sport", label: "Sport schauen" },
@@ -52,11 +73,11 @@ const OCCASIONS = [
 
 const getNextQuarterHour = (): string => {
   const now = new Date();
-  const mins = now.getMinutes();
-  const nextSlot = Math.ceil(mins / 15) * 15;
-  const h = nextSlot >= 60 ? now.getHours() + 1 : now.getHours();
-  const m = nextSlot >= 60 ? 0 : nextSlot;
-  return `${String(h % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const totalMins = now.getHours() * 60 + now.getMinutes();
+  const nextTotal = Math.ceil(totalMins / 15) * 15;
+  const h = Math.floor(nextTotal / 60) % 24;
+  const m = nextTotal % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
 const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], reservations = [], onSuccess, onCancel }: Props) => {
@@ -73,6 +94,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
   const [date, setDate] = useState(todayStr);
   const [startTime, setStartTime] = useState(smartDefault);
   const [selectedUnitId, setSelectedUnitId] = useState(initialUnitId || "");
+  const [selectedZone, setSelectedZone] = useState<string>(initialZone || "hauptbereich");
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
   const [sonstigesText, setSonstigesText] = useState("");
   const [note, setNote] = useState("");
@@ -86,8 +108,8 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
       const unit = allUnits.find(u => u.id === selectedUnitId);
       if (unit) return ZONE_FOR_AREA[unit.area] || unit.area;
     }
-    return initialZone || "hauptbereich";
-  }, [selectedUnitId, allUnits, initialZone]);
+    return selectedZone;
+  }, [selectedUnitId, allUnits, selectedZone]);
 
   const isBillard = zone === "billard";
 
@@ -116,10 +138,66 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
     return map;
   }, [reservations]);
 
+  /**
+   * Pick the best fitting free table in `zone` for `pax` people.
+   * Prefers smallest capacity that is >= pax.
+   */
+  const pickAutoUnit = (): string | null => {
+    // Map ZONE -> matching area names in DB
+    const areaMatchers: Record<string, (a: string) => boolean> = {
+      hauptbereich: a => a === "restaurant" || a === "hauptbereich",
+      fenster: a => a === "fenster",
+      vip: a => a === "vip",
+      podest: a => a === "podest",
+      billard: a => a === "billard",
+    };
+    const match = areaMatchers[zone] || ((a: string) => a === zone);
+
+    const candidates = allUnits.filter(u => {
+      if (!match(u.area)) return false;
+      const lower = u.name.toLowerCase();
+      if (lower.startsWith("kicker") || lower.startsWith("dart")) return false;
+      if (u.status === "blocked") return false;
+      const reservedStatus = unitStatusMap.get(u.id);
+      if (reservedStatus) return false; // already booked / occupied
+      const cap = (u.capacity ?? 4);
+      // For billard tables, capacity matching is loose (game tables often listed at 4)
+      if (zone === "billard") return true;
+      return cap >= pax;
+    });
+
+    if (candidates.length === 0) return null;
+    // Sort by smallest fitting capacity (then by position/name)
+    candidates.sort((a, b) => {
+      const ca = a.capacity ?? 4;
+      const cb = b.capacity ?? 4;
+      if (ca !== cb) return ca - cb;
+      return a.name.localeCompare(b.name);
+    });
+    return candidates[0].id;
+  };
+
   const handleSubmit = async () => {
     if (!guest.trim()) {
       toast.error("Bitte mindestens einen Gastnamen eingeben");
       return;
+    }
+
+    // Normalize time to strict HH:MM, 15-min aligned
+    const cleanTime = normalizeTime(startTime);
+    if (cleanTime !== startTime) {
+      console.warn(`[BookingForm] time normalized: "${startTime}" -> "${cleanTime}"`);
+    }
+
+    // Auto-pick a unit if none selected
+    let unitToAssign = selectedUnitId;
+    if (!unitToAssign) {
+      const auto = pickAutoUnit();
+      if (auto) {
+        unitToAssign = auto;
+        const u = allUnits.find(x => x.id === auto);
+        if (u) toast.message(`Tisch automatisch gewählt: ${u.name}`);
+      }
     }
 
     setSaving(true);
@@ -131,9 +209,9 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
           phone: phone.trim() || "000",
           guests: pax,
           date,
-          time: startTime,
+          time: cleanTime,
           zone,
-          unit_id: selectedUnitId || undefined,
+          unit_id: unitToAssign || undefined,
           anlass: occasion.includes("sonstiges") && sonstigesText.trim()
             ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim().replace(/,/g, ";")}`].join(", ")
             : occasion.join(", "),
@@ -150,10 +228,10 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
       }
 
       // Auto-assign unit if selected
-      if (selectedUnitId && body?.reservation_id) {
+      if (unitToAssign && body?.reservation_id) {
         try {
           await supabase.functions.invoke("admin-actions", {
-            body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: selectedUnitId },
+            body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: unitToAssign },
           });
         } catch { /* silent - unit assignment is best-effort */ }
       }
@@ -250,7 +328,24 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
         </div>
       </div>
 
-      {/* Table (Unit) selector - replaces zone selector */}
+      {/* Zone selector */}
+      <div>
+        <label style={labelStyle}>Bereich *</label>
+        <select
+          value={selectedUnitId ? zone : selectedZone}
+          onChange={e => {
+            setSelectedZone(e.target.value);
+            setSelectedUnitId(""); // reset table when zone changes
+          }}
+          style={inputStyle}
+        >
+          {ZONE_OPTIONS.map(z => (
+            <option key={z.value} value={z.value}>{z.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table (Unit) selector */}
       <div>
         <label style={labelStyle}>Tisch zuweisen</label>
         <select
@@ -258,27 +353,23 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
           onChange={e => setSelectedUnitId(e.target.value)}
           style={inputStyle}
         >
-          <option value="">— Kein Tisch (automatisch) —</option>
+          <option value="">— Automatisch passenden Tisch wählen —</option>
           {Object.entries(groupedUnits).map(([area, areaUnits]) => (
             <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
               {areaUnits.map(u => {
                 const resStatus = unitStatusMap.get(u.id);
                 const statusIcon = resStatus === "occupied" ? "🔴" : resStatus === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                const cap = u.capacity ?? 4;
                 return (
-                  <option key={u.id} value={u.id}>{statusIcon} {u.name}</option>
+                  <option key={u.id} value={u.id}>{statusIcon} {u.name} ({cap}P.)</option>
                 );
               })}
             </optgroup>
           ))}
         </select>
-        {selectedUnitId && (
-          <div style={{ fontSize: 10, color: "#999", marginTop: 3 }}>
-            Bereich: {zone.charAt(0).toUpperCase() + zone.slice(1)} (automatisch erkannt)
-          </div>
-        )}
-        {!selectedUnitId && !initialZone && (
+        {!selectedUnitId && (
           <div style={{ fontSize: 10, color: "#e07820", marginTop: 3 }}>
-            Ohne Tisch wird der Bereich "Hauptbereich" verwendet
+            Es wird automatisch der kleinste freie Tisch ≥ {pax} Personen im Bereich "{zone}" gewählt.
           </div>
         )}
       </div>
