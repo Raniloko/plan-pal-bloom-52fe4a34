@@ -12,10 +12,14 @@ const Footer = ({ onOpenCookieSettings }: FooterProps) => {
         <p className="text-muted-foreground text-sm mb-6">
           Otto-Hahn-Str. 18, 63456 Hanau, Deutschland
         </p>
-        <div className="flex justify-center gap-2 text-sm text-muted-foreground">
-          <Link to="/impressum" className="hover:text-primary transition-colors">Impressum</Link>
+        <div className="flex justify-center flex-wrap gap-2 text-sm text-muted-foreground">
+          <a href="https://www.rondo-sportsbar.de/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Website</a>
           <span>|</span>
-          <Link to="/datenschutz" className="hover:text-primary transition-colors">Datenschutz</Link>
+          <a href="https://www.rondo-sportsbar.de/reservierung" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Reservierung</a>
+          <span>|</span>
+          <a href="https://www.rondo-sportsbar.de/impressum/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Impressum</a>
+          <span>|</span>
+          <a href="https://www.rondo-sportsbar.de/datenschutz/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Datenschutz</a>
           <span>|</span>
           <button onClick={onOpenCookieSettings} className="hover:text-primary transition-colors">Dateneinstellungen</button>
         </div>
