@@ -12,7 +12,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["DM Sans", "sans-serif"],
+        sans: ["Open Sans", "sans-serif"],
         display: ["Bebas Neue", "cursive"],
         mono: ["'JetBrains Mono'", "monospace"],
       },
