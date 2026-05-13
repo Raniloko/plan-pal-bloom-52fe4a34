@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.auto-cancel-overdue]
 verify_jwt = false
+
+[functions.temp-update-pw]
+verify_jwt = false
