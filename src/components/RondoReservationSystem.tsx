@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
@@ -70,6 +70,8 @@ const STEPS = [
 const RondoReservationSystem = () => {
   const { getTimesForDate } = useOpeningHours();
   const [step, setStep] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
   const [data, setData] = useState<ReservationData>({
     date: "",
     time: "",
@@ -254,6 +256,18 @@ const RondoReservationSystem = () => {
     }
   }, [data.zone, data.time, isZoneFullyBooked]);
 
+  // Prevent the page from jumping when changing steps – keep the form anchor stable
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const el = containerRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 100;
+    window.scrollTo({ top, behavior: "smooth" });
+  }, [step]);
+
   if (submitted) {
     return (
       <div className="text-center py-12">
@@ -288,7 +302,7 @@ const RondoReservationSystem = () => {
   }
 
   return (
-    <div>
+    <div ref={containerRef}>
       {/* Step indicator */}
       <div className="flex items-center justify-between mb-8 overflow-x-auto gap-1">
         {STEPS.map((s, i) => (
@@ -305,7 +319,7 @@ const RondoReservationSystem = () => {
       </div>
 
       {/* Step content */}
-      <div className="min-h-[280px]">
+      <div className="min-h-[420px] sm:min-h-[360px]">
         {step === 0 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Wann möchtest du kommen?</h3>
