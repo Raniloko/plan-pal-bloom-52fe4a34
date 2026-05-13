@@ -69,7 +69,8 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { date, time, guests, zone, anlass, name, email, phone, message, honeypot, unit_id } = body;
+    const { date, time, guests, zone, anlass, name, email, phone, message, honeypot } = body;
+    let unit_id: string | null = body.unit_id ?? null;
 
     if (honeypot && honeypot.trim() !== "") {
       return new Response(
@@ -154,6 +155,55 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Auto-assign a unit if none provided: smallest fitting capacity, fall back to larger.
+    if (!unit_id) {
+      const { data: zoneUnits } = await supabase
+        .from("units")
+        .select("id, name, capacity, status")
+        .eq("area", zone);
+
+      if (zoneUnits && zoneUnits.length > 0) {
+        // Get all reservations for this zone+date to detect conflicts per unit
+        const { data: dayRes } = await supabase
+          .from("reservations")
+          .select("unit_id, reservation_time")
+          .eq("reservation_date", date)
+          .eq("zone", zone)
+          .not("status", "in", '("cancelled","checked_out")');
+
+        const conflictsByUnit = new Map<string, boolean>();
+        for (const r of dayRes || []) {
+          if (!r.unit_id) continue;
+          const [rh, rm] = r.reservation_time.split(":").map(Number);
+          const rStart = rh * 60 + rm;
+          const rEnd = rStart + overlapDur;
+          if (newStart < rEnd && newEnd > rStart) {
+            conflictsByUnit.set(r.unit_id, true);
+          }
+        }
+
+        const available = zoneUnits.filter(u =>
+          u.status !== "blocked" && !conflictsByUnit.has(u.id)
+        );
+
+        // Prefer smallest table with capacity >= guests; fall back to largest available if none fits exactly.
+        const fitting = available
+          .filter(u => (u.capacity ?? 4) >= guests)
+          .sort((a, b) => (a.capacity ?? 4) - (b.capacity ?? 4));
+
+        let chosen = fitting[0];
+        if (!chosen) {
+          // No table large enough free → take the largest available as fallback (better than nothing)
+          const fallback = [...available].sort((a, b) => (b.capacity ?? 4) - (a.capacity ?? 4));
+          chosen = fallback[0];
+        }
+
+        if (chosen) {
+          unit_id = chosen.id;
+        }
+      }
+    }
+
     // Zone capacity check
     const { data: existingRes, error: availabilityError } = await supabase
       .from("reservations")
@@ -196,6 +246,7 @@ Deno.serve(async (req) => {
       message: message ? sanitize(message).substring(0, 1000) : "",
       honeypot: "",
       status: "confirmed",
+      unit_id: unit_id,
     }).select().single();
 
     if (error) {
