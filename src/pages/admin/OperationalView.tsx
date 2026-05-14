@@ -296,7 +296,7 @@ const OperationalView = () => {
   };
 
   const handleNewReservation = () => {
-    setPanelData({ tableLabel: "Neue Reservierung", status: "free" });
+    setPanelData({ tableLabel: "Neue Reservierung", status: "free", directBook: true });
     setSelectedRowId(null);
     setPanelOpen(true);
   };

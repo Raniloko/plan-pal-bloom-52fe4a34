@@ -83,6 +83,7 @@ export interface PanelData {
   unitDayReservations?: UnitDayReservation[];
   allReservationsForUnit?: UnitDayReservation[];
   initialWalkIn?: boolean;
+  directBook?: boolean;
 }
 
 interface UnitOption {
@@ -154,7 +155,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     if (open) {
       setNotes(data?.unitNotes || "");
       setCheckedIn(data?.status === "present");
-      setMode(data?.initialWalkIn ? "book" : "view");
+      setMode((data?.initialWalkIn || data?.directBook) ? "book" : "view");
       setAssignedUnitId(data?.unitId || "");
       setBrowseDate(new Date());
       setBrowseDateReservations(data?.unitDayReservations || []);
