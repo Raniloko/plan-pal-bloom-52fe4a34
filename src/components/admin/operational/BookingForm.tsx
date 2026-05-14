@@ -38,11 +38,13 @@ const ZONE_FOR_AREA: Record<string, string> = {
   dart: "billard",
   restaurant: "hauptbereich",
   hauptbereich: "hauptbereich",
+  fenster: "fenster",
   vip: "vip",
 };
 
 const ZONE_OPTIONS: { value: string; label: string }[] = [
   { value: "hauptbereich", label: "Hauptbereich (140 Zoll)" },
+  { value: "fenster", label: "Restaurant (75 Zoll)" },
   { value: "vip", label: "VIP" },
   { value: "billard", label: "Billard" },
 ];
@@ -142,6 +144,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
     // Map ZONE -> matching area names in DB
     const areaMatchers: Record<string, (a: string) => boolean> = {
       hauptbereich: a => a === "restaurant" || a === "hauptbereich",
+      fenster: a => a === "fenster",
       vip: a => a === "vip",
       billard: a => a === "billard",
     };
