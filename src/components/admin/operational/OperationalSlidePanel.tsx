@@ -196,7 +196,10 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
     supabase.from("units").select("id, name, area, status, capacity").order("position_index").then(({ data: u }) => {
       const filtered = ((u as UnitOption[]) || []).filter(unit => {
         const lower = unit.name.toLowerCase();
-        return !lower.startsWith("kicker") && !lower.startsWith("dart");
+        if (lower.startsWith("kicker") || lower.startsWith("dart")) return false;
+        // Fenster- und Podest-Tische ausblenden (nicht buchbar)
+        if (unit.area === "fenster" || unit.area === "podest") return false;
+        return true;
       });
       setUnits(filtered);
     });

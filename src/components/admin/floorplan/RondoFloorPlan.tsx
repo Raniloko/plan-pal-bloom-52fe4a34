@@ -6,7 +6,7 @@ import FensterFloorPlan from "./FensterFloorPlan";
 import BillardFloorPlan from "./BillardFloorPlan";
 import VipFloorPlan from "./VipFloorPlan";
 import SalitosFloorPlan from "./SalitosFloorPlan";
-import AreaPlaceholder from "./AreaPlaceholder";
+
 
 const DEFAULT_TABLES: Record<string, TableData> = {
   t10: { id: "t10", title: "Tisch 10", status: "free" },
@@ -34,14 +34,6 @@ const DEFAULT_TABLES: Record<string, TableData> = {
   bt3: { id: "bt3", title: "Billard 3", status: "free" },
 };
 
-const AREA_INFO: Record<string, { title: string; desc: string; img?: string }> = {
-  podest: {
-    title: "Podest",
-    desc: "Erhöhter Bereich für bis zu 33 Gäste – ideal für größere Gruppen und Feiern",
-    img: "/images/podest.jpg",
-  },
-};
-
 const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeArea, showLabels = true, zoom = 1, colorMode = "status" }: FloorPlanProps) => {
   const tables = useMemo(() => ({ ...DEFAULT_TABLES, ...tablesProp }), [tablesProp]);
   const click = (id: string) => onTableClick?.(id, tables[id]);
@@ -58,12 +50,6 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
   }
   if (activeArea === "salitos") {
     return <SalitosFloorPlan tables={tablesProp} onTableClick={onTableClick} onTableDrop={onTableDrop} showLabels={showLabels} zoom={zoom} colorMode={colorMode} />;
-  }
-
-  const showPlaceholder = activeArea && activeArea !== "all" && activeArea !== "hauptbereich";
-  if (showPlaceholder && activeArea) {
-    const info = AREA_INFO[activeArea];
-    if (info) return <AreaPlaceholder {...info} />;
   }
 
   return (

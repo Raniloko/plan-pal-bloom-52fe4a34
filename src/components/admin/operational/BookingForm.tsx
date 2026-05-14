@@ -114,7 +114,10 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
     const groups: Record<string, UnitOption[]> = {};
     allUnits.filter(u => {
       const lower = u.name.toLowerCase();
-      return !lower.startsWith("kicker") && !lower.startsWith("dart");
+      if (lower.startsWith("kicker") || lower.startsWith("dart")) return false;
+      // Fenster- und Podest-Tische ausblenden (nicht buchbar)
+      if (u.area === "fenster" || u.area === "podest") return false;
+      return true;
     }).forEach(u => {
       (groups[u.area] = groups[u.area] || []).push(u);
     });
@@ -149,6 +152,8 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
 
     const candidates = allUnits.filter(u => {
       if (!match(u.area)) return false;
+      // Fenster- und Podest-Tische ausschließen
+      if (u.area === "fenster" || u.area === "podest") return false;
       const lower = u.name.toLowerCase();
       if (lower.startsWith("kicker") || lower.startsWith("dart")) return false;
       if (u.status === "blocked") return false;
