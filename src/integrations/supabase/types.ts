@@ -152,6 +152,7 @@ export type Database = {
           id: string
           message: string | null
           occasion: string
+          recurring_group_id: string | null
           reservation_date: string
           reservation_time: string
           status: string
@@ -172,6 +173,7 @@ export type Database = {
           id?: string
           message?: string | null
           occasion: string
+          recurring_group_id?: string | null
           reservation_date: string
           reservation_time: string
           status?: string
@@ -192,6 +194,7 @@ export type Database = {
           id?: string
           message?: string | null
           occasion?: string
+          recurring_group_id?: string | null
           reservation_date?: string
           reservation_time?: string
           status?: string
