@@ -47,11 +47,15 @@ const ZONE_FOR_AREA: Record<string, string> = {
   hauptbereich: "hauptbereich",
   fenster: "fenster",
   vip: "vip",
+  podest: "podest",
+  salitos: "salitos",
 };
 
 const ZONE_OPTIONS: { value: string; label: string }[] = [
   { value: "hauptbereich", label: "Hauptbereich (140 Zoll)" },
   { value: "fenster", label: "Restaurant (75 Zoll)" },
+  { value: "salitos", label: "Salitos Lounge / Outdoor" },
+  { value: "podest", label: "Podest" },
   { value: "vip", label: "VIP" },
   { value: "billard", label: "Billard" },
 ];
@@ -158,6 +162,8 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
       fenster: a => a === "fenster",
       vip: a => a === "vip",
       billard: a => a === "billard",
+      podest: a => a === "podest",
+      salitos: a => a === "salitos",
     };
     const match = areaMatchers[zone] || ((a: string) => a === zone);
 
