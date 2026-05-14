@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const VALID_ZONES = ["hauptbereich", "billard", "vip"];
+const VALID_ZONES = ["hauptbereich", "billard", "vip", "podest", "fenster"];
 const VALID_OCCASIONS = ["sport", "feier", "essen", "billard", "sonstiges"];
 
 function isValidTime(t: string): boolean {
@@ -17,8 +17,10 @@ function isValidTime(t: string): boolean {
 
 const ZONE_CAPACITY: Record<string, number> = {
   hauptbereich: 7,
+  fenster: 5,
   billard: 8,
   vip: 6,
+  podest: 8,
 };
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
