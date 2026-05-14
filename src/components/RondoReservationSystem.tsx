@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
-type ReservationZone = "hauptbereich" | "billard" | "vip" | "";
+type ReservationZone = "hauptbereich" | "fenster" | "billard" | "vip" | "podest" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
 
 interface ReservationData {
@@ -21,6 +21,7 @@ interface ReservationData {
 
 const ZONES = [
   { value: "hauptbereich", label: "Restaurantbereich am 140-Zoll Screen", desc: "Direkt vor dem großen 140-Zoll-LED-Screen", info: "" },
+  { value: "fenster", label: "Restaurantbereich am 75-Zoll Screen", desc: "Gemütliche Tische am 75-Zoll-Screen mit Fensterblick", info: "" },
   {
     value: "billard",
     label: "Billard-Tisch",
@@ -28,6 +29,7 @@ const ZONES = [
     info: "⏱ Abrechnung: 0,23 €/Min pro Tisch (ca. 13,80 €/Std). Die Abrechnung startet ab Spielbeginn und wird vor Ort bezahlt. Reservierung sichert dir einen Tisch – keine Vorauszahlung nötig.",
   },
   { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen ab 11 Personen", info: "👥 Mindestens 11 Personen erforderlich. Der VIP-Raum ist ein abgetrennter, privater Bereich mit eigenem Service." },
+  { value: "podest", label: "Podest", desc: "Erhöhter Bereich mit guter Sicht", info: "🔧 Hinweis: Der Podest-Bereich befindet sich aktuell noch in Bearbeitung/Planung." },
 ];
 
 const ANLAESSE = [
@@ -50,8 +52,10 @@ type AvailabilityMap = Record<string, Partial<Record<ZoneKey, number>>>;
 
 const ZONE_CAPACITY: Record<ZoneKey, number> = {
   hauptbereich: 7,
+  fenster: 3,
   billard: 8,
   vip: 6,
+  podest: 4,
 };
 
 const STEPS = [
