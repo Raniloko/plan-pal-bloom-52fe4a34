@@ -70,6 +70,7 @@ const OperationalView = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadedDate, setLoadedDate] = useState<string | null>(null);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -78,22 +79,28 @@ const OperationalView = () => {
 
   const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const currentDateStrRef = useRef(dateStr);
+  currentDateStrRef.current = dateStr;
 
   const load = useCallback(async () => {
+    const requestDate = dateStr;
     try {
       const res = await supabase.functions.invoke("admin-actions", {
-        body: { action: "fetch_dashboard", date: dateStr },
+        body: { action: "fetch_dashboard", date: requestDate },
       });
       if (res.error) throw res.error;
       const d = res.data;
       if (d?.error) { console.error("Dashboard fetch error:", d.error); return; }
+      if (currentDateStrRef.current !== requestDate) return;
       setReservations((d.reservations as Reservation[]) || []);
       setUnits((d.units as Unit[]) || []);
       setWaitlist((d.waitlist as WaitlistEntry[]) || []);
+      setLoadedDate(requestDate);
 
       const settingsRes = await supabase.functions.invoke("admin-actions", {
         body: { action: "get_settings" },
       });
+      if (currentDateStrRef.current !== requestDate) return;
       if (settingsRes.data?.settings?.reservation_duration) {
         setDurationMin(Number(settingsRes.data.settings.reservation_duration) || 120);
       }
@@ -118,6 +125,7 @@ const OperationalView = () => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const isToday = dateStr === todayStr;
+    const isLoadedSelectedDate = loadedDate === dateStr;
     return reservations
       .filter(r => r.status !== "checked_out")
       .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
@@ -128,7 +136,7 @@ const OperationalView = () => {
         const isCheckedIn = r.status === "checked_in";
         const isCancelled = r.status === "cancelled";
         const minutesOverdue = (now.getTime() - start.getTime()) / 60000;
-        const isOverdue = isToday && !isCheckedIn && !isCancelled && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
+        const isOverdue = isToday && isLoadedSelectedDate && !isCheckedIn && !isCancelled && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
 
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
@@ -153,7 +161,7 @@ const OperationalView = () => {
           overdue: isOverdue,
         };
       });
-  }, [reservations, units, dateStr]);
+  }, [reservations, units, dateStr, loadedDate]);
 
   const totalGuests = rows.filter(r => r.status !== "cancelled").reduce((s, r) => s + r.guests, 0);
 
@@ -174,6 +182,7 @@ const OperationalView = () => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     if (dateStr !== todayStr) return;
+    if (loadedDate !== dateStr) return;
     const overdueRows = rows.filter(r => r.overdue);
     overdueRows.forEach(r => {
       if (!notifiedOverdueRef.current.has(r.id)) {
@@ -206,7 +215,7 @@ const OperationalView = () => {
     notifiedExceededRef.current.forEach(id => {
       if (!seatedRows.find(r => r.id === id)) notifiedExceededRef.current.delete(id);
     });
-  }, [rows, durationMin, dateStr]);
+  }, [rows, durationMin, dateStr, loadedDate]);
 
   // Faster polling to compensate for Realtime removal on PII tables
   useEffect(() => {
