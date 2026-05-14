@@ -341,6 +341,28 @@ export type Database = {
         }
         Returns: boolean
       }
+      reserve_atomic: {
+        Args: {
+          p_date: string
+          p_duration_min: number
+          p_payload: Json
+          p_time: string
+          p_unit_id: string
+        }
+        Returns: string
+      }
+      reserve_billard_auto: {
+        Args: {
+          p_date: string
+          p_duration_min: number
+          p_payload: Json
+          p_time: string
+        }
+        Returns: {
+          reservation_id: string
+          unit_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
