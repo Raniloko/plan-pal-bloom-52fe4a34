@@ -25,7 +25,7 @@ const AppContent = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/backstage");
-  const isReservierung = location.pathname === "/reservierung";
+  const isReservierung = location.pathname.startsWith("/reservierung");
 
   return (
     <>
