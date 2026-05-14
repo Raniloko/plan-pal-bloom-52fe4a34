@@ -212,17 +212,27 @@ const OperationalView = () => {
 
   const floorTables = useMemo(() => {
     const map: Record<string, TableData> = {};
+    const toFpId = (unit: { name: string; area: string }): string => {
+      const name = unit.name.toLowerCase().trim();
+      const digits = name.replace(/[^0-9]/g, "");
+      if (unit.area === "salitos") return digits ? "s" + digits : "";
+      if (unit.area === "vip") {
+        // "Tisch 101..106" → vip1..vip6
+        const n = parseInt(digits, 10);
+        if (!isNaN(n)) return "vip" + (n > 100 ? n - 100 : n);
+        return "";
+      }
+      if (name.startsWith("billard")) return "bt" + digits;
+      if (name.startsWith("tisch f")) return "f" + digits;
+      if (name.startsWith("tisch")) return "t" + digits;
+      return "";
+    };
     reservations.forEach(r => {
       if (!r.unit_id) return;
       if (r.status === "cancelled" || r.status === "checked_out") return;
       const unit = units.find(u => u.id === r.unit_id);
       if (!unit) return;
-      const name = unit.name.toLowerCase();
-      let fpId = "";
-      if (name.startsWith("billard")) fpId = "bt" + name.replace("billard ", "").trim();
-      else if (name.startsWith("vip")) fpId = "vip" + name.replace("vip ", "").trim();
-      else if (name.startsWith("tisch f")) fpId = "f" + name.replace("tisch f", "").trim();
-      else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
+      const fpId = toFpId(unit);
       if (!fpId) return;
       const isPresent = r.status === "checked_in";
       map[fpId] = {
@@ -234,12 +244,7 @@ const OperationalView = () => {
     });
     units.forEach(u => {
       if (u.status !== "blocked") return;
-      const name = u.name.toLowerCase();
-      let fpId = "";
-      if (name.startsWith("billard")) fpId = "bt" + name.replace("billard ", "").trim();
-      else if (name.startsWith("vip")) fpId = "vip" + name.replace("vip ", "").trim();
-      else if (name.startsWith("tisch f")) fpId = "f" + name.replace("tisch f", "").trim();
-      else if (name.startsWith("tisch")) fpId = "t" + name.replace("tisch ", "").trim();
+      const fpId = toFpId(u);
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
     return map;
