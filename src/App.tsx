@@ -25,6 +25,7 @@ const AppContent = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/backstage");
+  const isReservierung = location.pathname === "/reservierung";
 
   return (
     <>
@@ -41,7 +42,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <Footer onOpenCookieSettings={() => setCookieSettingsOpen(true)} />}
-      {!isAdmin && (
+      {!isAdmin && !isReservierung && (
         <CookieBanner
           onSettingsOpen={cookieSettingsOpen}
           onSettingsClose={() => setCookieSettingsOpen(false)}
