@@ -21,11 +21,28 @@ import { SessionWarningModal } from "@/components/admin/SessionWarningModal";
 
 const queryClient = new QueryClient();
 
+const SUPPRESS_COOKIE_KEY = "rondo_suppress_cookie_banner";
+
 const AppContent = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/backstage");
   const isReservierung = location.pathname.startsWith("/reservierung");
+
+  // Once a user lands on the change/cancel flow (typically via email link),
+  // suppress the cookie banner for the rest of the session — even if they
+  // navigate to other public pages afterwards.
+  if (typeof window !== "undefined") {
+    if (
+      location.pathname.startsWith("/reservierung/aendern") ||
+      location.pathname.startsWith("/reservierung/stornieren")
+    ) {
+      try { sessionStorage.setItem(SUPPRESS_COOKIE_KEY, "1"); } catch {}
+    }
+  }
+  const suppressCookie =
+    typeof window !== "undefined" &&
+    (() => { try { return sessionStorage.getItem(SUPPRESS_COOKIE_KEY) === "1"; } catch { return false; } })();
 
   return (
     <>
@@ -42,7 +59,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <Footer onOpenCookieSettings={() => setCookieSettingsOpen(true)} />}
-      {!isAdmin && !isReservierung && (
+      {!isAdmin && !isReservierung && !suppressCookie && (
         <CookieBanner
           onSettingsOpen={cookieSettingsOpen}
           onSettingsClose={() => setCookieSettingsOpen(false)}
