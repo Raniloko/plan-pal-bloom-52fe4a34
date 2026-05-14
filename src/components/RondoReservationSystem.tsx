@@ -392,7 +392,7 @@ const RondoReservationSystem = () => {
               </button>
             </div>
             <p className="text-center text-sm text-muted-foreground">
-              Für Gruppen ab 11 Personen empfehlen wir unseren VIP-Raum oder das Podest.
+              Für Gruppen ab 11 Personen empfehlen wir unseren VIP-Raum.
             </p>
           </div>
         )}
