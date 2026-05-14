@@ -402,6 +402,7 @@ const OperationalView = () => {
             onRowClick={handleRowClick}
             onNewClick={handleNewReservation}
             onWalkInClick={handleNewWalkIn}
+            onWaitlistClick={handleWaitlistClick}
             waitlist={waitlist}
             onRefreshWaitlist={load}
             durationMin={durationMin}
