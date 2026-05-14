@@ -26,6 +26,7 @@ interface Props {
   tableLabel?: string;
   initialZone?: string;
   initialUnitId?: string;
+  initialWalkIn?: boolean;
   allUnits?: UnitOption[];
   reservations?: ReservationRef[];
   onSuccess: () => void;
