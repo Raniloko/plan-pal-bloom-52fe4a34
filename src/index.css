@@ -54,7 +54,21 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Open Sans', sans-serif;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
     letter-spacing: 0.02em;
+  }
+  .admin-theme h1,
+  .admin-theme h2,
+  .admin-theme h3,
+  .admin-theme h4,
+  .admin-theme h5,
+  .admin-theme h6 {
+    font-weight: 600;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
   }
 }
 
