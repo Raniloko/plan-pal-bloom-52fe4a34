@@ -37,6 +37,7 @@ interface Props {
   onRowClick: (row: ResRow) => void;
   onNewClick: () => void;
   onWalkInClick?: () => void;
+  onWaitlistClick?: (entry: WaitlistEntry) => void;
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
   durationMin?: number;
