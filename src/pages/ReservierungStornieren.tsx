@@ -3,8 +3,10 @@ import { useSearchParams } from "react-router-dom";
 
 const ZONE_LABELS: Record<string, string> = {
   hauptbereich: "Restaurant (140-Zoll Screen)",
+  fenster: "Restaurant (75-Zoll Screen)",
   billard: "Billard",
   vip: "VIP-Raum",
+  podest: "Podest",
 };
 
 function formatDate(dateStr: string): string {
