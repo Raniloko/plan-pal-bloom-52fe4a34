@@ -116,6 +116,8 @@ const OperationalView = () => {
   // Include cancelled in rows for "Achtung" tab
   const rows: ResRow[] = useMemo(() => {
     const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const isToday = dateStr === todayStr;
     return reservations
       .filter(r => r.status !== "checked_out")
       .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
@@ -126,7 +128,7 @@ const OperationalView = () => {
         const isCheckedIn = r.status === "checked_in";
         const isCancelled = r.status === "cancelled";
         const minutesOverdue = (now.getTime() - start.getTime()) / 60000;
-        const isOverdue = !isCheckedIn && !isCancelled && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
+        const isOverdue = isToday && !isCheckedIn && !isCancelled && (r.status === "confirmed" || r.status === "pending") && minutesOverdue >= 10;
 
         let icon: ResRow["icon"] = "none";
         if (r.status === "pending") icon = "ob";
