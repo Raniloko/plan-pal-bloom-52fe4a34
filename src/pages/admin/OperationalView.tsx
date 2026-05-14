@@ -172,6 +172,8 @@ const OperationalView = () => {
 
   useEffect(() => {
     const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (dateStr !== todayStr) return;
     const overdueRows = rows.filter(r => r.overdue);
     overdueRows.forEach(r => {
       if (!notifiedOverdueRef.current.has(r.id)) {
