@@ -38,16 +38,12 @@ const ZONE_FOR_AREA: Record<string, string> = {
   dart: "billard",
   restaurant: "hauptbereich",
   hauptbereich: "hauptbereich",
-  fenster: "fenster",
   vip: "vip",
-  podest: "podest",
 };
 
 const ZONE_OPTIONS: { value: string; label: string }[] = [
   { value: "hauptbereich", label: "Hauptbereich (140 Zoll)" },
-  { value: "fenster", label: "Fenster (75 Zoll)" },
   { value: "vip", label: "VIP" },
-  { value: "podest", label: "Podest" },
   { value: "billard", label: "Billard" },
 ];
 
