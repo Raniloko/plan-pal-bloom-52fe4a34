@@ -307,6 +307,23 @@ const OperationalView = () => {
     setPanelOpen(true);
   };
 
+  const handleWaitlistClick = (entry: { id: string; guest_name: string; guest_email: string; guest_phone: string; desired_date: string; desired_time: string; area: string }) => {
+    setPanelData({
+      tableLabel: `Warteliste · ${entry.guest_name}`,
+      status: "free",
+      directBook: true,
+      zone: entry.area,
+      initialGuest: entry.guest_name,
+      initialEmail: entry.guest_email,
+      initialPhone: entry.guest_phone,
+      initialDate: entry.desired_date,
+      initialTime: entry.desired_time?.slice(0, 5),
+      waitlistId: entry.id,
+    });
+    setSelectedRowId(null);
+    setPanelOpen(true);
+  };
+
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
   // Drag-and-drop: assign reservation to a table
