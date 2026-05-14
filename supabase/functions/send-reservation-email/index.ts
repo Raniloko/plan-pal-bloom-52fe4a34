@@ -14,6 +14,15 @@ const ZONE_LABELS: Record<string, string> = {
   podest: "Podest",
 };
 
+function escapeHtml(input: unknown): string {
+  return String(input ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-");
   const days = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
@@ -180,6 +189,18 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Auth: only callers presenting the service-role key may send emails.
+    // This prevents abuse via spoofed recipients / phishing using our verified domain.
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization") || "";
+    const provided = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!provided || provided !== SERVICE_KEY) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY is not configured");
@@ -192,41 +213,60 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { reservation, is_modification, is_cancellation, cancel_reason } = body;
 
-    if (!reservation || !reservation.customer_email) {
+    if (!reservation || !reservation.id || !reservation.customer_email) {
       return new Response(
         JSON.stringify({ error: "Missing reservation data" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    
-    // Fetch cancellation_token for secure links
-    let cancellationToken = "";
-    if (!is_cancellation) {
-      const supabase = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const { data: tokenData } = await supabase
-        .from("reservations")
-        .select("cancellation_token")
-        .eq("id", reservation.id)
-        .single();
-      cancellationToken = tokenData?.cancellation_token || "";
+    // Verify the reservation actually exists and use stored values (prevents spoofed payloads).
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      SERVICE_KEY
+    );
+    const { data: dbRes, error: dbErr } = await supabaseAdmin
+      .from("reservations")
+      .select("id, customer_name, customer_email, reservation_date, reservation_time, guest_count, zone, occasion, message, cancellation_token")
+      .eq("id", reservation.id)
+      .single();
+    if (dbErr || !dbRes) {
+      return new Response(
+        JSON.stringify({ error: "Reservation not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    // Escape every user-controlled field that gets interpolated into HTML.
+    const safeReservation = {
+      id: dbRes.id,
+      customer_name: escapeHtml(dbRes.customer_name),
+      customer_email: dbRes.customer_email, // used as recipient header, not in HTML
+      reservation_date: dbRes.reservation_date,
+      reservation_time: dbRes.reservation_time,
+      guest_count: dbRes.guest_count,
+      zone: dbRes.zone,
+      occasion: dbRes.occasion,
+      message: dbRes.message ? escapeHtml(dbRes.message) : "",
+    };
+    const safeCancelReason = escapeHtml(cancel_reason || "");
+
+    const cancellationToken = !is_cancellation ? (dbRes.cancellation_token || "") : "";
     
     // Use app URLs instead of raw Edge Function URLs
     const APP_URL = Deno.env.get("APP_URL") || "https://rondo-sportsbar-reservierung.lovable.app";
-    const cancelUrl = `${APP_URL}/reservierung/stornieren?id=${reservation.id}&token=${cancellationToken}`;
-    const modifyUrl = `${APP_URL}/reservierung/aendern?id=${reservation.id}&token=${cancellationToken}`;
+    const cancelUrl = `${APP_URL}/reservierung/stornieren?id=${encodeURIComponent(dbRes.id)}&token=${encodeURIComponent(cancellationToken)}`;
+    const modifyUrl = `${APP_URL}/reservierung/aendern?id=${encodeURIComponent(dbRes.id)}&token=${encodeURIComponent(cancellationToken)}`;
 
     let html: string;
     let subjectPrefix: string;
 
     if (is_cancellation) {
-      html = buildCancellationEmailHtml(reservation, cancel_reason || "");
+      html = buildCancellationEmailHtml(safeReservation as any, safeCancelReason);
       subjectPrefix = "Reservierung storniert";
     } else {
       html = buildEmailHtml({
-        ...reservation,
+        ...(safeReservation as any),
         cancel_url: cancelUrl,
         modify_url: modifyUrl,
         is_modification: !!is_modification,
@@ -242,8 +282,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Rondo Sportsbar <info@dev-lab24.de>",
-        to: [reservation.customer_email],
-        subject: `${subjectPrefix} – ${formatDate(reservation.reservation_date)}, ${reservation.reservation_time} Uhr`,
+        to: [dbRes.customer_email],
+        subject: `${subjectPrefix} – ${formatDate(dbRes.reservation_date)}, ${dbRes.reservation_time} Uhr`,
         html,
       }),
     });
