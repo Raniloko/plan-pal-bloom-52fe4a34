@@ -101,6 +101,10 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
   const [success, setSuccess] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(initialWalkIn);
 
+  useEffect(() => {
+    setIsWalkIn(initialWalkIn);
+  }, [initialWalkIn]);
+
   // Derive zone from selected unit
   const zone = useMemo(() => {
     if (selectedUnitId) {
