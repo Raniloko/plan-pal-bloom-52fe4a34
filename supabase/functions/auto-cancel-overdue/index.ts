@@ -12,9 +12,20 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Auth: only allow callers presenting the service-role key (e.g. pg_cron).
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization") || "";
+    const provided = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!provided || provided !== SERVICE_KEY) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      SERVICE_KEY
     );
 
     // Load auto-cancel threshold from settings (default: 15 min)

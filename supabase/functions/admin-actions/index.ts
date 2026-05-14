@@ -560,18 +560,12 @@ Deno.serve(async (req) => {
       }
 
       case "check_login_attempts": {
-        const { email, log_attempt, success } = body;
+        const { email } = body;
         if (!email) return error("email required", 400);
 
-        // If the caller wants to log the current attempt, do it server-side
-        // here so it cannot be invoked as a separate public action.
-        if (log_attempt !== undefined) {
-          await supabase.from("login_attempts").insert({ email, success: !!success });
-          if (success) {
-            const cutoffOld = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-            await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoffOld);
-          }
-        }
+        // Read-only: this action MUST NOT write any login_attempts records,
+        // otherwise an unauthenticated attacker could lock out admins on demand.
+        // Logging is performed server-side from the actual auth flow only.
 
         const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const { data: attempts } = await supabase
