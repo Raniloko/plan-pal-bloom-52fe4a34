@@ -7,9 +7,10 @@ const ZONE_LABELS: Record<string, string> = {
   billard: "Billard",
   vip: "VIP-Raum",
   podest: "Podest",
+  salitos: "Salitos Lounge / Outdoor",
 };
 
-const VALID_ZONES = ["hauptbereich", "fenster", "billard", "vip", "podest"];
+const VALID_ZONES = ["hauptbereich", "fenster", "billard", "vip", "podest", "salitos"];
 const VALID_OCCASIONS = ["sport", "feier", "essen", "billard", "sonstiges"];
 const OCCASION_LABELS: Record<string, string> = {
   sport: "Live-Sport schauen",
