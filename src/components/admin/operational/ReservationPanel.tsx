@@ -37,6 +37,7 @@ interface Props {
   onRowClick: (row: ResRow) => void;
   onNewClick: () => void;
   onWalkInClick?: () => void;
+  onWaitlistClick?: (entry: WaitlistEntry) => void;
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
   durationMin?: number;
@@ -46,7 +47,7 @@ interface Props {
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, onWaitlistClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
   const [notifying, setNotifying] = useState<string | null>(null);
@@ -266,12 +267,14 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
               waitlist.map(w => {
                 const isNotified = w.status === "notified";
                 return (
-                  <div key={w.id} style={{
+                  <div key={w.id}
+                    onClick={() => onWaitlistClick?.(w)}
+                    style={{
                     display: "grid", gridTemplateColumns: "70px 1fr 60px 36px",
                     minHeight: 58, borderBottom: "1px solid #e0e0e0",
                     borderLeft: `3px solid ${isNotified ? "#3a8c3a" : "#e07820"}`,
                     background: isNotified ? "#edf4ed" : "#fff",
-                    padding: "0 14px 0 11px", alignItems: "center",
+                    padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
                   }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{w.desired_time?.slice(0, 5)}</div>
@@ -292,7 +295,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                     <div style={{ display: "flex", justifyContent: "center" }}>
                       {!isNotified && (
                         <button
-                          onClick={() => handleNotify(w)}
+                          onClick={(e) => { e.stopPropagation(); handleNotify(w); }}
                           disabled={notifying === w.id}
                           title="Gast benachrichtigen"
                           style={{

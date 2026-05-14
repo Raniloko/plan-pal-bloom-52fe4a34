@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,12 @@ interface Props {
   initialZone?: string;
   initialUnitId?: string;
   initialWalkIn?: boolean;
+  initialGuest?: string;
+  initialEmail?: string;
+  initialPhone?: string;
+  initialDate?: string;
+  initialTime?: string;
+  initialPax?: number;
   allUnits?: UnitOption[];
   reservations?: ReservationRef[];
   onSuccess: () => void;
@@ -79,19 +85,19 @@ const getNextQuarterHour = (): string => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = false, allUnits = [], reservations = [], onSuccess, onCancel }: Props) => {
+const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = false, initialGuest, initialEmail, initialPhone, initialDate, initialTime, initialPax, allUnits = [], reservations = [], onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const defaultTime = getNextQuarterHour();
   const availableTimes = getTimesForDate(todayStr);
   const smartDefault = availableTimes.find(t => t >= defaultTime) || availableTimes[0] || "19:00";
 
-  const [guest, setGuest] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [pax, setPax] = useState(2);
-  const [date, setDate] = useState(todayStr);
-  const [startTime, setStartTime] = useState(smartDefault);
+  const [guest, setGuest] = useState(initialGuest || "");
+  const [email, setEmail] = useState(initialEmail || "");
+  const [phone, setPhone] = useState(initialPhone || "");
+  const [pax, setPax] = useState(initialPax ?? 2);
+  const [date, setDate] = useState(initialDate || todayStr);
+  const [startTime, setStartTime] = useState(initialTime || smartDefault);
   const [selectedUnitId, setSelectedUnitId] = useState(initialUnitId || "");
   const [selectedZone, setSelectedZone] = useState<string>(initialZone || "hauptbereich");
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
@@ -100,6 +106,10 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(initialWalkIn);
+
+  useEffect(() => {
+    setIsWalkIn(initialWalkIn);
+  }, [initialWalkIn]);
 
   // Derive zone from selected unit
   const zone = useMemo(() => {
