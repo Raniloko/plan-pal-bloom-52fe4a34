@@ -149,11 +149,21 @@ Deno.serve(async (req) => {
         const free = (zoneUnits || []).filter(u =>
           u.status !== "blocked" && !usedUnits.has(u.id)
         );
-        const fitting = free.filter(u => (u.capacity ?? 4) >= guests).sort((a, b) => (a.capacity ?? 4) - (b.capacity ?? 4));
-        let pick = fitting[0];
-        if (!pick) {
-          const fallback = [...free].sort((a, b) => (b.capacity ?? 4) - (a.capacity ?? 4));
-          pick = fallback[0];
+        let pick;
+        if (zone === "billard") {
+          // Billard: pick lowest-numbered free table (1..8)
+          const num = (n: string) => {
+            const m = (n || "").match(/\d+/);
+            return m ? parseInt(m[0], 10) : 9999;
+          };
+          pick = [...free].sort((a, b) => num(a.name) - num(b.name))[0];
+        } else {
+          const fitting = free.filter(u => (u.capacity ?? 4) >= guests).sort((a, b) => (a.capacity ?? 4) - (b.capacity ?? 4));
+          pick = fitting[0];
+          if (!pick) {
+            const fallback = [...free].sort((a, b) => (b.capacity ?? 4) - (a.capacity ?? 4));
+            pick = fallback[0];
+          }
         }
         if (!pick) {
           skipped.push({ date, reason: "Bereich ausgebucht" });
