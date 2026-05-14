@@ -88,7 +88,16 @@ const OperationalView = () => {
       const res = await supabase.functions.invoke("admin-actions", {
         body: { action: "fetch_dashboard", date: requestDate },
       });
-      if (res.error) throw res.error;
+      if (res.error) {
+        // Session abgelaufen → ausloggen und zur Login-Seite
+        const msg = String(res.error?.message || "");
+        if (msg.includes("401") || msg.toLowerCase().includes("non-2xx")) {
+          await supabase.auth.signOut();
+          window.location.href = "/backstage/login";
+          return;
+        }
+        throw res.error;
+      }
       const d = res.data;
       if (d?.error) { console.error("Dashboard fetch error:", d.error); return; }
       if (currentDateStrRef.current !== requestDate) return;
