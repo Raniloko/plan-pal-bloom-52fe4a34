@@ -36,6 +36,7 @@ interface Props {
   selectedRowId: string | null;
   onRowClick: (row: ResRow) => void;
   onNewClick: () => void;
+  onWalkInClick?: () => void;
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
   durationMin?: number;
