@@ -334,14 +334,23 @@ Deno.serve(async (req) => {
           return !conflicts;
         });
 
-        // Sort: capacity >= guest_count first (smallest fitting), then rest by capacity asc
         const gc = Number(guest_count) || 2;
-        free.sort((a: any, b: any) => {
-          const fa = (a.capacity || 0) >= gc ? 0 : 1;
-          const fb = (b.capacity || 0) >= gc ? 0 : 1;
-          if (fa !== fb) return fa - fb;
-          return (a.capacity || 0) - (b.capacity || 0);
-        });
+        if (area === "billard") {
+          // Billard: assign in numeric order 1..8 (only among free tables)
+          const num = (n: string) => {
+            const m = (n || "").match(/\d+/);
+            return m ? parseInt(m[0], 10) : 9999;
+          };
+          free.sort((a: any, b: any) => num(a.name) - num(b.name));
+        } else {
+          // Sort: capacity >= guest_count first (smallest fitting), then rest by capacity asc
+          free.sort((a: any, b: any) => {
+            const fa = (a.capacity || 0) >= gc ? 0 : 1;
+            const fb = (b.capacity || 0) >= gc ? 0 : 1;
+            if (fa !== fb) return fa - fb;
+            return (a.capacity || 0) - (b.capacity || 0);
+          });
+        }
 
         return ok({ units: free, duration: durMin });
       }
