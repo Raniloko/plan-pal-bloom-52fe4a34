@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban, Filter } from "lucide-react";
+import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban, Filter, ArrowRightCircle } from "lucide-react";
 import { LegendDialog } from "./LegendDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ interface Props {
   onNewClick: () => void;
   onWalkInClick?: () => void;
   onWaitlistClick?: (entry: WaitlistEntry) => void;
+  onWaitlistConvert?: (entry: WaitlistEntry) => void;
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
   durationMin?: number;
@@ -47,7 +48,7 @@ interface Props {
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, onWaitlistClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, onWaitlistClick, onWaitlistConvert, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
   const [notifying, setNotifying] = useState<string | null>(null);
@@ -293,19 +294,33 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "center" }}>
-                      {!isNotified && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleNotify(w); }}
-                          disabled={notifying === w.id}
-                          title="Gast benachrichtigen"
-                          style={{
-                            width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-                            background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
-                          }}
-                        >
-                          <Send size={11} />
-                        </button>
-                      )}
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {!isNotified && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleNotify(w); }}
+                            disabled={notifying === w.id}
+                            title="Gast benachrichtigen"
+                            style={{
+                              width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+                              background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+                            }}
+                          >
+                            <Send size={11} />
+                          </button>
+                        )}
+                        {onWaitlistConvert && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onWaitlistConvert(w); }}
+                            title="In Reservierung umwandeln"
+                            style={{
+                              width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+                              background: "#c9a84c", border: "1px solid #b59740", borderRadius: 4, cursor: "pointer", color: "#111",
+                            }}
+                          >
+                            <ArrowRightCircle size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
