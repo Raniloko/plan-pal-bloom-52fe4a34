@@ -1,39 +1,63 @@
+# Warteliste → Reservierung Konvertierung
 
-## Sicherheits-Konzept als Markdown-Datei ablegen
+Ziel: Im Admin-Panel (`/backstage` → Operational View → Tab „Warteliste") soll jeder Eintrag mit einem Klick auf einen neuen Button **„In Reservierung umwandeln"** zu einer echten Reservierung werden. Dabei wird automatisch ein passender freier Tisch im gewünschten Bereich vorgeschlagen, den der Admin per Dropdown noch ändern oder bestätigen kann.
 
-Du hast dich für **"erst später, nur Konzept"** entschieden. Ich baue daher **nichts** um, sondern lege das vollständige Migrations- und Sicherheitskonzept als Referenz-Datei im Projekt-Root ab.
+## Ablauf für den Admin
 
-### Was passiert
+1. Im Tab „Warteliste" erscheint pro Eintrag neben dem bestehenden „Senden"-Button ein neuer Button **„→ Reservierung"** (Gold-Akzent `#c9a84c`).
+2. Klick öffnet einen kompakten Dialog `WaitlistConvertDialog` mit:
+   - Vorausgefüllten Daten aus dem Wartelisten-Eintrag (Name, Telefon, E-Mail, Datum, Uhrzeit, Bereich, Personenanzahl falls vorhanden — sonst Default 2).
+   - **Tisch-Vorschlag**: Liste aller freien Units im Wunschbereich zum Wunsch-Zeitslot, sortiert nach bester Kapazitäts-Passung (kleinste Kapazität ≥ Gästeanzahl zuerst). Der erste Vorschlag ist vorausgewählt.
+   - Dropdown zum manuellen Wechseln auf einen anderen freien Tisch.
+   - Optional: Personenanzahl anpassbar (15-Min-Slot-Logik bleibt).
+3. Klick auf **„Bestätigen"**:
+   - Erstellt eine Reservierung (`status = 'confirmed'`, `unit_id` gesetzt).
+   - Setzt den Wartelisten-Eintrag auf `status = 'converted'` (neuer Status-Wert).
+   - Sendet automatisch die Bestätigungs-E-Mail an den Gast (vorhandene `send-reservation-email`-Function).
+   - Schließt Dialog, refresht Reservierungs- und Wartelisten-Liste, Toast „Reservierung erstellt für {Name}".
 
-**Eine neue Datei** `MIGRATION_PLAN.md` wird erstellt — sonst keine Code-Änderungen.
+## Tisch-Verfügbarkeitslogik
 
-### Inhalt der Datei
+Wiederverwendung der bestehenden Kapazitäts-Prüfung aus `admin-actions` / `create-reservation`:
+- Lade alle `units` im Wunschbereich.
+- Lade alle aktiven Reservierungen am Wunschtag im Bereich.
+- Eine Unit ist „frei", wenn im Zeitfenster (Wunschzeit ± `DURATION_MIN`, default 120 Min, Billard 30 Min Buffer) keine andere `confirmed`/`pending`/`checked_in`-Reservierung auf derselben `unit_id` liegt.
+- Manuell gesperrte Units (`status != 'free'` aus `units`-Tabelle) werden ausgeschlossen.
 
-Das Dokument enthält basierend auf deinen Entscheidungen:
+## Technische Umsetzung
 
-| Bereich | Deine Wahl |
-|---|---|
-| Start | Konzept dokumentieren, Umbau später |
-| Realtime | Server-Sent Events (SSE) |
-| Admin-Login | E-Mail + Passwort + IP-Whitelist |
-| E-Mail | All-Inkl SMTP via PHPMailer |
+**Backend** — neue Action in `supabase/functions/admin-actions/index.ts`:
 
-**Gliederung:**
-1. **Zielarchitektur** — Frontend (React Build) → `/www/api/*.php` → MySQL, mit `/private/` außerhalb Web-Root
-2. **Datenbank** — PDO + Prepared Statements, minimale DB-User-Rechte, UTF8MB4
-3. **Admin-Login mit IP-Whitelist** — `/private/ip-whitelist.php` als erste Prüfung (403 vor Login-Logik), `password_hash` BCRYPT cost 12, PHP-Sessions mit `httponly`/`secure`/`samesite=Strict`, Brute-Force-Schutz
-4. **Öffentliche Endpunkte** — CSRF-Token, Rate-Limiting in MySQL, Honeypot, Whitelist-Validierung, Cancellation-Token nach Nutzung auf NULL
-5. **SSE-Endpunkt** — `/sse/notifications.php` mit `EventSource` im Frontend, `flush()`-Voraussetzung bei All-Inkl prüfen, Reconnect-Logik
-6. **PHPMailer + All-Inkl SMTP** — SMTP-Credentials in `config.php`, TLS Port 465, Templates mit `htmlspecialchars()`
-7. **HTTP-Header** — HSTS, CSP, X-Frame-Options, Referrer-Policy
-8. **.htaccess** — HTTPS-Redirect, Schutz für `/private/`/`.env`/`.sql`/`.log`/`.bak`, SPA-Fallback
-9. **Cron-Job** — All-Inkl KAS native Cron für `auto-cancel.php` mit Token-Schutz
-10. **Logs & Backups** — `display_errors=Off`, Logs nach `/private/logs/`, tägliches `mysqldump`
-11. **Postgres → MySQL Schema-Mapping** — `uuid`/`gen_random_uuid()` → `CHAR(36)`/`UUID()`, `jsonb` → `JSON`, `timestamptz` → `TIMESTAMP`, RLS-Policies → PHP Auth-Layer, Enums → `VARCHAR + CHECK`
-12. **Etappenplan** für die spätere Umsetzung (Fundament → öffentl. API → Admin → Extras → Deployment)
+```text
+action: "convert_waitlist"
+body: { waitlist_id, unit_id, guest_count, reservation_time?, reservation_date? }
+→ 1. Auth-Check (admin role wie bestehende actions)
+→ 2. Waitlist-Eintrag laden, Pflichtfelder validieren
+→ 3. Unit-Verfügbarkeit erneut prüfen (Race-Condition-Schutz)
+→ 4. INSERT in reservations (zone aus waitlist.area, occasion = 'Warteliste')
+→ 5. UPDATE waitlist SET status = 'converted', notified_at = now()
+→ 6. activity_log Eintrag
+→ 7. send-reservation-email aufrufen (Bestätigung)
+→ 8. Response: { reservation_id }
+```
 
-### Was unverändert bleibt
+Zusätzlich neue Action `get_available_units` (oder Wiederverwendung vorhandener Logik), die für eine Kombination aus `area + date + time + duration` die Liste freier Units liefert.
 
-- Aktuelles Supabase-Setup (Edge Functions, Realtime, Auth) bleibt vollständig aktiv
-- Reservierungs-/Stornierungs-/Änderungs-Flow funktioniert wie zuletzt umgesetzt
-- Keine Anpassungen an Frontend-Komponenten oder Edge Functions
+**Frontend** — neue/geänderte Dateien:
+- `src/components/admin/operational/WaitlistConvertDialog.tsx` (neu): Dialog mit shadcn `Dialog`, Tisch-Dropdown, Gäste-Input, Bestätigen-Button, Loading-State.
+- `src/components/admin/operational/ReservationPanel.tsx`: Neuer Button pro Wartelisten-Row, öffnet Dialog mit `entry`-Prop.
+- `src/pages/admin/OperationalView.tsx`: Dialog-State (`convertEntry`), nach Erfolg `refreshReservations()` + `refreshWaitlist()`.
+
+**Datenbank**: Keine Schema-Änderung nötig — `waitlist.status` ist `text`, `'converted'` als neuer Wert reicht.
+
+## Edge Cases
+
+- Wenn keine Unit im Bereich frei ist → Dialog zeigt Warnung „Keine freien Tische — bitte Zeit/Bereich anpassen oder manuell überbuchen" + Checkbox „Trotzdem buchen (Überbuchung)".
+- Wenn der Gast bereits per `notify_waitlist` benachrichtigt wurde (`status = 'notified'`) → Convert-Button bleibt sichtbar (häufiger Folge-Schritt).
+- Wartelisten-Eintrag bereits konvertiert → Button ausgeblendet, Status-Badge zeigt grün „Konvertiert".
+
+## Out of scope
+
+- Keine Änderung an der öffentlichen Wartelisten-Seite.
+- Keine automatische Konvertierung (immer Admin-Klick + Bestätigung).
+- Keine SMS-Benachrichtigung, nur E-Mail (wie bestehend).

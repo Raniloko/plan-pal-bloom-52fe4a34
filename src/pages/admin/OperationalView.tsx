@@ -14,6 +14,7 @@ import {
   NotificationsPanel,
   RecurringBookingDialog,
 } from "@/components/admin/operational";
+import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 
@@ -76,6 +77,7 @@ const OperationalView = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [convertEntry, setConvertEntry] = useState<WaitlistEntry | null>(null);
 
   const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
@@ -430,6 +432,7 @@ const OperationalView = () => {
             onNewClick={handleNewReservation}
             onWalkInClick={handleNewWalkIn}
             onWaitlistClick={handleWaitlistClick}
+            onWaitlistConvert={(entry) => setConvertEntry(entry)}
             waitlist={waitlist}
             onRefreshWaitlist={load}
             durationMin={durationMin}
@@ -474,6 +477,12 @@ const OperationalView = () => {
         onClose={() => setRecurringOpen(false)}
         onSuccess={load}
         allUnits={units}
+      />
+      <WaitlistConvertDialog
+        entry={convertEntry}
+        open={!!convertEntry}
+        onClose={() => setConvertEntry(null)}
+        onConverted={load}
       />
     </div>
   );
