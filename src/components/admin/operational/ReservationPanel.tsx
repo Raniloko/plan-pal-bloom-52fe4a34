@@ -36,6 +36,7 @@ interface Props {
   selectedRowId: string | null;
   onRowClick: (row: ResRow) => void;
   onNewClick: () => void;
+  onWalkInClick?: () => void;
   waitlist: WaitlistEntry[];
   onRefreshWaitlist: () => void;
   durationMin?: number;
@@ -45,7 +46,7 @@ interface Props {
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
   const [resTab, setResTab] = useState<"res" | "wait">("res");
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
   const [notifying, setNotifying] = useState<string | null>(null);
@@ -126,6 +127,12 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           marginLeft: "auto", padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
           background: "#c9a84c", color: "#111", border: "none", cursor: "pointer",
         }}>+ Neu</button>
+        {onWalkInClick && (
+          <button onClick={onWalkInClick} style={{
+            marginLeft: 6, padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+            background: "#4ade80", color: "#111", border: "none", cursor: "pointer",
+          }}>+ Walk-in</button>
+        )}
       </div>
 
 

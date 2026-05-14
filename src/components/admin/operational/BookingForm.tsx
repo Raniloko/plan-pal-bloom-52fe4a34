@@ -26,6 +26,7 @@ interface Props {
   tableLabel?: string;
   initialZone?: string;
   initialUnitId?: string;
+  initialWalkIn?: boolean;
   allUnits?: UnitOption[];
   reservations?: ReservationRef[];
   onSuccess: () => void;
@@ -78,7 +79,7 @@ const getNextQuarterHour = (): string => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], reservations = [], onSuccess, onCancel }: Props) => {
+const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = false, allUnits = [], reservations = [], onSuccess, onCancel }: Props) => {
   const { getTimesForDate } = useOpeningHours();
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const defaultTime = getNextQuarterHour();
@@ -98,7 +99,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(initialWalkIn);
 
   // Derive zone from selected unit
   const zone = useMemo(() => {
