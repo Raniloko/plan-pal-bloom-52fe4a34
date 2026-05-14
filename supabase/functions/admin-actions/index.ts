@@ -372,52 +372,64 @@ Deno.serve(async (req) => {
         const finalGuests = Number(guest_count) || 2;
         const zone = wEntry.area;
 
-        // Verify unit availability (race-condition guard) unless overbooking
-        if (unit_id && !allow_overbook) {
-          const { data: settingsData } = await supabase
-            .from("settings").select("value").eq("key", "reservation_duration").single();
-          const baseDur = settingsData?.value ? Number(settingsData.value) : 120;
-          const durMin = zone === "billard" ? 30 : baseDur;
+        // Compute duration for overlap window
+        const { data: settingsData } = await supabase
+          .from("settings").select("value").eq("key", "reservation_duration").single();
+        const baseDur = settingsData?.value ? Number(settingsData.value) : 120;
+        const durMin = zone === "billard" ? 30 : baseDur;
 
-          const { data: conflicts } = await supabase
-            .from("reservations")
-            .select("id, customer_name, reservation_time")
-            .eq("unit_id", unit_id)
-            .eq("reservation_date", finalDate)
-            .not("status", "in", '("cancelled","checked_out")');
+        const payload = {
+          customer_name: wEntry.guest_name,
+          customer_email: wEntry.guest_email,
+          customer_phone: wEntry.guest_phone,
+          guest_count: finalGuests,
+          zone,
+          occasion: "Warteliste",
+          status: "confirmed",
+          message: "Aus Warteliste konvertiert",
+        };
 
-          const [th, tm] = finalTime.split(":").map(Number);
-          const wantStart = th * 60 + tm;
-          const wantEnd = wantStart + durMin;
-          const overlap = (conflicts || []).find((c: any) => {
-            const [ch, cm] = (c.reservation_time as string).split(":").map(Number);
-            const cStart = ch * 60 + cm;
-            const cEnd = cStart + durMin;
-            return wantStart < cEnd && wantEnd > cStart;
+        let newResId: string | null = null;
+        let assignedUnitId: string | null = unit_id || null;
+
+        if (zone === "billard" && !unit_id && !allow_overbook) {
+          // Atomic auto-pick of lowest-numbered free billard table
+          const { data: autoData, error: autoErr } = await supabase.rpc("reserve_billard_auto", {
+            p_date: finalDate,
+            p_time: finalTime,
+            p_duration_min: durMin,
+            p_payload: payload,
           });
-          if (overlap) {
-            return error(`Tisch nicht mehr frei (Konflikt mit ${overlap.customer_name})`, 409);
+          if (autoErr) {
+            if (autoErr.message?.includes("no_free_billard")) {
+              return error("Kein Billardtisch mehr frei (Race-Condition vermieden)", 409);
+            }
+            return error(autoErr.message, 500);
           }
+          const row = Array.isArray(autoData) ? autoData[0] : autoData;
+          newResId = row?.reservation_id;
+          assignedUnitId = row?.unit_id;
+        } else {
+          // Atomic insert with overlap recheck under per-day lock
+          const { data: rid, error: rpcErr } = await supabase.rpc("reserve_atomic", {
+            p_unit_id: allow_overbook ? null : assignedUnitId,
+            p_date: finalDate,
+            p_time: finalTime,
+            p_duration_min: durMin,
+            p_payload: payload,
+          });
+          if (rpcErr) {
+            if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
+              return error("Tisch nicht mehr frei (gleichzeitige Buchung)", 409);
+            }
+            return error(rpcErr.message, 500);
+          }
+          newResId = rid as string;
         }
 
-        const { data: newRes, error: insErr } = await supabase
-          .from("reservations")
-          .insert({
-            customer_name: wEntry.guest_name,
-            customer_email: wEntry.guest_email,
-            customer_phone: wEntry.guest_phone,
-            reservation_date: finalDate,
-            reservation_time: finalTime,
-            guest_count: finalGuests,
-            zone,
-            occasion: "Warteliste",
-            unit_id: unit_id || null,
-            status: "confirmed",
-            message: "Aus Warteliste konvertiert",
-          })
-          .select()
-          .single();
-        if (insErr) return error(insErr.message, 500);
+        const { data: newRes } = await supabase
+          .from("reservations").select("*").eq("id", newResId!).single();
+        if (!newRes) return error("Reservierung konnte nicht geladen werden", 500);
 
         await supabase
           .from("waitlist")
