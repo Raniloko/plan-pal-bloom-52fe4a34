@@ -17,7 +17,7 @@ function isValidTime(t: string): boolean {
 
 const ZONE_CAPACITY: Record<string, number> = {
   hauptbereich: 7,
-  fenster: 3,
+  fenster: 3,   // nur Tisch 55, 56, 57
   billard: 8,
   vip: 6,
   podest: 4,

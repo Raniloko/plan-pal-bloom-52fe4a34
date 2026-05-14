@@ -8,3 +8,4 @@ export { default as BookingForm } from "./BookingForm";
 export { SettingsDialog } from "./SettingsDialog";
 export { NotificationsPanel } from "./NotificationsPanel";
 export { LegendDialog } from "./LegendDialog";
+export { default as RecurringBookingDialog } from "./RecurringBookingDialog";

@@ -74,9 +74,6 @@ export const TABLE_AREA_MAP: Record<string, FloorArea> = {
   // Billard 4-8: billard area only
   bt4: "billard", bt5: "billard", bt6: "billard",
   bt7: "billard", bt8: "billard",
-  // Fensterbereich (101-106)
-  f1: "fenster", f2: "fenster", f3: "fenster",
-  f4: "fenster", f5: "fenster", f6: "fenster",
   // VIP (101-106)
   vip1: "vip", vip2: "vip", vip3: "vip", vip4: "vip", vip5: "vip", vip6: "vip",
   // Salitos Lounge / Outdoor
