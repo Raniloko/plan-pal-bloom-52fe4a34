@@ -84,6 +84,13 @@ export interface PanelData {
   allReservationsForUnit?: UnitDayReservation[];
   initialWalkIn?: boolean;
   directBook?: boolean;
+  initialGuest?: string;
+  initialEmail?: string;
+  initialPhone?: string;
+  initialDate?: string;
+  initialTime?: string;
+  initialPax?: number;
+  waitlistId?: string;
 }
 
 interface UnitOption {
@@ -517,6 +524,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
               initialZone={data?.zone}
               initialUnitId={data?.unitId}
               initialWalkIn={data?.initialWalkIn}
+              initialGuest={data?.initialGuest}
+              initialEmail={data?.initialEmail}
+              initialPhone={data?.initialPhone}
+              initialDate={data?.initialDate}
+              initialTime={data?.initialTime}
+              initialPax={data?.initialPax}
               allUnits={units}
               reservations={reservations}
               onSuccess={() => { setMode("view"); onRefresh(); }}
