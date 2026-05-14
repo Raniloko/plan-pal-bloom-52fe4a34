@@ -157,7 +157,7 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
       <ellipse cx={cx} cy={cy} rx={30} ry={18} fill="rgba(255,200,80,0.06)" />
 
       {/* Label */}
-      <text x={cx} y={labelY} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.1)" fontFamily="'DM Sans', sans-serif">{label}</text>
+      <text x={cx} y={labelY} textAnchor="middle" fontSize={11} fontWeight={700} fill="rgba(255,255,255,0.75)" fontFamily="'DM Sans', sans-serif" letterSpacing="0.05em">{label}</text>
 
       {/* Name tag for reserved/present */}
       {showLabels && data.guest && (isReserved || isPresent) && (

@@ -235,9 +235,30 @@ const RondoFloorPlan = ({ tables: tablesProp, onTableClick, onTableDrop, activeA
           seats={{ top: 1, right: 1, bottom: 1, left: 1 }}
           showLabels={showLabels} colorMode={colorMode} />
 
+        {/* ═══ PODEST (erhöhter Bereich, untere Mitte/Links) ═══ */}
+        <rect x={20} y={660} width={550} height={270} rx={6}
+          fill="rgba(180,140,60,0.07)" stroke="#7a6020" strokeWidth={2} strokeDasharray="8 4" />
+        <text x={295} y={690} textAnchor="middle" fontSize={13} fontWeight={700}
+          fill="rgba(200,160,60,0.85)" fontFamily="'DM Sans', sans-serif" letterSpacing="0.08em">
+          PODEST
+        </text>
+
+        {/* ─── 75-ZOLL SCREEN (oben links am Podest) ─── */}
+        <rect x={30} y={665} width={130} height={75} rx={4}
+          fill="#111" stroke="#555" strokeWidth={2} />
+        <rect x={35} y={670} width={120} height={65} rx={2}
+          fill="#0d1a2a" stroke="#1a4070" strokeWidth={1} />
+        <text x={95} y={698} textAnchor="middle" fontSize={9} fontWeight={700}
+          fill="#3a7bd5" fontFamily="'DM Sans', sans-serif">75"</text>
+        <text x={95} y={711} textAnchor="middle" fontSize={7}
+          fill="rgba(255,255,255,0.4)" fontFamily="'DM Sans', sans-serif">SCREEN</text>
+        {/* TV stand */}
+        <rect x={85} y={740} width={20} height={5} rx={1} fill="#333" />
+        <rect x={80} y={745} width={30} height={3} rx={1} fill="#333" />
+
         {/* ─── RONDO LOGO (bottom left) – matched to 75 Zoll position ─── */}
-        <image href="/images/rondo-logo.png" x={30} y={720} width={230} height={120}
-          style={{ opacity: 0.9 } as React.CSSProperties} />
+        <image href="/images/rondo-logo.png" x={360} y={790} width={200} height={110}
+          style={{ opacity: 0.85 } as React.CSSProperties} />
 
       </svg>
     </div>

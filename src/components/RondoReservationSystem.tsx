@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
-type ReservationZone = "hauptbereich" | "billard" | "vip" | "";
+type ReservationZone = "hauptbereich" | "fenster" | "billard" | "vip" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
 
 interface ReservationData {
@@ -21,6 +21,7 @@ interface ReservationData {
 
 const ZONES = [
   { value: "hauptbereich", label: "Restaurantbereich am 140-Zoll Screen", desc: "Direkt vor dem großen 140-Zoll-LED-Screen", info: "" },
+  { value: "fenster", label: "Restaurantbereich am 75-Zoll Screen", desc: "Gemütlicher Bereich am 75-Zoll-Screen (Podest)", info: "" },
   {
     value: "billard",
     label: "Billard-Tisch",
@@ -50,6 +51,7 @@ type AvailabilityMap = Record<string, Partial<Record<ZoneKey, number>>>;
 
 const ZONE_CAPACITY: Record<ZoneKey, number> = {
   hauptbereich: 7,
+  fenster: 4,
   billard: 8,
   vip: 6,
 };

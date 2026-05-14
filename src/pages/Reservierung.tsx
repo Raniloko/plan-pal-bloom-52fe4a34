@@ -11,7 +11,7 @@ const Reservierung = () => {
             Reserv<span className="text-primary">ierung</span> im <span className="text-primary">Rondo</span>
           </h1>
           <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
-            Du möchtest die Matches deiner Lieblingsmannschaft auf unserem 140-Zoll-LED-Screen genießen? Reserviere dir jetzt deinen Platz!
+            Du möchtest die Matches deiner Lieblingsmannschaft auf unserem 140-Zoll-LED-Screen oder dem 75-Zoll-Screen am Podest genießen? Reserviere dir jetzt deinen Platz!
           </p>
 
           <div className="bg-card border border-border rounded-lg p-6 md:p-8">
