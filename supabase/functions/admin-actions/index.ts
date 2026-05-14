@@ -287,6 +287,164 @@ Deno.serve(async (req) => {
         return ok({ status: "notified" });
       }
 
+      case "get_available_units": {
+        const { area, date, time, guest_count } = body;
+        if (!area || !date || !time) return error("area, date, time required", 400);
+
+        // Load duration setting
+        const { data: settingsData } = await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "reservation_duration")
+          .single();
+        const baseDur = settingsData?.value ? Number(settingsData.value) : 120;
+        const durMin = area === "billard" ? 30 : baseDur;
+
+        // All units in area
+        const areaFilter = area === "hauptbereich"
+          ? ["hauptbereich", "restaurant"]
+          : area === "billard"
+          ? ["billard", "kicker", "dart"]
+          : [area];
+        const { data: allUnits } = await supabase
+          .from("units")
+          .select("*")
+          .in("area", areaFilter)
+          .order("position_index");
+
+        // Active reservations same date/area
+        const { data: dayRes } = await supabase
+          .from("reservations")
+          .select("unit_id, reservation_time, status")
+          .eq("reservation_date", date)
+          .not("status", "in", '("cancelled","checked_out")');
+
+        const [hh, mm] = time.split(":").map(Number);
+        const wantStart = hh * 60 + mm;
+        const wantEnd = wantStart + durMin;
+
+        const free = (allUnits || []).filter((u: any) => {
+          if (u.status === "blocked") return false;
+          const conflicts = (dayRes || []).filter((r: any) => r.unit_id === u.id).some((r: any) => {
+            const [ch, cm] = (r.reservation_time as string).split(":").map(Number);
+            const cStart = ch * 60 + cm;
+            const cEnd = cStart + durMin;
+            return wantStart < cEnd && wantEnd > cStart;
+          });
+          return !conflicts;
+        });
+
+        // Sort: capacity >= guest_count first (smallest fitting), then rest by capacity asc
+        const gc = Number(guest_count) || 2;
+        free.sort((a: any, b: any) => {
+          const fa = (a.capacity || 0) >= gc ? 0 : 1;
+          const fb = (b.capacity || 0) >= gc ? 0 : 1;
+          if (fa !== fb) return fa - fb;
+          return (a.capacity || 0) - (b.capacity || 0);
+        });
+
+        return ok({ units: free, duration: durMin });
+      }
+
+      case "convert_waitlist": {
+        const { waitlist_id, unit_id, guest_count, reservation_time, reservation_date, allow_overbook } = body;
+        if (!waitlist_id) return error("waitlist_id required", 400);
+
+        const { data: wEntry, error: wErr } = await supabase
+          .from("waitlist")
+          .select("*")
+          .eq("id", waitlist_id)
+          .single();
+        if (wErr || !wEntry) return error("Wartelisten-Eintrag nicht gefunden", 404);
+        if (wEntry.status === "converted") return error("Bereits konvertiert", 409);
+
+        const finalDate = reservation_date || wEntry.desired_date;
+        const finalTime = (reservation_time || wEntry.desired_time || "").slice(0, 5);
+        const finalGuests = Number(guest_count) || 2;
+        const zone = wEntry.area;
+
+        // Verify unit availability (race-condition guard) unless overbooking
+        if (unit_id && !allow_overbook) {
+          const { data: settingsData } = await supabase
+            .from("settings").select("value").eq("key", "reservation_duration").single();
+          const baseDur = settingsData?.value ? Number(settingsData.value) : 120;
+          const durMin = zone === "billard" ? 30 : baseDur;
+
+          const { data: conflicts } = await supabase
+            .from("reservations")
+            .select("id, customer_name, reservation_time")
+            .eq("unit_id", unit_id)
+            .eq("reservation_date", finalDate)
+            .not("status", "in", '("cancelled","checked_out")');
+
+          const [th, tm] = finalTime.split(":").map(Number);
+          const wantStart = th * 60 + tm;
+          const wantEnd = wantStart + durMin;
+          const overlap = (conflicts || []).find((c: any) => {
+            const [ch, cm] = (c.reservation_time as string).split(":").map(Number);
+            const cStart = ch * 60 + cm;
+            const cEnd = cStart + durMin;
+            return wantStart < cEnd && wantEnd > cStart;
+          });
+          if (overlap) {
+            return error(`Tisch nicht mehr frei (Konflikt mit ${overlap.customer_name})`, 409);
+          }
+        }
+
+        const { data: newRes, error: insErr } = await supabase
+          .from("reservations")
+          .insert({
+            customer_name: wEntry.guest_name,
+            customer_email: wEntry.guest_email,
+            customer_phone: wEntry.guest_phone,
+            reservation_date: finalDate,
+            reservation_time: finalTime,
+            guest_count: finalGuests,
+            zone,
+            occasion: "Warteliste",
+            unit_id: unit_id || null,
+            status: "confirmed",
+            message: "Aus Warteliste konvertiert",
+          })
+          .select()
+          .single();
+        if (insErr) return error(insErr.message, 500);
+
+        await supabase
+          .from("waitlist")
+          .update({ status: "converted", notified_at: new Date().toISOString() })
+          .eq("id", waitlist_id);
+
+        await logActivity(supabase, "convert_waitlist", "reservation", newRes.id, `Aus Warteliste ${waitlist_id}`);
+
+        // Send confirmation email (non-blocking)
+        try {
+          const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+          const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+            body: JSON.stringify({
+              reservation: {
+                id: newRes.id,
+                customer_name: newRes.customer_name,
+                customer_email: newRes.customer_email,
+                reservation_date: newRes.reservation_date,
+                reservation_time: newRes.reservation_time,
+                guest_count: newRes.guest_count,
+                zone: newRes.zone,
+                occasion: newRes.occasion,
+                message: newRes.message || "",
+              },
+            }),
+          });
+        } catch (e) {
+          console.error("Confirmation email error (non-blocking):", e);
+        }
+
+        return ok({ reservation_id: newRes.id });
+      }
+
       case "resend_email": {
         const { reservation_id } = body;
         if (!reservation_id) return error("reservation_id required", 400);
