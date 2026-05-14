@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
     }
     
     // Use app URLs instead of raw Edge Function URLs
-    const APP_URL = "https://plan-pal-bloom.lovable.app";
+    const APP_URL = Deno.env.get("APP_URL") || "https://rondo-sportsbar-reservierung.lovable.app";
     const cancelUrl = `${APP_URL}/reservierung/stornieren?id=${reservation.id}&token=${cancellationToken}`;
     const modifyUrl = `${APP_URL}/reservierung/aendern?id=${reservation.id}&token=${cancellationToken}`;
 
