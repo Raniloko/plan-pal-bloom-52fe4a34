@@ -29,7 +29,7 @@ const ZONES = [
     info: "⏱ Abrechnung: 0,23 €/Min pro Tisch (ca. 13,80 €/Std). Die Abrechnung startet ab Spielbeginn und wird vor Ort bezahlt. Reservierung sichert dir einen Tisch – keine Vorauszahlung nötig.",
   },
   { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen ab 11 Personen", info: "👥 Mindestens 11 Personen erforderlich. Der VIP-Raum ist ein abgetrennter, privater Bereich mit eigenem Service." },
-  { value: "podest", label: "Podest", desc: "Erhöhter Bereich mit guter Sicht", info: "🔧 Hinweis: Der Podest-Bereich befindet sich aktuell noch in Bearbeitung/Planung." },
+  { value: "podest", label: "Podest", desc: "Erhöhter Bereich mit guter Sicht", info: "📺 Erhöhter Bereich mit guter Sicht auf den 140-Zoll-LED-Screen." },
   { value: "salitos", label: "Salitos Lounge / Outdoor", desc: "Lounge- & Outdoor-Bereich mit entspannter Atmosphäre", info: "☀️ Outdoor-Lounge mit 15 Tischen. Bei schlechtem Wetter setzen wir uns mit dir in Verbindung." },
 ];
 
