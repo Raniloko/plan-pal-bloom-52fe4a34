@@ -74,6 +74,7 @@ const OperationalView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [recurringOpen, setRecurringOpen] = useState(false);
 
   const [durationMin, setDurationMin] = useState(120);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
@@ -345,6 +346,7 @@ const OperationalView = () => {
         onDateChange={setSelectedDate}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
+        onOpenRecurring={() => setRecurringOpen(true)}
         isMobile={isMobile}
       />
 
@@ -415,6 +417,12 @@ const OperationalView = () => {
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <NotificationsPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <RecurringBookingDialog
+        open={recurringOpen}
+        onClose={() => setRecurringOpen(false)}
+        onSuccess={load}
+        allUnits={units}
+      />
     </div>
   );
 };
