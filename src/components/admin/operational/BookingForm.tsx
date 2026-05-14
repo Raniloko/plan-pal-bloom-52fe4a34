@@ -142,9 +142,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, allUnits = [], re
     // Map ZONE -> matching area names in DB
     const areaMatchers: Record<string, (a: string) => boolean> = {
       hauptbereich: a => a === "restaurant" || a === "hauptbereich",
-      fenster: a => a === "fenster",
       vip: a => a === "vip",
-      podest: a => a === "podest",
       billard: a => a === "billard",
     };
     const match = areaMatchers[zone] || ((a: string) => a === zone);
