@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 
-type ReservationZone = "hauptbereich" | "fenster" | "billard" | "vip" | "podest" | "";
+type ReservationZone = "hauptbereich" | "fenster" | "billard" | "vip" | "podest" | "salitos" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
 
 interface ReservationData {
@@ -30,6 +30,7 @@ const ZONES = [
   },
   { value: "vip", label: "VIP-Raum", desc: "Privater Bereich für Gruppen ab 11 Personen", info: "👥 Mindestens 11 Personen erforderlich. Der VIP-Raum ist ein abgetrennter, privater Bereich mit eigenem Service." },
   { value: "podest", label: "Podest", desc: "Erhöhter Bereich mit guter Sicht", info: "🔧 Hinweis: Der Podest-Bereich befindet sich aktuell noch in Bearbeitung/Planung." },
+  { value: "salitos", label: "Salitos Lounge / Outdoor", desc: "Lounge- & Outdoor-Bereich mit entspannter Atmosphäre", info: "☀️ Outdoor-Lounge mit 15 Tischen. Bei schlechtem Wetter setzen wir uns mit dir in Verbindung." },
 ];
 
 const ANLAESSE = [
@@ -56,6 +57,7 @@ const ZONE_CAPACITY: Record<ZoneKey, number> = {
   billard: 8,
   vip: 6,
   podest: 4,
+  salitos: 15,
 };
 
 const STEPS = [

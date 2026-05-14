@@ -7,6 +7,7 @@ const ZONE_LABELS: Record<string, string> = {
   billard: "Billard",
   vip: "VIP-Raum",
   podest: "Podest",
+  salitos: "Salitos Lounge / Outdoor",
 };
 
 function formatDate(dateStr: string): string {
