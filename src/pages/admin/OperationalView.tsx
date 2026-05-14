@@ -478,6 +478,12 @@ const OperationalView = () => {
         onSuccess={load}
         allUnits={units}
       />
+      <WaitlistConvertDialog
+        entry={convertEntry}
+        open={!!convertEntry}
+        onClose={() => setConvertEntry(null)}
+        onConverted={load}
+      />
     </div>
   );
 };
