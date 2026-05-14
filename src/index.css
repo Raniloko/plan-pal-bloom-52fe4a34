@@ -59,6 +59,17 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
   }
+  .admin-theme h1,
+  .admin-theme h2,
+  .admin-theme h3,
+  .admin-theme h4,
+  .admin-theme h5,
+  .admin-theme h6 {
+    font-weight: 600;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+  }
 }
 
 @layer utilities {
