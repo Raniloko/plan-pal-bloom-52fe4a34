@@ -301,6 +301,12 @@ const OperationalView = () => {
     setPanelOpen(true);
   };
 
+  const handleNewWalkIn = () => {
+    setPanelData({ tableLabel: "Walk-in Gast", status: "free", initialWalkIn: true });
+    setSelectedRowId(null);
+    setPanelOpen(true);
+  };
+
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
   // Drag-and-drop: assign reservation to a table
