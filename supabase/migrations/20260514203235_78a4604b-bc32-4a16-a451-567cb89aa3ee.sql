@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.reserve_atomic(uuid, date, text, int, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.reserve_billard_auto(date, text, int, jsonb) FROM PUBLIC, anon, authenticated;
