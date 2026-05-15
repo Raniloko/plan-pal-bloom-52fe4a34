@@ -49,7 +49,8 @@ type ActiveReservation = {
 };
 
 type ZoneKey = Exclude<ReservationZone, "">;
-type AvailabilityMap = Record<string, Partial<Record<ZoneKey, number>>>;
+// Per-zone list of booked start times (in minutes) for the selected date.
+type AvailabilityMap = Partial<Record<ZoneKey, number[]>>;
 
 const ZONE_CAPACITY: Record<ZoneKey, number> = {
   hauptbereich: 7,
@@ -58,6 +59,16 @@ const ZONE_CAPACITY: Record<ZoneKey, number> = {
   vip: 6,
   podest: 4,
   salitos: 15,
+};
+
+// Reservation duration used for overlap calculations on the booking form.
+// Backend caps Billard at 120 min and uses settings.reservation_duration for others.
+// We use 120 min as a safe shared default — matches the backend default.
+const SLOT_DURATION_MIN = 120;
+
+const toMin = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
 };
 
 const STEPS = [
@@ -114,15 +125,12 @@ const RondoReservationSystem = () => {
       return;
     }
 
-    const grouped = (activeReservations as ActiveReservation[]).reduce<AvailabilityMap>((acc, reservation) => {
-      if (!acc[reservation.reservation_time]) {
-        acc[reservation.reservation_time] = {};
-      }
-      const current = acc[reservation.reservation_time][reservation.zone] ?? 0;
-      acc[reservation.reservation_time][reservation.zone] = current + 1;
-      return acc;
-    }, {});
-
+    const grouped: AvailabilityMap = {};
+    (activeReservations as ActiveReservation[]).forEach(r => {
+      const arr = grouped[r.zone] || [];
+      arr.push(toMin(r.reservation_time));
+      grouped[r.zone] = arr;
+    });
     setAvailability(grouped);
     setAvailabilityLoading(false);
   }, [zoneKeys]);
@@ -146,8 +154,12 @@ const RondoReservationSystem = () => {
     };
   }, [data.date, fetchAvailability]);
 
+  // Count reservations in a zone whose [start, start+dur) overlaps [time, time+dur).
   const getCountForZoneAtTime = useCallback((time: string, zone: ZoneKey) => {
-    return availability[time]?.[zone] ?? 0;
+    const list = availability[zone] || [];
+    const start = toMin(time);
+    const end = start + SLOT_DURATION_MIN;
+    return list.filter(s => start < s + SLOT_DURATION_MIN && end > s).length;
   }, [availability]);
 
   const isZoneFullyBooked = useCallback((zone: ZoneKey, time: string) => {
@@ -168,6 +180,19 @@ const RondoReservationSystem = () => {
   const isTimeFullyBooked = useCallback((time: string) => {
     return zoneKeys.every((zone) => isZoneFullyBooked(zone, time));
   }, [isZoneFullyBooked, zoneKeys]);
+
+  // Find the earliest later time slot where the given zone has free capacity.
+  const findNextFreeTimeForZone = useCallback((zone: ZoneKey, fromTime: string): string | null => {
+    if (!data.date) return null;
+    const slots = getTimesForDate(data.date);
+    const fromMin = toMin(fromTime);
+    for (const t of slots) {
+      if (toMin(t) <= fromMin) continue;
+      if (isTimeInPast(data.date, t)) continue;
+      if (!isZoneFullyBooked(zone, t)) return t;
+    }
+    return null;
+  }, [data.date, getTimesForDate, isTimeInPast, isZoneFullyBooked]);
 
   const canNext = () => {
     switch (step) {
