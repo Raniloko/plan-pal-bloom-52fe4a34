@@ -218,7 +218,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
     try {
       const res = await supabase.functions.invoke("create-reservation", {
         body: {
-          name: guest.trim(),
+          name: guest.trim() || (isWalkIn ? "Walk-in Gast" : ""),
           email: email.trim() || "walkin@intern.local",
           phone: phone.trim() || "000",
           guests: pax,
@@ -438,9 +438,9 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
           flex: 1, padding: "10px", fontSize: 12, fontWeight: 600, borderRadius: 6,
           background: "#f2f2f2", color: "#666", border: "1px solid #ddd", cursor: "pointer",
         }}>Abbrechen</button>
-        <button onClick={handleSubmit} disabled={saving || !guest.trim()} style={{
+        <button onClick={handleSubmit} disabled={saving || (!isWalkIn && !guest.trim())} style={{
           flex: 1, padding: "10px", fontSize: 12, fontWeight: 700, borderRadius: 6,
-          background: !guest.trim() ? "#ccc" : isWalkIn ? "#4ade80" : "#c9a84c", color: "#111", border: "none", cursor: "pointer",
+          background: (!isWalkIn && !guest.trim()) ? "#ccc" : isWalkIn ? "#4ade80" : "#c9a84c", color: "#111", border: "none", cursor: "pointer",
           opacity: saving ? 0.6 : 1,
         }}>{saving ? "Speichern..." : isWalkIn ? "Walk-in anlegen" : "Reservierung anlegen"}</button>
       </div>
