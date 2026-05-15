@@ -408,21 +408,45 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
           <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#999" }}>
             Keine Reservierungen{isToday ? " heute" : ""}
           </div>
-        ) : (
-          browseDateReservations.map(r => {
+        ) : (() => {
+          // Sort chronologically and tag the currently-relevant entry.
+          const sorted = [...browseDateReservations].sort((a, b) =>
+            a.reservation_time.localeCompare(b.reservation_time)
+          );
+          const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+          const checkedInIdx = sorted.findIndex(r => r.status === "checked_in");
+          let currentIdx = checkedInIdx;
+          if (currentIdx < 0 && isToday) {
+            currentIdx = sorted.findIndex(r => {
+              const [h, m] = r.reservation_time.split(":").map(Number);
+              return h * 60 + m + 120 > nowMin; // assume up to 2h slot
+            });
+          }
+          return sorted.map((r, idx) => {
             const sl = STATUS_LABEL[r.status] || { text: r.status, color: "#666" };
             const isActive = r.id === data.reservationId;
+            const isCurrent = isToday && idx === currentIdx;
+            const isNext = isToday && currentIdx >= 0 && idx === currentIdx + 1;
+            const tag = isCurrent ? "Jetzt dran" : isNext ? "Als Nächstes" : null;
+            const tagColor = isCurrent ? "#2a7a2a" : "#3a7bd5";
             return (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-                background: isActive ? "#e8f5e8" : "#fff",
-                border: `1px solid ${isActive ? "#b8d8b8" : "#eaeaea"}`,
+                background: isCurrent ? "#e8f5e8" : isActive ? "#f0f7ff" : "#fff",
+                border: `1px solid ${isCurrent ? "#b8d8b8" : isActive ? "#b8d0e8" : "#eaeaea"}`,
                 borderRadius: 6, marginBottom: 4,
               }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: sl.color, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>
-                    {r.reservation_time.slice(0, 5)} · {r.customer_name}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#111", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span>{r.reservation_time.slice(0, 5)} · {r.customer_name}</span>
+                    {tag && (
+                      <span style={{
+                        fontSize: 8, fontWeight: 800, color: "#fff",
+                        background: tagColor, padding: "1px 5px", borderRadius: 3,
+                        textTransform: "uppercase", letterSpacing: 0.4,
+                      }}>{tag}</span>
+                    )}
                   </div>
                   <div style={{ fontSize: 10, color: "#666", display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Users size={9} /> {r.guest_count}</span>
@@ -432,8 +456,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 <span style={{ fontSize: 9, fontWeight: 700, color: sl.color, padding: "1px 6px", borderRadius: 3, background: `${sl.color}15` }}>{sl.text}</span>
               </div>
             );
-          })
-        )}
+          });
+        })()}
       </div>
     );
   };
