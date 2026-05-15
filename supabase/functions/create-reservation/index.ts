@@ -162,13 +162,115 @@ Deno.serve(async (req) => {
       .single();
     const durMin = settingsData?.value ? Number(settingsData.value) : 120;
 
-    // For billard zone: use shorter overlap window since billard uses live-timer (actual duration varies)
-    // Admin/walk-in bookings on billard should not be blocked by the fixed 2h duration
-    const overlapDur = zone === "billard" ? Math.min(durMin, 30) : durMin;
+    // Billard: block the full booked play time (capped at 2h) so two
+    // reservations cannot land on the same table within that window.
+    // The live-timer model only governs the in-house check-in flow,
+    // not future reservation conflicts.
+    const overlapDur = zone === "billard" ? Math.min(durMin, 120) : durMin;
 
     const [newH, newM] = time.split(":").map(Number);
     const newStart = newH * 60 + newM;
     const newEnd = newStart + overlapDur;
+
+    // ---- Billard: route through atomic RPCs to prevent race conditions ----
+    // Two simultaneous billard requests previously could both pick the same
+    // free table because the JS auto-assign read & wrote in separate steps.
+    // The DB RPCs use a per-day advisory lock so concurrent picks are serialized.
+    if (zone === "billard") {
+      const payload = {
+        customer_name: sanitize(name),
+        customer_email: sanitize(email),
+        customer_phone: sanitize(phone),
+        guest_count: guests,
+        zone,
+        occasion: anlass,
+        status: "confirmed",
+        message: message ? sanitize(message).substring(0, 1000) : "",
+      };
+
+      let billardResId: string | null = null;
+      let billardUnitId: string | null = unit_id;
+
+      if (unit_id) {
+        const { data: rid, error: rpcErr } = await supabase.rpc("reserve_atomic", {
+          p_unit_id: unit_id,
+          p_date: date,
+          p_time: time,
+          p_duration_min: overlapDur,
+          p_payload: payload,
+        });
+        if (rpcErr) {
+          if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
+            return new Response(
+              JSON.stringify({ error: "Dieser Billardtisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          console.error("reserve_atomic error:", rpcErr.message);
+          return new Response(
+            JSON.stringify({ error: "Fehler beim Speichern der Reservierung." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        billardResId = rid as string;
+      } else {
+        const { data: autoData, error: autoErr } = await supabase.rpc("reserve_billard_auto", {
+          p_date: date,
+          p_time: time,
+          p_duration_min: overlapDur,
+          p_payload: payload,
+        });
+        if (autoErr) {
+          if (autoErr.message?.includes("no_free_billard")) {
+            return new Response(
+              JSON.stringify({ error: "Zur gewählten Uhrzeit ist kein Billardtisch mehr frei. Bitte wähle eine andere Uhrzeit." }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          console.error("reserve_billard_auto error:", autoErr.message);
+          return new Response(
+            JSON.stringify({ error: "Fehler beim Speichern der Reservierung." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const row = Array.isArray(autoData) ? autoData[0] : autoData;
+        billardResId = row?.reservation_id ?? null;
+        billardUnitId = row?.unit_id ?? null;
+      }
+
+      // Fire-and-forget confirmation email
+      try {
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+        const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+          body: JSON.stringify({
+            reservation: {
+              id: billardResId,
+              customer_name: sanitize(name),
+              customer_email: sanitize(email),
+              reservation_date: date,
+              reservation_time: time,
+              guest_count: guests,
+              zone,
+              occasion: anlass,
+              message: message ? sanitize(message).substring(0, 1000) : "",
+            },
+          }),
+        });
+      } catch (emailErr) {
+        console.error("Email sending failed (non-blocking):", emailErr);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, reservation_id: billardResId, unit_id: billardUnitId }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // If a specific unit_id is provided, check for overlapping reservations on that unit
     if (unit_id) {
