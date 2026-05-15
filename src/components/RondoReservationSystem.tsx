@@ -456,24 +456,35 @@ const RondoReservationSystem = () => {
                 const booked = data.time ? getCountForZoneAtTime(data.time, zone) : 0;
                 const capacity = ZONE_CAPACITY[zone];
                 const isFull = Boolean(data.time) && booked >= capacity;
-                const nextFree = isFull && data.time ? findNextFreeTimeForZone(zone, data.time) : null;
+                // Billard kann ab 20:00 nicht mehr gebucht werden
+                const billardClosed =
+                  zone === "billard" &&
+                  Boolean(data.time) &&
+                  Number(data.time.split(":")[0]) >= 20;
+                const disabled = isFull || billardClosed;
+                const nextFree = isFull && !billardClosed && data.time ? findNextFreeTimeForZone(zone, data.time) : null;
 
                 return (
                   <button
                     key={z.value}
-                    disabled={isFull}
+                    disabled={disabled}
                     onClick={() => setData({ ...data, zone: z.value as ReservationZone })}
                     className={`text-left p-4 rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                       data.zone === z.value
                         ? "border-primary bg-primary/10"
-                        : isFull
+                        : disabled
                           ? "border-border bg-muted"
                           : "border-border bg-muted hover:border-primary/50"
                     }`}
                   >
                     <p className="font-semibold">{z.label}</p>
                     <p className="text-xs text-muted-foreground">{z.desc}</p>
-                    {isFull && (
+                    {billardClosed && (
+                      <p className="mt-2 text-xs font-semibold text-primary">
+                        Ab 20:00 Uhr keine Billard-Reservierung mehr möglich.
+                      </p>
+                    )}
+                    {isFull && !billardClosed && (
                       <p className="mt-2 text-xs font-semibold text-primary">
                         Belegt um {data.time}.
                         {nextFree
