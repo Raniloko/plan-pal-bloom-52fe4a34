@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLoading = () => (
   <div style={{
@@ -18,9 +20,32 @@ const AdminLoading = () => (
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const [roleChecked, setRoleChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  if (loading) return <AdminLoading />;
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setRoleChecked(true); setIsAdmin(false); return; }
+    setRoleChecked(false);
+    (async () => {
+      try {
+        const res = await supabase.functions.invoke("admin-actions", {
+          body: { action: "check_admin" },
+        });
+        if (cancelled) return;
+        setIsAdmin(!res.error && res.data?.success === true);
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      } finally {
+        if (!cancelled) setRoleChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  if (loading || (user && !roleChecked)) return <AdminLoading />;
   if (!user) return <Navigate to="/backstage/login" replace />;
+  if (!isAdmin) return <Navigate to="/backstage/login" replace />;
 
   return <>{children}</>;
 };

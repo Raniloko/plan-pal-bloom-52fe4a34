@@ -68,6 +68,12 @@ Deno.serve(async (req) => {
     }
 
     switch (action) {
+      case "check_admin": {
+        // Reaching this point already proves the caller is an authenticated admin
+        // (the auth/role gate above runs for every non-public action).
+        return ok({ admin: true });
+      }
+
       case "fetch_dashboard": {
         const { date } = body;
         if (!date) return error("date required", 400);
