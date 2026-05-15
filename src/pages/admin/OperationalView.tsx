@@ -161,7 +161,7 @@ const OperationalView = () => {
           offset,
           guests: r.guest_count,
           name: r.customer_name,
-          tableRef: unit ? `${unit.area.slice(0, 2)}. / ${unit.name.replace(/\D/g, "")}` : r.zone,
+          tableRef: unit ? unit.name : r.zone,
           icon,
           highlighted: isCheckedIn || isOverdue,
           status: r.status as ResRow["status"],
