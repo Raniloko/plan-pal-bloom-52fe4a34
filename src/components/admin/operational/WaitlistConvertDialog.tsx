@@ -36,7 +36,7 @@ interface Props {
 const areaLabel = (area: string) => {
   const map: Record<string, string> = {
     billard: "Billard", restaurant: "Restaurant", vip: "VIP",
-    hauptbereich: "Hauptbereich", podest: "Podest", fenster: "Fenster",
+    hauptbereich: "Restaurant 140 Zoll", podest: "Podest", fenster: "Restaurant 75 Zoll",
   };
   return map[area] || area;
 };

@@ -52,8 +52,8 @@ const ZONE_FOR_AREA: Record<string, string> = {
 };
 
 const ZONE_OPTIONS: { value: string; label: string }[] = [
-  { value: "hauptbereich", label: "Hauptbereich (140 Zoll)" },
-  { value: "fenster", label: "Restaurant (75 Zoll)" },
+  { value: "hauptbereich", label: "Restaurant 140 Zoll" },
+  { value: "fenster", label: "Restaurant 75 Zoll" },
   { value: "salitos", label: "Salitos Lounge / Outdoor" },
   { value: "podest", label: "Podest" },
   { value: "vip", label: "VIP" },

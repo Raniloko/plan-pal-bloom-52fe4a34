@@ -21,8 +21,8 @@ interface Props {
 }
 
 const ZONES = [
-  { value: "hauptbereich", label: "Hauptbereich (140 Zoll)" },
-  { value: "fenster", label: "Restaurant (75 Zoll)" },
+  { value: "hauptbereich", label: "Restaurant 140 Zoll" },
+  { value: "fenster", label: "Restaurant 75 Zoll" },
   { value: "vip", label: "VIP" },
   { value: "podest", label: "Podest" },
   { value: "billard", label: "Billard" },
