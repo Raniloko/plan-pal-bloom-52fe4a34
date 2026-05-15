@@ -192,7 +192,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
   };
 
   const handleSubmit = async () => {
-    if (!guest.trim()) {
+    if (!isWalkIn && !guest.trim()) {
       toast.error("Bitte mindestens einen Gastnamen eingeben");
       return;
     }
