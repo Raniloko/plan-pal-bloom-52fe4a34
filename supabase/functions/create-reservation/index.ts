@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     if (!name || sanitize(name).length < 2 || sanitize(name).length > 100) errors.push("Name muss 2-100 Zeichen lang sein.");
     if (!isAdminBooking) {
       if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
-      if (!phone || sanitize(phone).length < 5 || sanitize(phone).length > 30) errors.push("Ungültige Telefonnummer.");
+      if (!phone || sanitize(phone).length < 3 || sanitize(phone).length > 30) errors.push("Ungültige Telefonnummer (mind. 3 Zeichen).");
     }
     if (message && message.length > 1000) errors.push("Nachricht darf maximal 1000 Zeichen lang sein.");
 
