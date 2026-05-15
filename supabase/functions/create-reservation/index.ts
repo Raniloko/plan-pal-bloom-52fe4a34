@@ -133,6 +133,13 @@ Deno.serve(async (req) => {
       VALID_OCCASIONS.includes(p) || p.startsWith("sonstiges:")
     );
     if (!isAdminBooking && !validAnlass) errors.push("Ungültiger Anlass.");
+    // Billard ab 20:00 nicht mehr buchbar (gilt nicht für Admin/Walk-in)
+    if (!isAdminBooking && zone === "billard" && time && isValidTime(time)) {
+      const [bH] = time.split(":").map(Number);
+      if (bH >= 20) {
+        errors.push("Billard ist ab 20:00 Uhr nicht mehr reservierbar.");
+      }
+    }
     if (!name || sanitize(name).length < 2 || sanitize(name).length > 100) errors.push("Name muss 2-100 Zeichen lang sein.");
     if (!isAdminBooking) {
       if (!email || !isValidEmail(sanitize(email))) errors.push("Ungültige E-Mail-Adresse.");
