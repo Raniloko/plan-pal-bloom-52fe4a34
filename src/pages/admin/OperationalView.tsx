@@ -123,12 +123,8 @@ const OperationalView = () => {
 
   useEffect(() => {
     load();
-    // Only subscribe to units (non-PII) via Realtime; reservations/waitlist/notifications removed for security
-    const ch = supabase
-      .channel("op-view")
-      .on("postgres_changes", { event: "*", schema: "public", table: "units" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    // Realtime auf 'units' wurde deaktiviert (öffentliche SELECT-RLS würde anonyme Subscriber zulassen).
+    // Aktualisierung erfolgt über das 15s-Polling weiter unten.
   }, [load]);
 
   // Include cancelled in rows for "Achtung" tab
