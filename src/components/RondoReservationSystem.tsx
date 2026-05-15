@@ -200,7 +200,7 @@ const RondoReservationSystem = () => {
       case 1: return data.guests >= 1;
       case 2: return data.zone !== "";
       case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
-      case 4: return data.name.trim() && data.email.trim() && data.phone.trim();
+      case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3;
       default: return true;
     }
   };
