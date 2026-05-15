@@ -78,6 +78,7 @@ export interface PanelData {
   unitNotes?: string;
   customerEmail?: string;
   customerPhone?: string;
+  customerMessage?: string;
   zone?: string;
   checkedInAt?: string | null;
   unitDayReservations?: UnitDayReservation[];
