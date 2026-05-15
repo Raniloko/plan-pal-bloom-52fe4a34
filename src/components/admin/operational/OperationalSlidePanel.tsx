@@ -78,6 +78,7 @@ export interface PanelData {
   unitNotes?: string;
   customerEmail?: string;
   customerPhone?: string;
+  customerMessage?: string;
   zone?: string;
   checkedInAt?: string | null;
   unitDayReservations?: UnitDayReservation[];
@@ -576,6 +577,19 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 )}
                 {data.customerPhone && (
                   <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>☎ {data.customerPhone}</div>
+                )}
+                {data.customerMessage && data.customerMessage.trim() && (
+                  <div style={{
+                    background: "#fffbe8", border: "1px solid #f0e0a0", borderRadius: 6,
+                    padding: "8px 10px", marginTop: 4, marginBottom: 8,
+                  }}>
+                    <div style={{ fontSize: 9, color: "#8a7a20", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>
+                      Notiz vom Gast
+                    </div>
+                    <div style={{ fontSize: 12, color: "#5a4a10", whiteSpace: "pre-wrap", lineHeight: 1.4 }}>
+                      {data.customerMessage}
+                    </div>
+                  </div>
                 )}
                 <div style={{ fontSize: 10, color: "#bbb", marginBottom: 12 }}>
                   RND-{data.reservationId?.slice(0, 8).toUpperCase() || "XXXXXXXX"}
