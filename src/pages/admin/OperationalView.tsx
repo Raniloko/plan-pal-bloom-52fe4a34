@@ -318,6 +318,7 @@ const OperationalView = () => {
       status: data.status, unitId: unit?.id, unitNotes: unit?.notes || "",
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
+      customerMessage: reservation?.message || "",
       zone: reservation?.zone || (unit ? areaToZone(unit.area) : undefined),
       checkedInAt: reservation?.checked_in_at ?? null,
       unitDayReservations: unitDayReservations.map(r => ({
@@ -340,6 +341,7 @@ const OperationalView = () => {
       reservationId: row.id,
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
+      customerMessage: reservation?.message || "",
       zone: reservation?.zone,
       unitId: unit?.id,
       unitNotes: unit?.notes || "",
