@@ -247,19 +247,46 @@ const OperationalView = () => {
       if (name.startsWith("tisch")) return "t" + digits;
       return "";
     };
+    // Group reservations per unit so we can pick the *currently relevant* one:
+    // 1) checked-in (Anwesend) wins, 2) next upcoming, 3) most recent past.
+    const byUnit = new Map<string, Reservation[]>();
     reservations.forEach(r => {
       if (!r.unit_id) return;
       if (r.status === "cancelled" || r.status === "checked_out") return;
-      const unit = units.find(u => u.id === r.unit_id);
+      const arr = byUnit.get(r.unit_id) || [];
+      arr.push(r);
+      byUnit.set(r.unit_id, arr);
+    });
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const isToday = dateStr === todayStr;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    byUnit.forEach((list, unitId) => {
+      const unit = units.find(u => u.id === unitId);
       if (!unit) return;
       const fpId = toFpId(unit);
       if (!fpId) return;
-      const isPresent = r.status === "checked_in";
+      const sorted = [...list].sort((a, b) => a.reservation_time.localeCompare(b.reservation_time));
+      const checkedIn = sorted.find(r => r.status === "checked_in");
+      let pick = checkedIn;
+      if (!pick) {
+        if (isToday) {
+          const upcoming = sorted.find(r => {
+            const [h, m] = r.reservation_time.split(":").map(Number);
+            return h * 60 + m + durationMin > nowMin;
+          });
+          pick = upcoming || sorted[sorted.length - 1];
+        } else {
+          pick = sorted[0];
+        }
+      }
+      if (!pick) return;
+      const isPresent = pick.status === "checked_in";
       map[fpId] = {
         id: fpId, title: unit.name,
         status: isPresent ? "present" : "reserved",
-        guest: r.customer_name, startTime: r.reservation_time.slice(0, 5),
-        pax: r.guest_count, reservationId: r.id,
+        guest: pick.customer_name, startTime: pick.reservation_time.slice(0, 5),
+        pax: pick.guest_count, reservationId: pick.id,
       };
     });
     units.forEach(u => {
@@ -268,7 +295,7 @@ const OperationalView = () => {
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
     return map;
-  }, [reservations, units]);
+  }, [reservations, units, dateStr, durationMin]);
 
   const areaToZone = (area: string): string => {
     const map: Record<string, string> = { billard: "billard", kicker: "billard", dart: "billard", restaurant: "hauptbereich" };
@@ -280,7 +307,9 @@ const OperationalView = () => {
     const reservation = data.reservationId ? reservations.find(r => r.id === data.reservationId) : undefined;
     // Get all reservations for this unit today
     const unitDayReservations = unit
-      ? reservations.filter(r => r.unit_id === unit.id && r.status !== "checked_out")
+      ? reservations
+          .filter(r => r.unit_id === unit.id && r.status !== "checked_out")
+          .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
       : [];
     setPanelData({
       tableLabel: data.title,
