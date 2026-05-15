@@ -304,7 +304,9 @@ Deno.serve(async (req) => {
           .eq("key", "reservation_duration")
           .single();
         const baseDur = settingsData?.value ? Number(settingsData.value) : 120;
-        const durMin = area === "billard" ? 30 : baseDur;
+        // Billard: block the full booked play time (max 2h) so two reservations
+        // never collide on the same table inside that window.
+        const durMin = area === "billard" ? Math.min(baseDur, 120) : baseDur;
 
         // All units in area
         const areaFilter = area === "hauptbereich"
@@ -382,7 +384,7 @@ Deno.serve(async (req) => {
         const { data: settingsData } = await supabase
           .from("settings").select("value").eq("key", "reservation_duration").single();
         const baseDur = settingsData?.value ? Number(settingsData.value) : 120;
-        const durMin = zone === "billard" ? 30 : baseDur;
+        const durMin = zone === "billard" ? Math.min(baseDur, 120) : baseDur;
 
         const payload = {
           customer_name: wEntry.guest_name,
