@@ -456,6 +456,7 @@ const RondoReservationSystem = () => {
                 const booked = data.time ? getCountForZoneAtTime(data.time, zone) : 0;
                 const capacity = ZONE_CAPACITY[zone];
                 const isFull = Boolean(data.time) && booked >= capacity;
+                const nextFree = isFull && data.time ? findNextFreeTimeForZone(zone, data.time) : null;
 
                 return (
                   <button
@@ -472,6 +473,14 @@ const RondoReservationSystem = () => {
                   >
                     <p className="font-semibold">{z.label}</p>
                     <p className="text-xs text-muted-foreground">{z.desc}</p>
+                    {isFull && (
+                      <p className="mt-2 text-xs font-semibold text-primary">
+                        Belegt um {data.time}.
+                        {nextFree
+                          ? <> Nächste freie Uhrzeit: <span className="underline">{nextFree}</span></>
+                          : <> Heute keine freie Uhrzeit mehr.</>}
+                      </p>
+                    )}
                   </button>
                 );
               })}
