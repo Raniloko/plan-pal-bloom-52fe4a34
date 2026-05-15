@@ -95,7 +95,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
   };
 
   const areaLabel = (area: string) => {
-    const map: Record<string, string> = { billard: "Billard", restaurant: "Restaurant", vip: "VIP", hauptbereich: "Hauptbereich", podest: "Podest", fenster: "Fenster" };
+    const map: Record<string, string> = { billard: "Billard", restaurant: "Restaurant", vip: "VIP", hauptbereich: "Restaurant 140 Zoll", podest: "Podest", fenster: "Restaurant 75 Zoll" };
     return map[area] || area;
   };
 
