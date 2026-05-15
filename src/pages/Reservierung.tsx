@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import RondoReservationSystem from "@/components/RondoReservationSystem";
 import { Clock, ArrowRight, Info, AlertTriangle, Sparkles } from "lucide-react";
 
