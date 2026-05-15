@@ -73,7 +73,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
   const platziert = useMemo(() => rows.filter(r => r.status === "checked_in"), [rows]);
   const bevorstehend = useMemo(() => rows.filter(r => (r.status === "confirmed" || r.status === "pending") && !r.overdue), [rows]);
   // Achtung: overdue + cancelled
-  const achtung = useMemo(() => rows.filter(r => r.overdue || r.status === "cancelled"), [rows]);
+  const achtung = useMemo(() => rows.filter(r => (r.overdue && r.status !== "checked_in" && r.status !== "checked_out") || r.status === "cancelled"), [rows]);
 
   const filtered = subTab === "platziert" ? platziert : subTab === "achtung" ? achtung : bevorstehend;
 
