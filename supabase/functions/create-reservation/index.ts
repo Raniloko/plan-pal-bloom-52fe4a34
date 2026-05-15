@@ -80,7 +80,46 @@ Deno.serve(async (req) => {
       );
     }
 
-    const isAdminBooking = sanitize(email) === "walkin@intern.local";
+    // Walk-in / admin booking bypass: only honored when the caller presents
+    // a valid admin JWT. Without a verified admin token, treat the request
+    // like a normal public booking so all validations apply.
+    let isAdminBooking = false;
+    if (sanitize(email) === "walkin@intern.local") {
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const anonClient = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_ANON_KEY")!,
+            { global: { headers: { Authorization: authHeader } } }
+          );
+          const token = authHeader.replace("Bearer ", "");
+          const { data: claimsData } = await anonClient.auth.getClaims(token);
+          const userId = claimsData?.claims?.sub as string | undefined;
+          if (userId) {
+            const adminClient = createClient(
+              Deno.env.get("SUPABASE_URL")!,
+              Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+            );
+            const { data: roleData } = await adminClient
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", userId)
+              .eq("role", "admin")
+              .maybeSingle();
+            if (roleData) isAdminBooking = true;
+          }
+        } catch (e) {
+          console.error("Admin booking auth check failed:", e);
+        }
+      }
+      if (!isAdminBooking) {
+        return new Response(
+          JSON.stringify({ error: "Ungültige E-Mail-Adresse." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     const errors: string[] = [];
 
