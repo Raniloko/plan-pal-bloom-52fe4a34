@@ -556,7 +556,15 @@ Deno.serve(async (req) => {
       }
 
       case "fetch_notifications": {
-        const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50);
+        // Nur Benachrichtigungen des heutigen Tages (lokale Zeit Europe/Berlin angenommen).
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const { data } = await supabase
+          .from("notifications")
+          .select("*")
+          .gte("created_at", todayStart)
+          .order("created_at", { ascending: false })
+          .limit(50);
         return ok({ notifications: data || [] });
       }
 
