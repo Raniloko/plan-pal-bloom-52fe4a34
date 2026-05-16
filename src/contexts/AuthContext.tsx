@@ -84,68 +84,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, keepLoggedIn]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // While the provider is still booting, ignore a null/SIGNED_OUT event:
-      // supabase sometimes emits INITIAL_SESSION with null before the
-      // persisted token has been read from storage. Treating that as a real
-      // logout would kick the admin straight to /backstage/login on reload.
-      if (initializing.current && !session) {
-        console.warn("[auth] ignoring transient null session during init:", event);
-        return;
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
     (async () => {
+      const { data: { session: initial } } = await supabase.auth.getSession();
+      if (initial) {
+        setSession(initial);
+        setUser(initial.user ?? null);
+      }
+
       const wantsPersistent = (() => {
         try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
       })();
 
-      try {
-        // 1) Hydrate from storage first.
-        const { data: { session: initial } } = await supabase.auth.getSession();
-        if (initial) {
-          setSession(initial);
-          setUser(initial.user ?? null);
-        }
-
-        // 2) When "Angemeldet bleiben" is on AND we have a refresh token,
-        //    refresh so the access token is fresh after a reload.
-        if (wantsPersistent && initial?.refresh_token) {
-          try {
-            const { data, error } = await supabase.auth.refreshSession({
-              refresh_token: initial.refresh_token,
-            });
-            if (error) {
-              console.warn("[auth] refreshSession failed on reload:", error.message);
-              const fatal = /refresh.*token|invalid.*grant|not.*found|expired|revoked/i.test(error.message);
-              if (fatal) {
-                try { localStorage.removeItem("admin_keep_logged_in"); } catch { /* ignore */ }
-                setKeepLoggedIn(false);
-                await supabase.auth.signOut().catch(() => { /* ignore */ });
-                setSession(null);
-                setUser(null);
-              }
-              // Non-fatal (network etc.): keep the hydrated session.
-            } else if (data.session) {
-              console.warn("[auth] refreshSession succeeded on reload");
-              setSession(data.session);
-              setUser(data.session.user);
-            }
-          } catch (err) {
-            console.warn("[auth] refreshSession threw on reload:", err);
-            // Keep hydrated session on unexpected errors.
+      if (wantsPersistent && initial?.refresh_token) {
+        try {
+          const { data, error } = await supabase.auth.refreshSession({ refresh_token: initial.refresh_token });
+          if (!error && data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
           }
-        }
-      } finally {
-        initializing.current = false;
-        setLoading(false);
+        } catch { /* keep hydrated session */ }
       }
-    })();
 
-    return () => subscription.unsubscribe();
+      initializing.current = false;
+      setLoading(false);
+
+      // Subscribe AFTER session is restored
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+        } else if (session) {
+          setSession(session);
+          setUser(session.user);
+        }
+        setLoading(false);
+      });
+
+      return () => subscription.unsubscribe();
+    })();
   }, []);
 
   const signIn = useCallback(async (email: string, password: string, rememberMe = false) => {
