@@ -237,6 +237,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Walk-ins use the internal placeholder address – never send emails for them.
+    if ((dbRes.customer_email || "").toLowerCase() === "walkin@intern.local") {
+      return new Response(
+        JSON.stringify({ success: true, skipped: "walkin" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Escape every user-controlled field that gets interpolated into HTML.
     const safeReservation = {
       id: dbRes.id,
