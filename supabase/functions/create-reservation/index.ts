@@ -159,7 +159,26 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const zoneCapacity = ZONE_CAPACITY[zone] ?? 1;
+    // Effective capacity = number of non-blocked units in this zone.
+    // Falls back to the static ZONE_CAPACITY when no units are defined.
+    let zoneCapacity = ZONE_CAPACITY[zone] ?? 1;
+    {
+      const { data: zoneUnitsForCap } = await supabase
+        .from("units")
+        .select("id, status")
+        .eq("area", zone);
+      if (zoneUnitsForCap && zoneUnitsForCap.length > 0) {
+        const available = zoneUnitsForCap.filter(u => u.status !== "blocked").length;
+        zoneCapacity = available;
+      }
+    }
+
+    if (zoneCapacity <= 0) {
+      return new Response(
+        JSON.stringify({ error: "Dieser Bereich ist aktuell nicht verfügbar." }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Load duration setting for overlap calculation
     const { data: settingsData } = await supabase
