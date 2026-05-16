@@ -106,6 +106,35 @@ const RondoReservationSystem = () => {
 
   const zoneKeys = useMemo(() => Object.keys(ZONE_CAPACITY) as ZoneKey[], []);
 
+  // Effective capacity per zone = number of non-blocked units in that area.
+  // Loaded once from `units`; fallback to ZONE_CAPACITY constant if empty.
+  const [unitCapacity, setUnitCapacity] = useState<Partial<Record<ZoneKey, number>>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: units, error } = await supabase
+        .from("units")
+        .select("area, status");
+      if (cancelled || error || !units) return;
+      const counts: Partial<Record<ZoneKey, number>> = {};
+      for (const u of units as { area: string; status: string | null }[]) {
+        if (!zoneKeys.includes(u.area as ZoneKey)) continue;
+        if (u.status === "blocked") continue;
+        const k = u.area as ZoneKey;
+        counts[k] = (counts[k] ?? 0) + 1;
+      }
+      setUnitCapacity(counts);
+    })();
+    return () => { cancelled = true; };
+  }, [zoneKeys]);
+
+  const effectiveCapacity = useCallback((zone: ZoneKey): number => {
+    const fromUnits = unitCapacity[zone];
+    if (fromUnits === undefined) return ZONE_CAPACITY[zone];
+    return fromUnits;
+  }, [unitCapacity]);
+
   const fetchAvailability = useCallback(async (date: string) => {
     if (!date) {
       setAvailability({});
@@ -163,8 +192,10 @@ const RondoReservationSystem = () => {
   }, [availability]);
 
   const isZoneFullyBooked = useCallback((zone: ZoneKey, time: string) => {
-    return getCountForZoneAtTime(time, zone) >= ZONE_CAPACITY[zone];
-  }, [getCountForZoneAtTime]);
+    const cap = effectiveCapacity(zone);
+    if (cap <= 0) return true;
+    return getCountForZoneAtTime(time, zone) >= cap;
+  }, [getCountForZoneAtTime, effectiveCapacity]);
 
   const isTimeInPast = useCallback((date: string, time: string) => {
     if (!date) return true;
@@ -460,8 +491,9 @@ const RondoReservationSystem = () => {
               {ZONES.map((z) => {
                 const zone = z.value as ZoneKey;
                 const booked = data.time ? getCountForZoneAtTime(data.time, zone) : 0;
-                const capacity = ZONE_CAPACITY[zone];
-                const isFull = Boolean(data.time) && booked >= capacity;
+                const capacity = effectiveCapacity(zone);
+                const noTables = capacity <= 0;
+                const isFull = noTables || (Boolean(data.time) && booked >= capacity);
                 // Billard kann ab 20:00 nicht mehr gebucht werden
                 const billardClosed =
                   zone === "billard" &&
@@ -490,7 +522,12 @@ const RondoReservationSystem = () => {
                         Ab 20:00 Uhr keine Billard-Reservierung mehr möglich.
                       </p>
                     )}
-                    {isFull && !billardClosed && (
+                    {noTables && !billardClosed && (
+                      <p className="mt-2 text-xs font-semibold text-primary">
+                        Aktuell nicht verfügbar.
+                      </p>
+                    )}
+                    {isFull && !noTables && !billardClosed && (
                       <p className="mt-2 text-xs font-semibold text-primary">
                         Belegt um {data.time}.
                         {nextFree
