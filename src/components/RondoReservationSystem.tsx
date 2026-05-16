@@ -491,8 +491,9 @@ const RondoReservationSystem = () => {
               {ZONES.map((z) => {
                 const zone = z.value as ZoneKey;
                 const booked = data.time ? getCountForZoneAtTime(data.time, zone) : 0;
-                const capacity = ZONE_CAPACITY[zone];
-                const isFull = Boolean(data.time) && booked >= capacity;
+                const capacity = effectiveCapacity(zone);
+                const noTables = capacity <= 0;
+                const isFull = noTables || (Boolean(data.time) && booked >= capacity);
                 // Billard kann ab 20:00 nicht mehr gebucht werden
                 const billardClosed =
                   zone === "billard" &&
@@ -521,7 +522,12 @@ const RondoReservationSystem = () => {
                         Ab 20:00 Uhr keine Billard-Reservierung mehr möglich.
                       </p>
                     )}
-                    {isFull && !billardClosed && (
+                    {noTables && !billardClosed && (
+                      <p className="mt-2 text-xs font-semibold text-primary">
+                        Aktuell nicht verfügbar.
+                      </p>
+                    )}
+                    {isFull && !noTables && !billardClosed && (
                       <p className="mt-2 text-xs font-semibold text-primary">
                         Belegt um {data.time}.
                         {nextFree
