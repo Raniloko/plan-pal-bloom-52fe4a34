@@ -86,29 +86,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     (async () => {
-      // When the user opted into "Angemeldet bleiben", proactively refresh the
-      // session on app load so an expired access token doesn't kick them out.
       const wantsPersistent = (() => {
         try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
       })();
 
+      // 1) Hydrate from storage first — onAuthStateChange has already fired
+      //    with INITIAL_SESSION at this point, so user/loading may already be set.
       const { data: { session: initial } } = await supabase.auth.getSession();
-
-      if (wantsPersistent) {
-        try {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (!error && data.session) {
-            setSession(data.session);
-            setUser(data.session.user);
-            setLoading(false);
-            return;
-          }
-        } catch { /* fall through to initial session */ }
-      }
-
       setSession(initial);
       setUser(initial?.user ?? null);
       setLoading(false);
+
+      // 2) When "Angemeldet bleiben" is on AND we have a refresh token, force a
+      //    refresh so the access token is fresh after a reload. If the refresh
+      //    token itself is gone/expired/revoked, clear the flag so the next
+      //    reload doesn't keep trying and the user lands cleanly on /login.
+      if (wantsPersistent && initial?.refresh_token) {
+        try {
+          const { data, error } = await supabase.auth.refreshSession({
+            refresh_token: initial.refresh_token,
+          });
+          if (error) {
+            console.warn("[auth] refreshSession failed on reload:", error.message);
+            const fatal = /refresh.*token|invalid.*grant|not.*found|expired/i.test(error.message);
+            if (fatal) {
+              try { localStorage.removeItem("admin_keep_logged_in"); } catch { /* ignore */ }
+              setKeepLoggedIn(false);
+              await supabase.auth.signOut().catch(() => { /* ignore */ });
+              setSession(null);
+              setUser(null);
+            }
+            return;
+          }
+          if (data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+          }
+        } catch (err) {
+          console.warn("[auth] refreshSession threw on reload:", err);
+        }
+      }
     })();
 
     return () => subscription.unsubscribe();
