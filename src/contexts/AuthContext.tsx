@@ -85,11 +85,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    (async () => {
+      // When the user opted into "Angemeldet bleiben", proactively refresh the
+      // session on app load so an expired access token doesn't kick them out.
+      const wantsPersistent = (() => {
+        try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
+      })();
+
+      const { data: { session: initial } } = await supabase.auth.getSession();
+
+      if (wantsPersistent) {
+        try {
+          const { data, error } = await supabase.auth.refreshSession();
+          if (!error && data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+            setLoading(false);
+            return;
+          }
+        } catch { /* fall through to initial session */ }
+      }
+
+      setSession(initial);
+      setUser(initial?.user ?? null);
       setLoading(false);
-    });
+    })();
 
     return () => subscription.unsubscribe();
   }, []);
