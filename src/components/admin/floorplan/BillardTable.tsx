@@ -159,26 +159,21 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
       {/* Label */}
       <text x={cx} y={labelY} textAnchor="middle" fontSize={11} fontWeight={600} fill="rgba(255,255,255,0.85)" fontFamily="'DM Sans', sans-serif">{label}</text>
 
-      {/* Name tag for reserved/present */}
+      {/* Center overlay: name + time for reserved/present */}
       {showLabels && data.guest && (isReserved || isPresent) && (
         <>
-          {isPresent && data.startTime && (
-            <>
-              <rect x={x} y={y + h + 5} width={w} height={13} rx={3} fill="rgba(0,0,0,0.6)" />
-              <text x={cx} y={y + h + 15} textAnchor="middle" fontSize={9} fontWeight={700} fill="#5de88a" fontFamily="'DM Sans', sans-serif">{data.startTime}</text>
-            </>
-          )}
-          <rect x={x} y={y + h + (isPresent ? 19 : 5)} width={w} height={16} rx={3} fill={isPresent ? "#1e8a38" : "#3a6adb"} />
-          <text x={cx} y={y + h + (isPresent ? 30 : 16)} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff" fontFamily="'DM Sans', sans-serif">
+          <rect x={cx - w / 2 + 10} y={cy - 22} width={w - 20} height={44} rx={6}
+            fill="rgba(0,0,0,0.78)" stroke={isPresent ? "#1e8a38" : "#3a6adb"} strokeWidth={1.5} />
+          <text x={cx} y={cy - 4} textAnchor="middle" fontSize={13} fontWeight={700}
+            fill="#fff" fontFamily="'DM Sans', sans-serif">
             {data.guest}
           </text>
-          {isReserved && data.startTime && (
-            <>
-              <rect x={x} y={y + h + 22} width={w} height={13} rx={2} fill="rgba(0,0,0,0.45)" />
-              <text x={cx} y={y + h + 32} textAnchor="middle" fontSize={9} fill="#7aadff" fontFamily="'DM Sans', sans-serif">
-                {data.endTime ? `${data.startTime} - ${data.endTime}` : data.startTime}
-              </text>
-            </>
+          {data.startTime && (
+            <text x={cx} y={cy + 14} textAnchor="middle" fontSize={11} fontWeight={600}
+              fill={isPresent ? "#5de88a" : "#7aadff"} fontFamily="'DM Sans', sans-serif">
+              {data.endTime ? `${data.startTime} – ${data.endTime}` : data.startTime}
+              {data.pax ? ` · ${data.pax}P` : ""}
+            </text>
           )}
         </>
       )}
