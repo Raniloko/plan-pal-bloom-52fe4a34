@@ -43,6 +43,7 @@ export const OperationalTopbar = ({
 }: Props) => {
   const [time, setTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [dateCalOpen, setDateCalOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -111,7 +112,29 @@ export const OperationalTopbar = ({
       {/* Date nav */}
       <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
         <button onClick={() => onDateChange(subDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronLeft size={14} /></button>
-        <span style={{ fontSize: isMobile ? 11 : 14, fontWeight: 600, color: "#fff", padding: "0 2px", whiteSpace: "nowrap" }}>{isMobile ? format(selectedDate, "d.MM", { locale: de }) : shortDate}</span>
+        <Popover open={dateCalOpen} onOpenChange={setDateCalOpen}>
+          <PopoverTrigger asChild>
+            <button
+              style={{
+                fontSize: isMobile ? 11 : 14, fontWeight: 600, color: "#fff",
+                padding: "0 6px", whiteSpace: "nowrap", background: "transparent",
+                border: "none", cursor: "pointer", height: "100%",
+              }}
+              title="Datum wählen"
+            >
+              {isMobile ? format(selectedDate, "d.MM", { locale: de }) : shortDate}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="center" style={{ zIndex: 9999 }}>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(d) => { if (d) { onDateChange(d); setDateCalOpen(false); } }}
+              locale={de}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
         <button onClick={() => onDateChange(addDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronRight size={14} /></button>
       </div>
 
