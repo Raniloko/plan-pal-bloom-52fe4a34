@@ -172,11 +172,11 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
           <text x={cx} y={y + h + (isPresent ? 30 : 16)} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff" fontFamily="'DM Sans', sans-serif">
             {data.guest}
           </text>
-          {isReserved && data.startTime && data.endTime && (
+          {isReserved && data.startTime && (
             <>
               <rect x={x} y={y + h + 22} width={w} height={13} rx={2} fill="rgba(0,0,0,0.45)" />
               <text x={cx} y={y + h + 32} textAnchor="middle" fontSize={9} fill="#7aadff" fontFamily="'DM Sans', sans-serif">
-                {data.startTime} - {data.endTime}
+                {data.endTime ? `${data.startTime} - ${data.endTime}` : data.startTime}
               </text>
             </>
           )}
