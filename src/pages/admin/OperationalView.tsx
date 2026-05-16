@@ -87,18 +87,28 @@ const OperationalView = () => {
   const load = useCallback(async () => {
     const requestDate = dateStr;
     try {
-      const res = await supabase.functions.invoke("admin-actions", {
+      let res = await supabase.functions.invoke("admin-actions", {
         body: { action: "fetch_dashboard", date: requestDate },
       });
       if (res.error) {
-        // Session abgelaufen → ausloggen und zur Login-Seite
         const msg = String(res.error?.message || "");
-        if (msg.includes("401") || msg.toLowerCase().includes("non-2xx")) {
-          await supabase.auth.signOut();
-          window.location.href = "/backstage/login";
-          return;
+        const looksAuth = msg.includes("401") || msg.toLowerCase().includes("non-2xx");
+        if (looksAuth) {
+          // Try a one-shot refresh and retry before assuming the session is gone.
+          console.warn("[admin] dashboard 401 — versuche Session-Refresh");
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          if (refreshed?.session) {
+            res = await supabase.functions.invoke("admin-actions", {
+              body: { action: "fetch_dashboard", date: requestDate },
+            });
+          } else {
+            // Truly no session — back to login.
+            await supabase.auth.signOut();
+            window.location.href = "/backstage/login";
+            return;
+          }
         }
-        throw res.error;
+        if (res.error) throw res.error;
       }
       const d = res.data;
       if (d?.error) { console.error("Dashboard fetch error:", d.error); return; }

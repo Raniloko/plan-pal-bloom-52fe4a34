@@ -22,30 +22,55 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const [roleChecked, setRoleChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     if (!user) { setRoleChecked(true); setIsAdmin(false); return; }
     setRoleChecked(false);
+    setCheckFailed(false);
     (async () => {
-      try {
-        const res = await supabase.functions.invoke("admin-actions", {
-          body: { action: "check_admin" },
-        });
-        if (cancelled) return;
-        setIsAdmin(!res.error && res.data?.success === true);
-      } catch {
-        if (!cancelled) setIsAdmin(false);
-      } finally {
-        if (!cancelled) setRoleChecked(true);
+      // Try up to 2x — the first call after a reload can race with the token
+      // refresh and come back 401 even though the user is a valid admin.
+      let success = false;
+      let transient = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await supabase.functions.invoke("admin-actions", {
+            body: { action: "check_admin" },
+          });
+          if (cancelled) return;
+          if (!res.error && res.data?.success === true) {
+            success = true;
+            transient = false;
+            break;
+          }
+          const msg = String(res.error?.message || "");
+          transient = /401|non-2xx|network|fetch/i.test(msg);
+          if (!transient) break;
+          // Give the AuthContext a moment to refresh the token.
+          await new Promise(r => setTimeout(r, 600));
+        } catch (err) {
+          if (cancelled) return;
+          transient = true;
+          await new Promise(r => setTimeout(r, 600));
+        }
       }
+      if (cancelled) return;
+      setIsAdmin(success);
+      // Only treat as a hard failure (-> redirect) when it's NOT a transient
+      // network/401 issue. Otherwise keep showing the loader so a brief
+      // backend hiccup on reload doesn't bounce the user to /login.
+      setCheckFailed(!success && !transient);
+      setRoleChecked(true);
     })();
     return () => { cancelled = true; };
   }, [user]);
 
   if (loading || (user && !roleChecked)) return <AdminLoading />;
   if (!user) return <Navigate to="/backstage/login" replace />;
-  if (!isAdmin) return <Navigate to="/backstage/login" replace />;
+  if (!isAdmin && checkFailed) return <Navigate to="/backstage/login" replace />;
+  if (!isAdmin) return <AdminLoading />;
 
   return <>{children}</>;
 };
