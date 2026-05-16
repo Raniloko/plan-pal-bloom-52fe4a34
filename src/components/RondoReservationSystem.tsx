@@ -174,6 +174,12 @@ const RondoReservationSystem = () => {
     const [hour, minute] = time.split(":").map(Number);
     const selectedDateTime = new Date();
     selectedDateTime.setHours(hour, minute, 0, 0);
+    // Slots nach Mitternacht (z.B. 00:00–05:45) gehören zum nächsten Kalendertag
+    // (Öffnungszeiten reichen über Mitternacht hinaus). Sonst würden sie
+    // fälschlich als „Vergangenheit" markiert.
+    if (hour < 6) {
+      selectedDateTime.setDate(selectedDateTime.getDate() + 1);
+    }
     return selectedDateTime.getTime() <= Date.now();
   }, []);
 
