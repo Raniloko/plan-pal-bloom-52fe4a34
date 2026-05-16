@@ -9,6 +9,9 @@ const AdminLogin = () => {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState<boolean>(() => {
+    try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
+  });
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -16,7 +19,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await signIn(email, password);
+    const result = await signIn(email, password, remember);
     if (result.error) {
       setError(result.error);
       setLoading(false);
@@ -95,6 +98,22 @@ const AdminLogin = () => {
             {error}
           </div>
         )}
+
+        {/* Remember me */}
+        <label style={{
+          display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+          fontSize: 13, color: "#bbb", userSelect: "none",
+        }}>
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={e => setRemember(e.target.checked)}
+            style={{
+              width: 16, height: 16, accentColor: "#c8b830", cursor: "pointer", margin: 0,
+            }}
+          />
+          Angemeldet bleiben
+        </label>
 
         {/* Submit */}
         <button type="submit" disabled={loading} style={{
