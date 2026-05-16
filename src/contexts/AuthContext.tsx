@@ -11,7 +11,7 @@ interface AuthContextType {
   loading: boolean;
   sessionWarning: boolean;
   dismissWarning: () => void;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -25,10 +25,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const lastActivity = useRef(Date.now());
   const warningTimer = useRef<ReturnType<typeof setTimeout>>();
   const logoutTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [keepLoggedIn, setKeepLoggedIn] = useState<boolean>(() => {
+    try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
+  });
 
   // Track user activity
   useEffect(() => {
     if (!user) return;
+    // When the user opted into "Angemeldet bleiben", skip the inactivity auto-logout entirely.
+    if (keepLoggedIn) {
+      setSessionWarning(false);
+      clearTimeout(warningTimer.current);
+      clearTimeout(logoutTimer.current);
+      return;
+    }
 
     const resetTimers = () => {
       lastActivity.current = Date.now();
@@ -66,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(warningTimer.current);
       clearTimeout(logoutTimer.current);
     };
-  }, [user]);
+  }, [user, keepLoggedIn]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -84,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, rememberMe = false) => {
     // Check brute-force lockout first (no logging yet)
     try {
       const checkRes = await supabase.functions.invoke("admin-actions", {
@@ -113,6 +123,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) return { error: "E-Mail oder Passwort falsch" };
     lastActivity.current = Date.now();
+    try {
+      if (rememberMe) localStorage.setItem("admin_keep_logged_in", "1");
+      else localStorage.removeItem("admin_keep_logged_in");
+    } catch { /* ignore */ }
+    setKeepLoggedIn(rememberMe);
     return { error: null };
   }, []);
 
@@ -121,6 +136,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setSession(null);
     setSessionWarning(false);
+    try { localStorage.removeItem("admin_keep_logged_in"); } catch { /* ignore */ }
+    setKeepLoggedIn(false);
   }, []);
 
   const dismissWarning = useCallback(() => {
