@@ -1,63 +1,40 @@
-# Warteliste → Reservierung Konvertierung
+## Ziel
 
-Ziel: Im Admin-Panel (`/backstage` → Operational View → Tab „Warteliste") soll jeder Eintrag mit einem Klick auf einen neuen Button **„In Reservierung umwandeln"** zu einer echten Reservierung werden. Dabei wird automatisch ein passender freier Tisch im gewünschten Bereich vorgeschlagen, den der Admin per Dropdown noch ändern oder bestätigen kann.
+Auf der öffentlichen Reservierungsseite soll ein Bereich (z.B. Podest) **nicht buchbar** sein, sobald an der gewählten Uhrzeit kein einziger Tisch in diesem Bereich frei ist. Bei anderen Uhrzeiten bleibt der Bereich wählbar.
 
-## Ablauf für den Admin
+## Aktueller Zustand
 
-1. Im Tab „Warteliste" erscheint pro Eintrag neben dem bestehenden „Senden"-Button ein neuer Button **„→ Reservierung"** (Gold-Akzent `#c9a84c`).
-2. Klick öffnet einen kompakten Dialog `WaitlistConvertDialog` mit:
-   - Vorausgefüllten Daten aus dem Wartelisten-Eintrag (Name, Telefon, E-Mail, Datum, Uhrzeit, Bereich, Personenanzahl falls vorhanden — sonst Default 2).
-   - **Tisch-Vorschlag**: Liste aller freien Units im Wunschbereich zum Wunsch-Zeitslot, sortiert nach bester Kapazitäts-Passung (kleinste Kapazität ≥ Gästeanzahl zuerst). Der erste Vorschlag ist vorausgewählt.
-   - Dropdown zum manuellen Wechseln auf einen anderen freien Tisch.
-   - Optional: Personenanzahl anpassbar (15-Min-Slot-Logik bleibt).
-3. Klick auf **„Bestätigen"**:
-   - Erstellt eine Reservierung (`status = 'confirmed'`, `unit_id` gesetzt).
-   - Setzt den Wartelisten-Eintrag auf `status = 'converted'` (neuer Status-Wert).
-   - Sendet automatisch die Bestätigungs-E-Mail an den Gast (vorhandene `send-reservation-email`-Function).
-   - Schließt Dialog, refresht Reservierungs- und Wartelisten-Liste, Toast „Reservierung erstellt für {Name}".
+Das Verhalten ist im Prinzip schon so:
+- Schritt 1 Datum/Uhrzeit: Uhrzeit wird ausgegraut, wenn **alle** Bereiche voll sind (`isTimeFullyBooked`).
+- Schritt 2 Bereich: Jeder Bereich-Button wird per `disabled` ausgegraut wenn `booked >= ZONE_CAPACITY[zone]`, mit Hinweis „Belegt um HH:MM. Nächste freie Uhrzeit: …".
 
-## Tisch-Verfügbarkeitslogik
+**Lücke:** Die Kapazität wird als Konstante (`ZONE_CAPACITY`) genommen — geblockte Tische (units.status = `blocked`) werden nicht abgezogen. Beispiel Podest: 4 Tische konstant. Wenn der Admin 2 davon sperrt, gilt die Zone erst ab 4 Reservierungen als voll, obwohl real nur 2 buchbar wären.
 
-Wiederverwendung der bestehenden Kapazitäts-Prüfung aus `admin-actions` / `create-reservation`:
-- Lade alle `units` im Wunschbereich.
-- Lade alle aktiven Reservierungen am Wunschtag im Bereich.
-- Eine Unit ist „frei", wenn im Zeitfenster (Wunschzeit ± `DURATION_MIN`, default 120 Min, Billard 30 Min Buffer) keine andere `confirmed`/`pending`/`checked_in`-Reservierung auf derselben `unit_id` liegt.
-- Manuell gesperrte Units (`status != 'free'` aus `units`-Tabelle) werden ausgeschlossen.
+## Änderung
 
-## Technische Umsetzung
+`src/components/RondoReservationSystem.tsx`
 
-**Backend** — neue Action in `supabase/functions/admin-actions/index.ts`:
+1. **Echte Kapazität pro Bereich laden:** beim Datums-Wechsel zusätzlich aus `units` lesen:
+   ```ts
+   supabase.from("units").select("area, status")
+   ```
+   Daraus pro Zone die Anzahl Tische mit `status != 'blocked'` zählen → `effectiveCapacity[zone]`. Fallback auf `ZONE_CAPACITY[zone]` wenn keine Units geladen.
 
-```text
-action: "convert_waitlist"
-body: { waitlist_id, unit_id, guest_count, reservation_time?, reservation_date? }
-→ 1. Auth-Check (admin role wie bestehende actions)
-→ 2. Waitlist-Eintrag laden, Pflichtfelder validieren
-→ 3. Unit-Verfügbarkeit erneut prüfen (Race-Condition-Schutz)
-→ 4. INSERT in reservations (zone aus waitlist.area, occasion = 'Warteliste')
-→ 5. UPDATE waitlist SET status = 'converted', notified_at = now()
-→ 6. activity_log Eintrag
-→ 7. send-reservation-email aufrufen (Bestätigung)
-→ 8. Response: { reservation_id }
-```
+2. **`isZoneFullyBooked` umstellen** auf `effectiveCapacity[zone]` statt `ZONE_CAPACITY[zone]`.
 
-Zusätzlich neue Action `get_available_units` (oder Wiederverwendung vorhandener Logik), die für eine Kombination aus `area + date + time + duration` die Liste freier Units liefert.
+3. **`isTimeFullyBooked`** nutzt automatisch die neue Funktion → Uhrzeit wird auch dann gesperrt, wenn alle real verfügbaren Tische aller Bereiche zu dieser Zeit belegt sind.
 
-**Frontend** — neue/geänderte Dateien:
-- `src/components/admin/operational/WaitlistConvertDialog.tsx` (neu): Dialog mit shadcn `Dialog`, Tisch-Dropdown, Gäste-Input, Bestätigen-Button, Loading-State.
-- `src/components/admin/operational/ReservationPanel.tsx`: Neuer Button pro Wartelisten-Row, öffnet Dialog mit `entry`-Prop.
-- `src/pages/admin/OperationalView.tsx`: Dialog-State (`convertEntry`), nach Erfolg `refreshReservations()` + `refreshWaitlist()`.
+4. **Bereich-Card Anzeige (Zeile 462–500):** ungebuchten Bereichen unverändert; volle Bereiche bleiben mit Hinweis „Belegt um HH:MM" + nächste freie Uhrzeit ausgegraut. Wenn `effectiveCapacity[zone] === 0` (alle Tische gesperrt): Badge „Aktuell nicht verfügbar" statt „Belegt".
 
-**Datenbank**: Keine Schema-Änderung nötig — `waitlist.status` ist `text`, `'converted'` als neuer Wert reicht.
+5. **Auto-Reset:** vorhandener Effekt (`if zone wird voll → zone leeren`) bleibt; greift jetzt auch wenn Admin Tische sperrt.
 
-## Edge Cases
+## Was sich NICHT ändert
 
-- Wenn keine Unit im Bereich frei ist → Dialog zeigt Warnung „Keine freien Tische — bitte Zeit/Bereich anpassen oder manuell überbuchen" + Checkbox „Trotzdem buchen (Überbuchung)".
-- Wenn der Gast bereits per `notify_waitlist` benachrichtigt wurde (`status = 'notified'`) → Convert-Button bleibt sichtbar (häufiger Folge-Schritt).
-- Wartelisten-Eintrag bereits konvertiert → Button ausgeblendet, Status-Badge zeigt grün „Konvertiert".
+- Backend (`create-reservation` Edge Function) und `ZONE_CAPACITY` dort bleiben unangetastet; die Frontend-Prüfung verhindert das Drücken des Buttons, die Backend-Prüfung bleibt als Sicherheitsnetz erhalten.
+- Billard-Logik (RPC-basiert, 20:00-Cutoff) bleibt wie sie ist.
+- Reihenfolge der Schritte und Texte/Layout bleiben gleich.
 
-## Out of scope
+## Technische Notizen
 
-- Keine Änderung an der öffentlichen Wartelisten-Seite.
-- Keine automatische Konvertierung (immer Admin-Klick + Bestätigung).
-- Keine SMS-Benachrichtigung, nur E-Mail (wie bestehend).
+- Einmaliger zusätzlicher Read auf `units` beim Datum-Wechsel (RLS erlaubt public read auf `units`).
+- `effectiveCapacity` in `useMemo` ableiten, damit Rerenders billig bleiben.
