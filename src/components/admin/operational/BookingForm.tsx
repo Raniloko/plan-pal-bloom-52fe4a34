@@ -206,11 +206,16 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
     // Auto-pick a unit if none selected
     let unitToAssign = selectedUnitId;
     if (!unitToAssign) {
-      const auto = pickAutoUnit();
-      if (auto) {
-        unitToAssign = auto;
-        const u = allUnits.find(x => x.id === auto);
-        if (u) toast.message(`Tisch automatisch gewählt: ${u.name}`);
+      if (isBillard) {
+        const auto = pickAutoUnit();
+        if (auto) {
+          unitToAssign = auto;
+          const u = allUnits.find(x => x.id === auto);
+          if (u) toast.message(`Billardtisch automatisch gewählt: ${u.name}`);
+        }
+      } else {
+        toast.error("Bitte einen Tisch auswählen");
+        return;
       }
     }
 
@@ -367,7 +372,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
           onChange={e => setSelectedUnitId(e.target.value)}
           style={inputStyle}
         >
-          <option value="">— Automatisch passenden Tisch wählen —</option>
+          <option value="">{isBillard ? "— Automatisch passenden Billardtisch wählen —" : "— Tisch wählen —"}</option>
           {Object.entries(groupedUnits).map(([area, areaUnits]) => (
             <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
               {areaUnits.map(u => {
@@ -381,9 +386,9 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
             </optgroup>
           ))}
         </select>
-        {!selectedUnitId && (
+        {!selectedUnitId && isBillard && (
           <div style={{ fontSize: 10, color: "#e07820", marginTop: 3 }}>
-            Es wird automatisch der kleinste freie Tisch ≥ {pax} Personen im Bereich "{zone}" gewählt.
+            Es wird automatisch ein freier Billardtisch gewählt.
           </div>
         )}
       </div>
