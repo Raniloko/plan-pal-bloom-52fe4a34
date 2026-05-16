@@ -264,8 +264,10 @@ Deno.serve(async (req) => {
         billardUnitId = row?.unit_id ?? null;
       }
 
-      // Fire-and-forget confirmation email
+      // Fire-and-forget confirmation email (skip for Walk-ins)
+      const isWalkInEmail = sanitize(email) === "walkin@intern.local";
       try {
+        if (isWalkInEmail) throw new Error("__skip_walkin_email__");
         const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
         const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
@@ -289,7 +291,9 @@ Deno.serve(async (req) => {
           }),
         });
       } catch (emailErr) {
-        console.error("Email sending failed (non-blocking):", emailErr);
+        if ((emailErr as Error)?.message !== "__skip_walkin_email__") {
+          console.error("Email sending failed (non-blocking):", emailErr);
+        }
       }
 
       return new Response(
@@ -433,6 +437,7 @@ Deno.serve(async (req) => {
 
     // Send confirmation email (fire-and-forget)
     try {
+      if (sanitize(email) === "walkin@intern.local") throw new Error("__skip_walkin_email__");
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-email`, {
@@ -456,7 +461,9 @@ Deno.serve(async (req) => {
         }),
       });
     } catch (emailErr) {
-      console.error("Email sending failed (non-blocking):", emailErr);
+      if ((emailErr as Error)?.message !== "__skip_walkin_email__") {
+        console.error("Email sending failed (non-blocking):", emailErr);
+      }
     }
 
     return new Response(
