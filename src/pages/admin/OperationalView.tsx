@@ -191,48 +191,8 @@ const OperationalView = () => {
     return { free: Math.max(0, total - occupiedBillard), total };
   }, [reservations]);
 
-  // Toast notification for overdue reservations
-  const notifiedOverdueRef = useRef<Set<string>>(new Set());
-  const notifiedExceededRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    if (dateStr !== todayStr) return;
-    if (loadedDate !== dateStr) return;
-    const overdueRows = rows.filter(r => r.overdue);
-    overdueRows.forEach(r => {
-      if (!notifiedOverdueRef.current.has(r.id)) {
-        notifiedOverdueRef.current.add(r.id);
-        toast.warning(`⚠️ ${r.name} ist ${r.offset} überfällig!`, {
-          description: `Reservierung um ${r.time} · ${r.guests} Pers. – Noch nicht eingecheckt`,
-          duration: 10000,
-        });
-      }
-    });
-    notifiedOverdueRef.current.forEach(id => {
-      if (!overdueRows.find(r => r.id === id)) notifiedOverdueRef.current.delete(id);
-    });
-
-    const seatedRows = rows.filter(r => r.status === "checked_in");
-    seatedRows.forEach(r => {
-      const [h, m] = r.time.split(":").map(Number);
-      const start = new Date(dateStr);
-      start.setHours(h, m, 0, 0);
-      const elapsed = Math.floor((now.getTime() - start.getTime()) / 60000);
-      if (elapsed >= durationMin && !notifiedExceededRef.current.has(r.id)) {
-        notifiedExceededRef.current.add(r.id);
-        const overBy = elapsed - durationMin;
-        toast.error(`⏱ ${r.name} hat die Reservierungsdauer überschritten!`, {
-          description: `Seit ${overBy} Min überzogen · Tisch ${r.tableRef} · ${r.guests} Pers.`,
-          duration: 15000,
-        });
-      }
-    });
-    notifiedExceededRef.current.forEach(id => {
-      if (!seatedRows.find(r => r.id === id)) notifiedExceededRef.current.delete(id);
-    });
-  }, [rows, durationMin, dateStr, loadedDate]);
+  // Overdue/exceeded toast notifications removed by request.
+  // Only success/error toasts on explicit user actions remain.
 
   // Faster polling to compensate for Realtime removal on PII tables
   useEffect(() => {
