@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +28,23 @@ const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/backstage");
   const isReservierung = location.pathname.startsWith("/reservierung");
+
+  // Swap the PWA manifest + theme so the admin area installs as its own app
+  // ("Rondo Admin") on Android/iOS, separate from the public reservation app.
+  useEffect(() => {
+    const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const appleTitle = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+    if (isAdmin) {
+      manifestLink?.setAttribute("href", "/admin-manifest.webmanifest");
+      themeMeta?.setAttribute("content", "#0d0d0d");
+      appleTitle?.setAttribute("content", "Rondo Admin");
+    } else {
+      manifestLink?.setAttribute("href", "/manifest.webmanifest");
+      themeMeta?.setAttribute("content", "#ffda00");
+      appleTitle?.setAttribute("content", "Rondo");
+    }
+  }, [isAdmin]);
 
   // Once a user lands on the change/cancel flow (typically via email link),
   // suppress the cookie banner for the rest of the session — even if they
