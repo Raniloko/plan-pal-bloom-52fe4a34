@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
     // Two simultaneous billard requests previously could both pick the same
     // free table because the JS auto-assign read & wrote in separate steps.
     // The DB RPCs use a per-day advisory lock so concurrent picks are serialized.
-    if (zone === "billard") {
+    if (zone === "billard" && unit_id) {
       const payload = {
         customer_name: sanitize(name),
         customer_email: sanitize(email),
@@ -215,9 +215,9 @@ Deno.serve(async (req) => {
       };
 
       let billardResId: string | null = null;
-      let billardUnitId: string | null = unit_id;
+      const billardUnitId: string | null = unit_id;
 
-      if (unit_id) {
+      {
         const { data: rid, error: rpcErr } = await supabase.rpc("reserve_atomic", {
           p_unit_id: unit_id,
           p_date: date,
@@ -239,29 +239,6 @@ Deno.serve(async (req) => {
           );
         }
         billardResId = rid as string;
-      } else {
-        const { data: autoData, error: autoErr } = await supabase.rpc("reserve_billard_auto", {
-          p_date: date,
-          p_time: time,
-          p_duration_min: overlapDur,
-          p_payload: payload,
-        });
-        if (autoErr) {
-          if (autoErr.message?.includes("no_free_billard")) {
-            return new Response(
-              JSON.stringify({ error: "Zur gewählten Uhrzeit ist kein Billardtisch mehr frei. Bitte wähle eine andere Uhrzeit." }),
-              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
-          }
-          console.error("reserve_billard_auto error:", autoErr.message);
-          return new Response(
-            JSON.stringify({ error: "Fehler beim Speichern der Reservierung." }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        const row = Array.isArray(autoData) ? autoData[0] : autoData;
-        billardResId = row?.reservation_id ?? null;
-        billardUnitId = row?.unit_id ?? null;
       }
 
       // Fire-and-forget confirmation email (skip for Walk-ins)
@@ -327,54 +304,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Auto-assign a unit if none provided: smallest fitting capacity, fall back to larger.
-    if (!unit_id) {
-      const { data: zoneUnits } = await supabase
-        .from("units")
-        .select("id, name, capacity, status")
-        .eq("area", zone);
-
-      if (zoneUnits && zoneUnits.length > 0) {
-        // Get all reservations for this zone+date to detect conflicts per unit
-        const { data: dayRes } = await supabase
-          .from("reservations")
-          .select("unit_id, reservation_time")
-          .eq("reservation_date", date)
-          .eq("zone", zone)
-          .not("status", "in", '("cancelled","checked_out")');
-
-        const conflictsByUnit = new Map<string, boolean>();
-        for (const r of dayRes || []) {
-          if (!r.unit_id) continue;
-          const [rh, rm] = r.reservation_time.split(":").map(Number);
-          const rStart = rh * 60 + rm;
-          const rEnd = rStart + overlapDur;
-          if (newStart < rEnd && newEnd > rStart) {
-            conflictsByUnit.set(r.unit_id, true);
-          }
-        }
-
-        const available = zoneUnits.filter(u =>
-          u.status !== "blocked" && !conflictsByUnit.has(u.id)
-        );
-
-        // Prefer smallest table with capacity >= guests; fall back to largest available if none fits exactly.
-        const fitting = available
-          .filter(u => (u.capacity ?? 4) >= guests)
-          .sort((a, b) => (a.capacity ?? 4) - (b.capacity ?? 4));
-
-        let chosen = fitting[0];
-        if (!chosen) {
-          // No table large enough free → take the largest available as fallback (better than nothing)
-          const fallback = [...available].sort((a, b) => (b.capacity ?? 4) - (a.capacity ?? 4));
-          chosen = fallback[0];
-        }
-
-        if (chosen) {
-          unit_id = chosen.id;
-        }
-      }
-    }
+    // Auto-Zuweisung entfernt: Tische werden ausschließlich manuell
+    // im Admin-Dashboard zugewiesen. Reservierungen ohne unit_id bleiben
+    // unassigned und werden nur über die Bereichskapazität geprüft.
 
     // Zone capacity check
     const { data: existingRes, error: availabilityError } = await supabase
