@@ -15,6 +15,7 @@ export interface ResRow {
   highlighted: boolean;
   status: "confirmed" | "pending" | "checked_in" | "checked_out" | "cancelled";
   overdue: boolean;
+  zone?: string;
 }
 
 interface WaitlistEntry {
@@ -210,7 +211,13 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                         const start = new Date(); start.setHours(h, m, 0, 0);
                         const elapsed = Math.floor((Date.now() - start.getTime()) / 60000);
                         const remaining = DURATION_MIN - elapsed;
-                        if (remaining <= 0) return <span style={{ color: "#cc3300", fontWeight: 700 }}>⏱ Überzogen</span>;
+                        // Billard Mo–Do: keine Überzogen-Anzeige
+                        const dow = new Date().getDay(); // 0=So, 1=Mo .. 6=Sa
+                        const isBillardWeekday = r.zone === "billard" && dow >= 1 && dow <= 4;
+                        if (remaining <= 0) {
+                          if (isBillardWeekday) return null;
+                          return <span style={{ color: "#cc3300", fontWeight: 700 }}>⏱ Überzogen</span>;
+                        }
                         if (remaining <= 15) return <span style={{ color: "#e07820", fontWeight: 600 }}>⏱ {remaining} Min</span>;
                         const rh = Math.floor(remaining / 60);
                         const rm = remaining % 60;
