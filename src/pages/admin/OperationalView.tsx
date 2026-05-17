@@ -176,6 +176,7 @@ const OperationalView = () => {
           highlighted: isCheckedIn || isOverdue,
           status: r.status as ResRow["status"],
           overdue: isOverdue,
+          zone: r.zone,
         };
       });
   }, [reservations, units, dateStr, loadedDate]);
