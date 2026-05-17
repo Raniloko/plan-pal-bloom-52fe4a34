@@ -601,9 +601,15 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 )}
 
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={handleMail} disabled={saving} style={{ ...btnBase, color: "#777" }}>
-                    <Mail size={10} /> Mail
-                  </button>
+                  {!checkedIn ? (
+                    <button onClick={handleCheckIn} disabled={saving} style={{ ...btnBase, color: "#2a7a2a", borderColor: "#bfe0bf" }}>
+                      <LogIn size={10} /> Gast kommt
+                    </button>
+                  ) : (
+                    <button onClick={handleCheckOut} disabled={saving} style={{ ...btnBase, color: "#cc2222", borderColor: "#e8c0c0", background: "#fde8e8" }}>
+                      <LogOut size={10} /> Gast geht
+                    </button>
+                  )}
                   <button onClick={handleCancel} disabled={saving} style={{ ...btnBase, color: "#cc2222", borderColor: "#e8c0c0" }}>
                     <Ban size={10} /> Stornieren
                   </button>
@@ -657,22 +663,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
               {/* Quick actions */}
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                {!checkedIn ? (
-                  <button onClick={handleCheckIn} disabled={saving} style={{
-                    ...btnBase, color: "#777",
-                  }}>
-                    <LogIn size={11} /> Einchecken
-                  </button>
-                ) : (
-                  <button onClick={handleCheckOut} disabled={saving} style={{
-                    ...btnBase,
-                    border: "1px solid #cc2222",
-                    background: "#fde8e8",
-                    color: "#cc2222",
-                  }}>
-                    <LogOut size={11} /> Gast geht
-                  </button>
-                )}
+                <button onClick={handleMail} disabled={saving} style={{ ...btnBase, color: "#777" }}>
+                  <Mail size={11} /> E-Mail senden
+                </button>
                 {data.unitId && (
                   <button onClick={handleBlock} disabled={saving} style={{
                     ...btnBase,
