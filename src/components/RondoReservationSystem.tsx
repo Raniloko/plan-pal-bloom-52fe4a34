@@ -17,6 +17,8 @@ interface ReservationData {
   email: string;
   phone: string;
   message: string;
+  billardUnitId: string;
+  billardUnitName: string;
 }
 
 const ZONES = [
@@ -96,6 +98,8 @@ const RondoReservationSystem = () => {
     email: "",
     phone: "",
     message: "",
+    billardUnitId: "",
+    billardUnitName: "",
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -103,6 +107,10 @@ const RondoReservationSystem = () => {
 
   const [availability, setAvailability] = useState<AvailabilityMap>({});
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+
+  type BillardTable = { id: string; name: string; available: boolean; blocked: boolean };
+  const [billardTables, setBillardTables] = useState<BillardTable[]>([]);
+  const [billardLoading, setBillardLoading] = useState(false);
 
   const zoneKeys = useMemo(() => Object.keys(ZONE_CAPACITY) as ZoneKey[], []);
 
@@ -235,12 +243,49 @@ const RondoReservationSystem = () => {
     switch (step) {
       case 0: return data.date && data.time;
       case 1: return data.guests >= 1;
-      case 2: return data.zone !== "";
+      case 2:
+        if (data.zone === "") return false;
+        if (data.zone === "billard" && !data.billardUnitId) return false;
+        return true;
       case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
       case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3;
       default: return true;
     }
   };
+
+  // Billard tables: load per date+time when billard zone selected
+  useEffect(() => {
+    if (data.zone !== "billard" || !data.date || !data.time) {
+      setBillardTables([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setBillardLoading(true);
+      try {
+        const res = await supabase.functions.invoke("billard-availability", {
+          method: "GET",
+        } as any);
+        // functions.invoke doesn't support GET query string easily; use fetch instead
+      } catch { /* noop */ }
+      try {
+        const url = `${(supabase as any).functionsUrl || ""}/billard-availability?date=${encodeURIComponent(data.date)}&time=${encodeURIComponent(data.time)}`;
+        const anonKey = (supabase as any).supabaseKey || "";
+        const r = await fetch(url, { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } });
+        const json = await r.json();
+        if (!cancelled && json?.tables) {
+          setBillardTables(json.tables as BillardTable[]);
+          // Clear selection if no longer available
+          if (data.billardUnitId) {
+            const stillFree = (json.tables as BillardTable[]).find(t => t.id === data.billardUnitId && t.available);
+            if (!stillFree) setData(prev => ({ ...prev, billardUnitId: "", billardUnitName: "" }));
+          }
+        }
+      } catch { /* noop */ }
+      finally { if (!cancelled) setBillardLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [data.zone, data.date, data.time, availability]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -275,6 +320,7 @@ const RondoReservationSystem = () => {
           phone: data.phone,
           message: data.message,
           honeypot: "",
+          unit_id: data.zone === "billard" ? data.billardUnitId : undefined,
         },
       });
 
