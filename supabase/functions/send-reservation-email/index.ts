@@ -42,6 +42,7 @@ function buildEmailHtml(reservation: {
   cancel_url: string;
   modify_url: string;
   is_modification?: boolean;
+  unit_name?: string;
 }): string {
   const zoneLabel = ZONE_LABELS[reservation.zone] || reservation.zone;
   const title = reservation.is_modification ? "Reservierung geändert" : "Reservierung bestätigt";
@@ -93,6 +94,13 @@ function buildEmailHtml(reservation: {
                 <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${zoneLabel}</td>
               </tr></table>
             </td></tr>
+            ${reservation.zone === "billard" && reservation.unit_name ? `
+            <tr><td style="padding:14px 16px;border-top:1px solid #eee;">
+              <table width="100%"><tr>
+                <td style="color:#888;font-size:13px;">Billard-Tisch</td>
+                <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${reservation.unit_name}</td>
+              </tr></table>
+            </td></tr>` : ""}
           </table>
         </td></tr>
 
@@ -227,7 +235,7 @@ Deno.serve(async (req) => {
     );
     const { data: dbRes, error: dbErr } = await supabaseAdmin
       .from("reservations")
-      .select("id, customer_name, customer_email, reservation_date, reservation_time, guest_count, zone, occasion, message, cancellation_token")
+      .select("id, customer_name, customer_email, reservation_date, reservation_time, guest_count, zone, occasion, message, cancellation_token, unit_id")
       .eq("id", reservation.id)
       .single();
     if (dbErr || !dbRes) {
@@ -245,6 +253,17 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch unit name for billard reservations
+    let unitName = "";
+    if (dbRes.zone === "billard" && (dbRes as any).unit_id) {
+      const { data: unitRow } = await supabaseAdmin
+        .from("units")
+        .select("name")
+        .eq("id", (dbRes as any).unit_id)
+        .maybeSingle();
+      if (unitRow?.name) unitName = escapeHtml(unitRow.name);
+    }
+
     // Escape every user-controlled field that gets interpolated into HTML.
     const safeReservation = {
       id: dbRes.id,
@@ -256,6 +275,7 @@ Deno.serve(async (req) => {
       zone: dbRes.zone,
       occasion: dbRes.occasion,
       message: dbRes.message ? escapeHtml(dbRes.message) : "",
+      unit_name: unitName,
     };
     const safeCancelReason = escapeHtml(cancel_reason || "");
 
@@ -278,6 +298,7 @@ Deno.serve(async (req) => {
         cancel_url: cancelUrl,
         modify_url: modifyUrl,
         is_modification: !!is_modification,
+        unit_name: unitName,
       });
       subjectPrefix = is_modification ? "Reservierung geändert" : "Reservierung bestätigt";
     }
