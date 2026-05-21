@@ -17,8 +17,6 @@ interface ReservationData {
   email: string;
   phone: string;
   message: string;
-  billardUnitId: string;
-  billardUnitName: string;
 }
 
 const ZONES = [
@@ -98,8 +96,6 @@ const RondoReservationSystem = () => {
     email: "",
     phone: "",
     message: "",
-    billardUnitId: "",
-    billardUnitName: "",
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -107,10 +103,6 @@ const RondoReservationSystem = () => {
 
   const [availability, setAvailability] = useState<AvailabilityMap>({});
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
-
-  type BillardTable = { id: string; name: string; available: boolean; blocked: boolean };
-  const [billardTables, setBillardTables] = useState<BillardTable[]>([]);
-  const [billardLoading, setBillardLoading] = useState(false);
 
   const zoneKeys = useMemo(() => Object.keys(ZONE_CAPACITY) as ZoneKey[], []);
 
@@ -243,44 +235,12 @@ const RondoReservationSystem = () => {
     switch (step) {
       case 0: return data.date && data.time;
       case 1: return data.guests >= 1;
-      case 2:
-        if (data.zone === "") return false;
-        if (data.zone === "billard" && !data.billardUnitId) return false;
-        return true;
+      case 2: return data.zone !== "";
       case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
       case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3;
       default: return true;
     }
   };
-
-  // Billard tables: load per date+time when billard zone selected
-  useEffect(() => {
-    if (data.zone !== "billard" || !data.date || !data.time) {
-      setBillardTables([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      setBillardLoading(true);
-      try {
-        const base = import.meta.env.VITE_SUPABASE_URL as string;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-        const url = `${base}/functions/v1/billard-availability?date=${encodeURIComponent(data.date)}&time=${encodeURIComponent(data.time)}`;
-        const r = await fetch(url, { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } });
-        const json = await r.json();
-        if (!cancelled && json?.tables) {
-          const tables = json.tables as BillardTable[];
-          setBillardTables(tables);
-          if (data.billardUnitId) {
-            const stillFree = tables.find(t => t.id === data.billardUnitId && t.available);
-            if (!stillFree) setData(prev => ({ ...prev, billardUnitId: "", billardUnitName: "" }));
-          }
-        }
-      } catch { /* noop */ }
-      finally { if (!cancelled) setBillardLoading(false); }
-    })();
-    return () => { cancelled = true; };
-  }, [data.zone, data.date, data.time, availability]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -315,7 +275,6 @@ const RondoReservationSystem = () => {
           phone: data.phone,
           message: data.message,
           honeypot: "",
-          unit_id: data.zone === "billard" ? data.billardUnitId : undefined,
         },
       });
 
@@ -384,9 +343,6 @@ const RondoReservationSystem = () => {
         </p>
         <div className="bg-card border border-border rounded-lg p-6 inline-block text-left max-w-sm">
           <p className="text-sm"><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
-          {data.zone === "billard" && data.billardUnitName && (
-            <p className="text-sm"><strong>Tisch:</strong> {data.billardUnitName}</p>
-          )}
               <p className="text-sm"><strong>Anlass:</strong> {data.anlass.map(a => {
                 const found = ANLAESSE.find(x => x.value === a);
                 if (a === "sonstiges" && data.sonstigesText.trim()) return `Sonstiges: ${data.sonstigesText.trim()}`;
@@ -400,7 +356,7 @@ const RondoReservationSystem = () => {
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
         <button
-          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "", billardUnitId: "", billardUnitName: "" }); }}
+          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "" }); }}
           className="mt-6 border border-primary text-primary px-6 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
         >
           Neue Reservierung
@@ -702,9 +658,6 @@ const RondoReservationSystem = () => {
               <p><strong>Uhrzeit:</strong> {data.time} Uhr</p>
               <p><strong>Personen:</strong> {data.guests}</p>
               <p><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
-              {data.zone === "billard" && data.billardUnitName && (
-                <p><strong>Tisch:</strong> {data.billardUnitName}</p>
-              )}
               <p><strong>Anlass:</strong> {data.anlass.map(a => {
                 const found = ANLAESSE.find(x => x.value === a);
                 if (a === "sonstiges" && data.sonstigesText.trim()) return `Sonstiges: ${data.sonstigesText.trim()}`;

@@ -24,6 +24,3 @@ verify_jwt = false
 [functions.auto-cancel-overdue]
 verify_jwt = false
 
-[functions.billard-availability]
-verify_jwt = false
-
