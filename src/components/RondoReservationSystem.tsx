@@ -263,21 +263,16 @@ const RondoReservationSystem = () => {
     (async () => {
       setBillardLoading(true);
       try {
-        const res = await supabase.functions.invoke("billard-availability", {
-          method: "GET",
-        } as any);
-        // functions.invoke doesn't support GET query string easily; use fetch instead
-      } catch { /* noop */ }
-      try {
-        const url = `${(supabase as any).functionsUrl || ""}/billard-availability?date=${encodeURIComponent(data.date)}&time=${encodeURIComponent(data.time)}`;
-        const anonKey = (supabase as any).supabaseKey || "";
+        const base = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const url = `${base}/functions/v1/billard-availability?date=${encodeURIComponent(data.date)}&time=${encodeURIComponent(data.time)}`;
         const r = await fetch(url, { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } });
         const json = await r.json();
         if (!cancelled && json?.tables) {
-          setBillardTables(json.tables as BillardTable[]);
-          // Clear selection if no longer available
+          const tables = json.tables as BillardTable[];
+          setBillardTables(tables);
           if (data.billardUnitId) {
-            const stillFree = (json.tables as BillardTable[]).find(t => t.id === data.billardUnitId && t.available);
+            const stillFree = tables.find(t => t.id === data.billardUnitId && t.available);
             if (!stillFree) setData(prev => ({ ...prev, billardUnitId: "", billardUnitName: "" }));
           }
         }
