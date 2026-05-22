@@ -275,6 +275,13 @@ Deno.serve(async (req) => {
         try {
           const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
           if (RESEND_API_KEY) {
+            const escapeHtml = (s: unknown) =>
+              String(s ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
@@ -282,7 +289,7 @@ Deno.serve(async (req) => {
                 from: "Rondo <info@dev-lab24.de>",
                 to: [wEntry.guest_email],
                 subject: "Platz verfügbar – Rondo",
-                html: `<p>Hallo ${wEntry.guest_name},</p><p>Es ist ein Platz für Sie verfügbar geworden! Bitte melden Sie sich zeitnah bei uns, um Ihre Reservierung zu bestätigen.</p><p>Gewünschtes Datum: ${wEntry.desired_date}<br>Gewünschte Uhrzeit: ${wEntry.desired_time}<br>Bereich: ${wEntry.area}</p><p>Mit freundlichen Grüßen,<br>Ihr Rondo Team</p>`,
+                html: `<p>Hallo ${escapeHtml(wEntry.guest_name)},</p><p>Es ist ein Platz für Sie verfügbar geworden! Bitte melden Sie sich zeitnah bei uns, um Ihre Reservierung zu bestätigen.</p><p>Gewünschtes Datum: ${escapeHtml(wEntry.desired_date)}<br>Gewünschte Uhrzeit: ${escapeHtml(wEntry.desired_time)}<br>Bereich: ${escapeHtml(wEntry.area)}</p><p>Mit freundlichen Grüßen,<br>Ihr Rondo Team</p>`,
               }),
             });
           }
