@@ -86,6 +86,7 @@ const RondoReservationSystem = () => {
   const { getTimesForDate } = useOpeningHours();
   const [step, setStep] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const billardSectionRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
   const [data, setData] = useState<ReservationData>({
     date: "",
@@ -281,6 +282,18 @@ const RondoReservationSystem = () => {
     })();
     return () => { cancelled = true; };
   }, [data.zone, data.date, data.time, availability]);
+
+  // Smooth-scroll to billard table picker on mobile when zone is selected and tables loaded
+  useEffect(() => {
+    if (data.zone === "billard" && billardTables.length > 0 && billardSectionRef.current) {
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        setTimeout(() => {
+          billardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+  }, [data.zone, billardTables]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -585,7 +598,7 @@ const RondoReservationSystem = () => {
             </div>
 
             {data.zone === "billard" && (
-              <div className="mt-6">
+              <div ref={billardSectionRef} className="mt-6">
                 <h4 className="font-display text-lg mb-2">Billard-Tisch wählen</h4>
                 <p className="text-sm text-muted-foreground mb-3">
                   Wähle deinen bevorzugten Tisch. Belegte oder gesperrte Tische sind ausgegraut.
