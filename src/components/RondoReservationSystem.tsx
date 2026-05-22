@@ -598,7 +598,7 @@ const RondoReservationSystem = () => {
             </div>
 
             {data.zone === "billard" && (
-              <div className="mt-6">
+              <div ref={billardSectionRef} className="mt-6">
                 <h4 className="font-display text-lg mb-2">Billard-Tisch wählen</h4>
                 <p className="text-sm text-muted-foreground mb-3">
                   Wähle deinen bevorzugten Tisch. Belegte oder gesperrte Tische sind ausgegraut.
