@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
     if (unit_id) {
       const { data: unitConflicts } = await supabase
         .from("reservations")
-        .select("id, customer_name, reservation_time")
+        .select("id, reservation_time")
         .eq("unit_id", unit_id)
         .eq("reservation_date", date)
         .not("status", "in", '("cancelled","checked_out")');
@@ -296,9 +296,8 @@ Deno.serve(async (req) => {
       });
 
       if (overlapping.length > 0) {
-        const c = overlapping[0];
         return new Response(
-          JSON.stringify({ error: `Dieser Tisch ist bereits um ${c.reservation_time.slice(0, 5)} an ${c.customer_name} vergeben. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit.` }),
+          JSON.stringify({ error: "Dieser Tisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
