@@ -86,6 +86,7 @@ const RondoReservationSystem = () => {
   const { getTimesForDate } = useOpeningHours();
   const [step, setStep] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const billardSectionRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
   const [data, setData] = useState<ReservationData>({
     date: "",
