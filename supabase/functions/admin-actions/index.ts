@@ -13,6 +13,22 @@ async function logActivity(sb: any, action: string, entityType: string, entityId
   } catch (e) { console.error("Activity log (non-blocking):", e); }
 }
 
+// Per-IP rate limit for login-attempt logging to prevent an unauthenticated
+// attacker from spamming fake failures to lock out admin accounts.
+const loginLogRate = new Map<string, { count: number; resetAt: number }>();
+const LOGIN_LOG_LIMIT = 10;
+const LOGIN_LOG_WINDOW_MS = 10 * 60 * 1000;
+function loginLogRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const e = loginLogRate.get(ip);
+  if (!e || now > e.resetAt) {
+    loginLogRate.set(ip, { count: 1, resetAt: now + LOGIN_LOG_WINDOW_MS });
+    return false;
+  }
+  e.count++;
+  return e.count > LOGIN_LOG_LIMIT;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -583,12 +599,28 @@ Deno.serve(async (req) => {
       }
 
       case "check_login_attempts": {
-        const { email } = body;
+        const { email, log_attempt, success } = body;
         if (!email) return error("email required", 400);
 
-        // Read-only: this action MUST NOT write any login_attempts records,
-        // otherwise an unauthenticated attacker could lock out admins on demand.
-        // Logging is performed server-side from the actual auth flow only.
+        // Optionally log the outcome of an actual login attempt. Rate-limited
+        // per IP so an attacker cannot easily spam fake failures to lock out
+        // an admin account.
+        if (log_attempt === true) {
+          const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
+            || req.headers.get("cf-connecting-ip")
+            || "unknown";
+          if (!loginLogRateLimited(ip)) {
+            try {
+              await supabase.from("login_attempts").insert({ email, success: !!success });
+              if (success) {
+                const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoff);
+              }
+            } catch (e) {
+              console.error("login_attempts insert failed (non-blocking):", e);
+            }
+          }
+        }
 
         const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const { data: attempts } = await supabase
