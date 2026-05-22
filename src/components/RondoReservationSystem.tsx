@@ -283,6 +283,18 @@ const RondoReservationSystem = () => {
     return () => { cancelled = true; };
   }, [data.zone, data.date, data.time, availability]);
 
+  // Smooth-scroll to billard table picker on mobile when zone is selected and tables loaded
+  useEffect(() => {
+    if (data.zone === "billard" && billardTables.length > 0 && billardSectionRef.current) {
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        setTimeout(() => {
+          billardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+  }, [data.zone, billardTables]);
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError("");
