@@ -584,6 +584,45 @@ const RondoReservationSystem = () => {
               })}
             </div>
 
+            {data.zone === "billard" && (
+              <div className="mt-6">
+                <h4 className="font-display text-lg mb-2">Billard-Tisch wählen</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Wähle deinen bevorzugten Tisch. Belegte oder gesperrte Tische sind ausgegraut.
+                </p>
+                {billardLoading ? (
+                  <p className="text-sm text-muted-foreground">Verfügbarkeit wird geladen…</p>
+                ) : billardTables.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Keine Tische gefunden.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {billardTables.map((t) => {
+                      const disabled = !t.available;
+                      const selected = data.billardUnitId === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          disabled={disabled}
+                          onClick={() => setData({ ...data, billardUnitId: t.id, billardUnitName: t.name })}
+                          className={`px-3 py-2 text-sm rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                            selected
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : disabled
+                                ? "border-border bg-muted text-muted-foreground"
+                                : "border-border bg-muted hover:border-primary/50"
+                          }`}
+                        >
+                          {t.name}
+                          {t.blocked && <span className="block text-[10px] text-muted-foreground">Gesperrt</span>}
+                          {!t.blocked && !t.available && <span className="block text-[10px] text-muted-foreground">Belegt</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
 
