@@ -731,6 +731,17 @@ const RondoReservationSystem = () => {
                   className="w-full bg-muted border border-border rounded-md px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
+              <label className="flex items-start gap-3 cursor-pointer pt-2">
+                <input
+                  type="checkbox"
+                  checked={data.acceptedTerms}
+                  onChange={(e) => setData({ ...data, acceptedTerms: e.target.checked })}
+                  className="mt-1 h-4 w-4 accent-primary cursor-pointer flex-shrink-0"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Ich habe die <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">AGB</a> und die <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Datenschutzerklärung</a> gelesen und akzeptiere diese. *
+                </span>
+              </label>
             </div>
           </div>
         )}
