@@ -19,6 +19,7 @@ interface ReservationData {
   message: string;
   billardUnitId: string;
   billardUnitName: string;
+  acceptedTerms: boolean;
 }
 
 const ZONES = [
