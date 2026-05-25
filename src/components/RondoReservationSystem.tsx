@@ -415,7 +415,7 @@ const RondoReservationSystem = () => {
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
         <button
-          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "", billardUnitId: "", billardUnitName: "" }); }}
+          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "", billardUnitId: "", billardUnitName: "", acceptedTerms: false }); }}
           className="mt-6 border border-primary text-primary px-6 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
         >
           Neue Reservierung
