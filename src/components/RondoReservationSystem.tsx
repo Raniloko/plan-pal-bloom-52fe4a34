@@ -102,6 +102,7 @@ const RondoReservationSystem = () => {
     message: "",
     billardUnitId: "",
     billardUnitName: "",
+    acceptedTerms: false,
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
