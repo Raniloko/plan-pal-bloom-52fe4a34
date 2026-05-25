@@ -10,6 +10,7 @@ import CookieBanner from "@/components/CookieBanner";
 import Reservierung from "./pages/Reservierung";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
+import AGB from "./pages/AGB";
 import NotFound from "./pages/NotFound";
 import ReservierungAendern from "./pages/ReservierungAendern";
 import ReservierungStornieren from "./pages/ReservierungStornieren";
@@ -69,6 +70,7 @@ const AppContent = () => {
         <Route path="/reservierung" element={<Reservierung />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
+        <Route path="/agb" element={<AGB />} />
         <Route path="/reservierung/aendern" element={<ReservierungAendern />} />
         <Route path="/reservierung/stornieren" element={<ReservierungStornieren />} />
         <Route path="/backstage/login" element={<AdminLogin />} />

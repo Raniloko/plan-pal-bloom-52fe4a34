@@ -19,6 +19,7 @@ interface ReservationData {
   message: string;
   billardUnitId: string;
   billardUnitName: string;
+  acceptedTerms: boolean;
 }
 
 const ZONES = [
@@ -101,6 +102,7 @@ const RondoReservationSystem = () => {
     message: "",
     billardUnitId: "",
     billardUnitName: "",
+    acceptedTerms: false,
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -249,7 +251,7 @@ const RondoReservationSystem = () => {
         if (data.zone === "billard" && !data.billardUnitId) return false;
         return true;
       case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
-      case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3;
+      case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3 && data.acceptedTerms;
       default: return true;
     }
   };
@@ -413,7 +415,7 @@ const RondoReservationSystem = () => {
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
         <button
-          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "", billardUnitId: "", billardUnitName: "" }); }}
+          onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "", billardUnitId: "", billardUnitName: "", acceptedTerms: false }); }}
           className="mt-6 border border-primary text-primary px-6 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
         >
           Neue Reservierung
@@ -729,6 +731,17 @@ const RondoReservationSystem = () => {
                   className="w-full bg-muted border border-border rounded-md px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
+              <label className="flex items-start gap-3 cursor-pointer pt-2">
+                <input
+                  type="checkbox"
+                  checked={data.acceptedTerms}
+                  onChange={(e) => setData({ ...data, acceptedTerms: e.target.checked })}
+                  className="mt-1 h-4 w-4 accent-primary cursor-pointer flex-shrink-0"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Ich habe die <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">AGB</a> und die <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Datenschutzerklärung</a> gelesen und akzeptiere diese. *
+                </span>
+              </label>
             </div>
           </div>
         )}
