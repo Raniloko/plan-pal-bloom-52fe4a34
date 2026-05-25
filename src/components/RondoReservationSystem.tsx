@@ -251,7 +251,7 @@ const RondoReservationSystem = () => {
         if (data.zone === "billard" && !data.billardUnitId) return false;
         return true;
       case 3: return data.anlass.length > 0 && (!data.anlass.includes("sonstiges") || data.sonstigesText.trim().length > 0);
-      case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3;
+      case 4: return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()) && data.phone.trim().length >= 3 && data.acceptedTerms;
       default: return true;
     }
   };
