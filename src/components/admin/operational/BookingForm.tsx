@@ -115,6 +115,11 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
     setIsWalkIn(initialWalkIn);
   }, [initialWalkIn]);
 
+  // Sync date when initialDate prop changes (e.g. user changes calendar then opens new booking)
+  useEffect(() => {
+    if (initialDate) setDate(initialDate);
+  }, [initialDate]);
+
   // Derive zone from first selected unit
   const zone = useMemo(() => {
     if (selectedUnitIds.length > 0) {
