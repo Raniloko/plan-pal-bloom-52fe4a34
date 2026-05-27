@@ -102,7 +102,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
   const [pax, setPax] = useState(initialPax ?? 2);
   const [date, setDate] = useState(initialDate || todayStr);
   const [startTime, setStartTime] = useState(initialTime || smartDefault);
-  const [selectedUnitId, setSelectedUnitId] = useState(initialUnitId || "");
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(initialUnitId ? [initialUnitId] : []);
   const [selectedZone, setSelectedZone] = useState<string>(initialZone || "hauptbereich");
   const [occasion, setOccasion] = useState<string[]>(["essen"]);
   const [sonstigesText, setSonstigesText] = useState("");
@@ -115,14 +115,14 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
     setIsWalkIn(initialWalkIn);
   }, [initialWalkIn]);
 
-  // Derive zone from selected unit
+  // Derive zone from first selected unit
   const zone = useMemo(() => {
-    if (selectedUnitId) {
-      const unit = allUnits.find(u => u.id === selectedUnitId);
+    if (selectedUnitIds.length > 0) {
+      const unit = allUnits.find(u => u.id === selectedUnitIds[0]);
       if (unit) return ZONE_FOR_AREA[unit.area] || unit.area;
     }
     return selectedZone;
-  }, [selectedUnitId, allUnits, selectedZone]);
+  }, [selectedUnitIds, allUnits, selectedZone]);
 
   const isBillard = zone === "billard";
 
@@ -203,13 +203,13 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
       console.warn(`[BookingForm] time normalized: "${startTime}" -> "${cleanTime}"`);
     }
 
-    // Auto-pick a unit if none selected
-    let unitToAssign = selectedUnitId;
-    if (!unitToAssign) {
+    // Build the list of units to book. If none selected, try auto-pick (billard) or fail.
+    let unitsToBook: string[] = [...selectedUnitIds];
+    if (unitsToBook.length === 0) {
       if (isBillard) {
         const auto = pickAutoUnit();
         if (auto) {
-          unitToAssign = auto;
+          unitsToBook = [auto];
           const u = allUnits.find(x => x.id === auto);
           if (u) toast.message(`Billardtisch automatisch gewählt: ${u.name}`);
         }
@@ -221,42 +221,61 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
 
     setSaving(true);
     try {
-      const res = await supabase.functions.invoke("create-reservation", {
-        body: {
-          name: guest.trim() || (isWalkIn ? "Walk-in Gast" : ""),
-          email: email.trim() || "walkin@intern.local",
-          phone: phone.trim() || "000",
-          guests: pax,
-          date,
-          time: cleanTime,
-          zone,
-          unit_id: unitToAssign || undefined,
-          anlass: occasion.includes("sonstiges") && sonstigesText.trim()
-            ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim().replace(/,/g, ";")}`].join(", ")
-            : occasion.join(", "),
-          message: (isWalkIn ? "Walk-in Gast. " : "") + (isBillard ? "Billard – Abrechnung per Live-Timer (0,23 €/Min). " : "") + (note.trim() || ""),
-          honeypot: "",
-        },
-      });
-      if (res.error) throw res.error;
-      const body = res.data;
-      if (body?.error) {
-        toast.error(body.error);
+      const anlass = occasion.includes("sonstiges") && sonstigesText.trim()
+        ? [...occasion.filter(o => o !== "sonstiges"), `sonstiges: ${sonstigesText.trim().replace(/,/g, ";")}`].join(", ")
+        : occasion.join(", ");
+      const message = (isWalkIn ? "Walk-in Gast. " : "") + (isBillard ? "Billard – Abrechnung per Live-Timer (0,23 €/Min). " : "") + (note.trim() || "");
+
+      const failures: string[] = [];
+      let createdCount = 0;
+
+      for (const unitId of unitsToBook) {
+        const res = await supabase.functions.invoke("create-reservation", {
+          body: {
+            name: guest.trim() || (isWalkIn ? "Walk-in Gast" : ""),
+            email: email.trim() || "walkin@intern.local",
+            phone: phone.trim() || "000",
+            guests: pax,
+            date,
+            time: cleanTime,
+            zone,
+            unit_id: unitId || undefined,
+            anlass,
+            message,
+            honeypot: "",
+          },
+        });
+        const unitName = allUnits.find(u => u.id === unitId)?.name || "Tisch";
+        if (res.error || res.data?.error) {
+          failures.push(`${unitName}: ${res.data?.error || res.error?.message || "Fehler"}`);
+          continue;
+        }
+        const body = res.data;
+        if (unitId && body?.reservation_id) {
+          try {
+            await supabase.functions.invoke("admin-actions", {
+              body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: unitId },
+            });
+          } catch { /* best-effort */ }
+        }
+        createdCount++;
+      }
+
+      if (createdCount === 0) {
+        toast.error(failures[0] || "Fehler beim Erstellen");
         setSaving(false);
         return;
       }
-
-      // Auto-assign unit if selected
-      if (unitToAssign && body?.reservation_id) {
-        try {
-          await supabase.functions.invoke("admin-actions", {
-            body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: unitToAssign },
-          });
-        } catch { /* silent - unit assignment is best-effort */ }
+      if (failures.length > 0) {
+        toast.warning(`${createdCount} erstellt, ${failures.length} fehlgeschlagen: ${failures.join("; ")}`);
+      } else {
+        toast.success(
+          createdCount === 1
+            ? (isWalkIn ? "Walk-in erstellt" : "Reservierung erstellt")
+            : `${createdCount} Reservierungen erstellt`,
+        );
       }
-
       setSuccess(true);
-      toast.success(isWalkIn ? "Walk-in erstellt" : "Reservierung erstellt");
       setTimeout(() => onSuccess(), 1200);
     } catch (err: any) {
       toast.error(err?.message || "Fehler beim Erstellen");
@@ -351,10 +370,10 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
       <div>
         <label style={labelStyle}>Bereich *</label>
         <select
-          value={selectedUnitId ? zone : selectedZone}
+          value={selectedUnitIds.length > 0 ? zone : selectedZone}
           onChange={e => {
             setSelectedZone(e.target.value);
-            setSelectedUnitId(""); // reset table when zone changes
+            setSelectedUnitIds([]); // reset tables when zone changes
           }}
           style={inputStyle}
         >
@@ -364,31 +383,63 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
         </select>
       </div>
 
-      {/* Table (Unit) selector */}
+      {/* Table (Unit) multi-selector */}
       <div>
-        <label style={labelStyle}>Tisch zuweisen</label>
-        <select
-          value={selectedUnitId}
-          onChange={e => setSelectedUnitId(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">{isBillard ? "— Automatisch passenden Billardtisch wählen —" : "— Tisch wählen —"}</option>
-          {Object.entries(groupedUnits).map(([area, areaUnits]) => (
-            <optgroup key={area} label={area.charAt(0).toUpperCase() + area.slice(1)}>
-              {areaUnits.map(u => {
-                const resStatus = unitStatusMap.get(u.id);
-                const statusIcon = resStatus === "occupied" ? "🔴" : resStatus === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
-                const cap = u.capacity ?? 4;
-                return (
-                  <option key={u.id} value={u.id}>{statusIcon} {u.name} ({cap}P.)</option>
-                );
-              })}
-            </optgroup>
-          ))}
-        </select>
-        {!selectedUnitId && isBillard && (
+        <label style={labelStyle}>
+          Tische zuweisen (Mehrfachauswahl){selectedUnitIds.length > 0 ? ` · ${selectedUnitIds.length} gewählt` : ""}
+        </label>
+        {(() => {
+          // Show only tables of the active zone area(s)
+          const areaMatch = (a: string) => {
+            if (zone === "hauptbereich") return a === "restaurant" || a === "hauptbereich";
+            return a === zone;
+          };
+          const zoneUnits = (groupedUnits ? Object.values(groupedUnits).flat() : []).filter(u => areaMatch(u.area));
+          if (zoneUnits.length === 0) {
+            return <div style={{ fontSize: 11, color: "#999" }}>Keine Tische in diesem Bereich.</div>;
+          }
+          return (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {zoneUnits
+                .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+                .map(u => {
+                  const selected = selectedUnitIds.includes(u.id);
+                  const resStatus = unitStatusMap.get(u.id);
+                  const dot = resStatus === "occupied" ? "🔴" : resStatus === "reserved" ? "🟡" : u.status === "blocked" ? "⛔" : "🟢";
+                  const cap = u.capacity ?? 4;
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setSelectedUnitIds(prev =>
+                        selected ? prev.filter(x => x !== u.id) : [...prev, u.id]
+                      )}
+                      title={`${u.name} (${cap}P.)`}
+                      style={{
+                        padding: "5px 9px", fontSize: 11, borderRadius: 4,
+                        border: selected ? "1.5px solid #c9a84c" : "1px solid #ddd",
+                        background: selected ? "#c9a84c22" : "#fff",
+                        color: selected ? "#111" : "#555",
+                        cursor: "pointer", fontWeight: selected ? 700 : 500,
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      <span style={{ fontSize: 9, marginRight: 3 }}>{dot}</span>
+                      {u.name} <span style={{ opacity: 0.6, fontWeight: 400 }}>({cap})</span>
+                    </button>
+                  );
+                })}
+            </div>
+          );
+        })()}
+        {selectedUnitIds.length === 0 && isBillard && (
           <div style={{ fontSize: 10, color: "#e07820", marginTop: 3 }}>
             Es wird automatisch ein freier Billardtisch gewählt.
+          </div>
+        )}
+        {selectedUnitIds.length > 1 && (
+          <div style={{ fontSize: 10, color: "#666", marginTop: 4 }}>
+            Hinweis: Es wird pro Tisch eine eigene Reservierung mit denselben Daten angelegt.
           </div>
         )}
       </div>
