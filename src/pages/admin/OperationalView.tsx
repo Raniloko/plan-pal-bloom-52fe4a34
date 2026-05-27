@@ -323,13 +323,13 @@ const OperationalView = () => {
   };
 
   const handleNewReservation = () => {
-    setPanelData({ tableLabel: "Neue Reservierung", status: "free", directBook: true });
+    setPanelData({ tableLabel: "Neue Reservierung", status: "free", directBook: true, initialDate: dateStr });
     setSelectedRowId(null);
     setPanelOpen(true);
   };
 
   const handleNewWalkIn = () => {
-    setPanelData({ tableLabel: "Walk-in Gast", status: "free", initialWalkIn: true });
+    setPanelData({ tableLabel: "Walk-in Gast", status: "free", initialWalkIn: true, initialDate: dateStr });
     setSelectedRowId(null);
     setPanelOpen(true);
   };
