@@ -46,80 +46,99 @@ function buildEmailHtml(reservation: {
 }): string {
   const zoneLabel = ZONE_LABELS[reservation.zone] || reservation.zone;
   const title = reservation.is_modification ? "Reservierung geändert" : "Reservierung bestätigt";
-  const accent = reservation.is_modification ? "#3b82f6" : "#22c55e";
+  const kicker = reservation.is_modification ? "AKTUALISIERT" : "BESTÄTIGT";
 
   return `<!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:'DM Sans',-apple-system,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:24px 12px;">
     <tr><td align="center">
-      <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e5e5;">
-        
-        <!-- Header -->
-        <tr><td style="padding:28px 32px 20px;text-align:center;border-bottom:1px solid #f0f0f0;">
-          <p style="margin:0;font-size:16px;font-weight:800;color:#1a1a1a;letter-spacing:1px;">RONDO SPORTSBAR</p>
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#111111;border-radius:4px;overflow:hidden;">
+
+        <!-- Brand bar -->
+        <tr><td style="background:#ffda00;padding:18px 32px;">
+          <table width="100%"><tr>
+            <td style="font-family:'DM Sans',Arial,sans-serif;font-size:18px;font-weight:800;color:#111111;letter-spacing:2px;">RONDO</td>
+            <td align="right" style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:#111111;letter-spacing:2px;">SPORTSBAR · HANAU</td>
+          </tr></table>
         </td></tr>
 
-        <!-- Status -->
-        <tr><td style="padding:24px 32px 16px;text-align:center;">
-          <p style="margin:0;font-size:20px;font-weight:700;color:${accent};">${reservation.is_modification ? "✏️" : "✓"} ${title}</p>
-          <p style="margin:8px 0 0;font-size:14px;color:#666;">Hallo ${reservation.customer_name}!</p>
+        <!-- Hero -->
+        <tr><td style="padding:48px 32px 24px;text-align:left;">
+          <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:#ffda00;letter-spacing:3px;">${kicker}</p>
+          <h1 style="margin:12px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:34px;line-height:1.1;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">${title}.</h1>
+          <p style="margin:18px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:15px;color:#a8a8a8;line-height:1.5;">Hallo ${reservation.customer_name}, wir freuen uns auf dich.</p>
+        </td></tr>
+
+        <!-- Yellow divider -->
+        <tr><td style="padding:32px 32px 0;">
+          <div style="height:2px;background:#ffda00;width:48px;"></div>
         </td></tr>
 
         <!-- Details -->
-        <tr><td style="padding:8px 32px 24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border-radius:8px;border:1px solid #eee;">
-            <tr><td style="padding:14px 16px;border-bottom:1px solid #eee;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Datum</td>
-                <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${formatDate(reservation.reservation_date)}</td>
-              </tr></table>
-            </td></tr>
-            <tr><td style="padding:14px 16px;border-bottom:1px solid #eee;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Uhrzeit</td>
-                <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${reservation.reservation_time} Uhr</td>
-              </tr></table>
-            </td></tr>
-            <tr><td style="padding:14px 16px;border-bottom:1px solid #eee;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Personen</td>
-                <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${reservation.guest_count}</td>
-              </tr></table>
-            </td></tr>
-            <tr><td style="padding:14px 16px;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Bereich</td>
-                <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${zoneLabel}</td>
-              </tr></table>
-            </td></tr>
+        <tr><td style="padding:24px 32px 8px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Datum</td>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-align:right;">${formatDate(reservation.reservation_date)}</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Uhrzeit</td>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-align:right;">${reservation.reservation_time} Uhr</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Personen</td>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-align:right;">${reservation.guest_count}</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 0;${reservation.zone === "billard" && reservation.unit_name ? "border-bottom:1px solid #222;" : ""}font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Bereich</td>
+              <td style="padding:14px 0;${reservation.zone === "billard" && reservation.unit_name ? "border-bottom:1px solid #222;" : ""}font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-align:right;">${zoneLabel}</td>
+            </tr>
             ${reservation.zone === "billard" && reservation.unit_name ? `
-            <tr><td style="padding:14px 16px;border-top:1px solid #eee;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Billard-Tisch</td>
-                <td style="color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;">${reservation.unit_name}</td>
-              </tr></table>
-            </td></tr>` : ""}
+            <tr>
+              <td style="padding:14px 0;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Billard-Tisch</td>
+              <td style="padding:14px 0;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#ffda00;text-align:right;">${reservation.unit_name}</td>
+            </tr>` : ""}
           </table>
         </td></tr>
 
         ${reservation.message ? `
-        <tr><td style="padding:0 32px 20px;">
-          <p style="margin:0;color:#888;font-size:12px;margin-bottom:4px;">Deine Nachricht:</p>
-          <p style="margin:0;color:#555;font-size:13px;font-style:italic;">"${reservation.message}"</p>
+        <tr><td style="padding:16px 32px 8px;">
+          <div style="border-left:2px solid #ffda00;padding:8px 0 8px 16px;">
+            <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;">Deine Nachricht</p>
+            <p style="margin:6px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:14px;color:#d4d4d4;line-height:1.5;">${reservation.message}</p>
+          </div>
         </td></tr>` : ""}
 
         <!-- Actions -->
-        <tr><td style="padding:0 32px 28px;text-align:center;">
-          <p style="color:#999;font-size:12px;margin:0 0 12px;">Reservierung verwalten:</p>
-          <a href="${reservation.modify_url}" style="display:inline-block;background:#1a1a1a;color:#fff;text-decoration:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;margin-right:8px;">Ändern</a>
-          <a href="${reservation.cancel_url}" style="display:inline-block;background:#fff;color:#dc2626;text-decoration:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid #fca5a5;">Stornieren</a>
+        <tr><td style="padding:32px 32px 8px;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="50%" style="padding-right:6px;">
+              <a href="${reservation.modify_url}" style="display:block;background:#ffda00;color:#111111;text-decoration:none;padding:16px 0;text-align:center;font-family:'DM Sans',Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-radius:2px;">Ändern</a>
+            </td>
+            <td width="50%" style="padding-left:6px;">
+              <a href="${reservation.cancel_url}" style="display:block;background:transparent;color:#ffffff;text-decoration:none;padding:14px 0;text-align:center;font-family:'DM Sans',Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:2px solid #2a2a2a;border-radius:2px;">Stornieren</a>
+            </td>
+          </tr></table>
+        </td></tr>
+
+        <!-- Address block -->
+        <tr><td style="padding:32px 32px 16px;">
+          <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#666;letter-spacing:2px;text-transform:uppercase;">Wir sehen uns hier</p>
+          <p style="margin:8px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:14px;color:#d4d4d4;line-height:1.6;">
+            Rondo Sportsbar<br>
+            Hanau
+          </p>
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="padding:16px 32px;border-top:1px solid #f0f0f0;text-align:center;">
-          <p style="margin:0;color:#bbb;font-size:11px;">Rondo Sportsbar · ID: ${reservation.id.slice(0, 8).toUpperCase()}</p>
+        <tr><td style="padding:24px 32px;border-top:1px solid #1f1f1f;text-align:center;">
+          <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#555;letter-spacing:1px;">RONDO SPORTSBAR · ID ${reservation.id.slice(0, 8).toUpperCase()}</p>
         </td></tr>
 
       </table>
@@ -141,49 +160,62 @@ function buildCancellationEmailHtml(reservation: {
 
   return `<!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:'DM Sans',-apple-system,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:24px 12px;">
     <tr><td align="center">
-      <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e5e5;">
-        <tr><td style="padding:28px 32px 20px;text-align:center;border-bottom:1px solid #f0f0f0;">
-          <p style="margin:0;font-size:16px;font-weight:800;color:#1a1a1a;letter-spacing:1px;">RONDO SPORTSBAR</p>
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#111111;border-radius:4px;overflow:hidden;">
+
+        <tr><td style="background:#ffda00;padding:18px 32px;">
+          <table width="100%"><tr>
+            <td style="font-family:'DM Sans',Arial,sans-serif;font-size:18px;font-weight:800;color:#111111;letter-spacing:2px;">RONDO</td>
+            <td align="right" style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:#111111;letter-spacing:2px;">SPORTSBAR · HANAU</td>
+          </tr></table>
         </td></tr>
-        <tr><td style="padding:24px 32px 16px;text-align:center;">
-          <p style="margin:0;font-size:20px;font-weight:700;color:#dc2626;">Reservierung storniert</p>
-          <p style="margin:8px 0 0;font-size:14px;color:#666;">Hallo ${reservation.customer_name}, deine Reservierung wurde storniert.</p>
+
+        <tr><td style="padding:48px 32px 24px;">
+          <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:700;color:#888;letter-spacing:3px;">STORNIERT</p>
+          <h1 style="margin:12px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:34px;line-height:1.1;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Reservierung storniert.</h1>
+          <p style="margin:18px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:15px;color:#a8a8a8;line-height:1.5;">Hallo ${reservation.customer_name}, deine Reservierung wurde erfolgreich storniert. Schade — wir hoffen, dich bald wiederzusehen.</p>
         </td></tr>
-        <tr><td style="padding:8px 32px 24px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border-radius:8px;border:1px solid #eee;">
-            <tr><td style="padding:14px 16px;border-bottom:1px solid #eee;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Datum</td>
-                <td style="color:#999;font-size:14px;text-align:right;text-decoration:line-through;">${formatDate(reservation.reservation_date)}</td>
-              </tr></table>
-            </td></tr>
-            <tr><td style="padding:14px 16px;border-bottom:1px solid #eee;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Uhrzeit</td>
-                <td style="color:#999;font-size:14px;text-align:right;text-decoration:line-through;">${reservation.reservation_time} Uhr</td>
-              </tr></table>
-            </td></tr>
-            <tr><td style="padding:14px 16px;">
-              <table width="100%"><tr>
-                <td style="color:#888;font-size:13px;">Bereich</td>
-                <td style="color:#999;font-size:14px;text-align:right;text-decoration:line-through;">${zoneLabel}</td>
-              </tr></table>
-            </td></tr>
+
+        <tr><td style="padding:24px 32px 8px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Datum</td>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:500;color:#666;text-align:right;text-decoration:line-through;">${formatDate(reservation.reservation_date)}</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Uhrzeit</td>
+              <td style="padding:14px 0;border-bottom:1px solid #222;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:500;color:#666;text-align:right;text-decoration:line-through;">${reservation.reservation_time} Uhr</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 0;font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#888;letter-spacing:1px;text-transform:uppercase;">Bereich</td>
+              <td style="padding:14px 0;font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:500;color:#666;text-align:right;text-decoration:line-through;">${zoneLabel}</td>
+            </tr>
           </table>
         </td></tr>
+
         ${cancelReason ? `
-        <tr><td style="padding:0 32px 20px;">
-          <p style="margin:0;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#991b1b;font-size:13px;">
-            <strong>Grund:</strong> ${cancelReason}
-          </p>
+        <tr><td style="padding:16px 32px 8px;">
+          <div style="border-left:2px solid #ffda00;padding:8px 0 8px 16px;">
+            <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;">Grund</p>
+            <p style="margin:6px 0 0;font-family:'DM Sans',Arial,sans-serif;font-size:14px;color:#d4d4d4;line-height:1.5;">${cancelReason}</p>
+          </div>
         </td></tr>` : ""}
-        <tr><td style="padding:16px 32px;border-top:1px solid #f0f0f0;text-align:center;">
-          <p style="margin:0;color:#bbb;font-size:11px;">Rondo Sportsbar · ID: ${reservation.id.slice(0, 8).toUpperCase()}</p>
+
+        <tr><td style="padding:32px 32px 16px;">
+          <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:14px;color:#d4d4d4;line-height:1.6;">Du möchtest neu reservieren? Wir sind jederzeit für dich da.</p>
         </td></tr>
+
+        <tr><td style="padding:24px 32px;border-top:1px solid #1f1f1f;text-align:center;">
+          <p style="margin:0;font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#555;letter-spacing:1px;">RONDO SPORTSBAR · ID ${reservation.id.slice(0, 8).toUpperCase()}</p>
+        </td></tr>
+
       </table>
     </td></tr>
   </table>
