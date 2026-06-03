@@ -303,9 +303,52 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Auto-Zuweisung entfernt: Tische werden ausschließlich manuell
-    // im Admin-Dashboard zugewiesen. Reservierungen ohne unit_id bleiben
-    // unassigned und werden nur über die Bereichskapazität geprüft.
+    // Auto-Zuweisung eines konkreten Tisches, wenn der Kunde keinen
+    // bestimmten Tisch ausgewählt hat. Verhindert "leere" Reservierungen
+    // ohne Tischnummer (vorher: nur Bereichsname sichtbar -> Chaos).
+    // Walk-Ins / Admin-Buchungen dürfen weiterhin ohne unit_id bleiben,
+    // damit das Personal Tische selbst zuweisen kann.
+    if (!unit_id && !isAdminBooking) {
+      const { data: zoneUnits } = await supabase
+        .from("units")
+        .select("id, name, status, position_index, capacity")
+        .eq("area", zone);
+
+      const candidates = (zoneUnits || [])
+        .filter((u) => u.status !== "blocked")
+        .sort((a: any, b: any) => {
+          // Bevorzuge Tische mit ausreichender Kapazität
+          const aFits = (a.capacity ?? 99) >= guests ? 0 : 1;
+          const bFits = (b.capacity ?? 99) >= guests ? 0 : 1;
+          if (aFits !== bFits) return aFits - bFits;
+          const ap = a.position_index ?? 999;
+          const bp = b.position_index ?? 999;
+          if (ap !== bp) return ap - bp;
+          return String(a.name).localeCompare(String(b.name));
+        });
+
+      if (candidates.length > 0) {
+        const { data: unitRes } = await supabase
+          .from("reservations")
+          .select("unit_id, reservation_time")
+          .eq("reservation_date", date)
+          .eq("zone", zone)
+          .not("unit_id", "is", null)
+          .not("status", "in", '("cancelled","checked_out")');
+
+        const busy = new Set<string>();
+        for (const r of unitRes || []) {
+          if (!r.unit_id) continue;
+          const [rh, rm] = (r.reservation_time as string).split(":").map(Number);
+          const rStart = rh * 60 + rm;
+          const rEnd = rStart + overlapDur;
+          if (newStart < rEnd && newEnd > rStart) busy.add(r.unit_id as string);
+        }
+
+        const picked = candidates.find((u) => !busy.has(u.id));
+        if (picked) unit_id = picked.id;
+      }
+    }
 
     // Zone capacity check
     const { data: existingRes, error: availabilityError } = await supabase
