@@ -308,7 +308,10 @@ const OperationalView = () => {
     setPanelData({
       tableLabel: row.tableRef,
       guest: row.name, startTime: row.time, pax: row.guests,
-      status: row.highlighted ? "present" : "reserved",
+      // "present"/ANWESEND nur, wenn der Gast wirklich eingecheckt ist.
+      // Überzogene (Achtung-)Reservierungen waren faelschlich als ANWESEND
+      // markiert und zeigten den "Gast geht"-Button.
+      status: reservation?.status === "checked_in" ? "present" : "reserved",
       reservationId: row.id,
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
