@@ -316,11 +316,13 @@ Deno.serve(async (req) => {
 
       const candidates = (zoneUnits || [])
         .filter((u) => u.status !== "blocked")
+        // Pflicht: ausreichende Kapazität für die Personenanzahl
+        .filter((u) => (u.capacity ?? 99) >= guests)
         .sort((a: any, b: any) => {
-          // Bevorzuge Tische mit ausreichender Kapazität
-          const aFits = (a.capacity ?? 99) >= guests ? 0 : 1;
-          const bFits = (b.capacity ?? 99) >= guests ? 0 : 1;
-          if (aFits !== bFits) return aFits - bFits;
+          // Kleinste passende Kapazität zuerst (verschwendet keine großen Tische)
+          const ca = a.capacity ?? 99;
+          const cb = b.capacity ?? 99;
+          if (ca !== cb) return ca - cb;
           const ap = a.position_index ?? 999;
           const bp = b.position_index ?? 999;
           if (ap !== bp) return ap - bp;
@@ -347,6 +349,18 @@ Deno.serve(async (req) => {
 
         const picked = candidates.find((u) => !busy.has(u.id));
         if (picked) unit_id = picked.id;
+      }
+
+      // Kein freier passender Tisch -> klare Fehlermeldung statt
+      // Reservierung ohne Tischnummer (vermeidet Chaos im Dashboard).
+      if (!unit_id) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Für diese Personenanzahl ist zur gewählten Uhrzeit kein passender Tisch verfügbar. Bitte wähle eine andere Uhrzeit oder einen anderen Bereich.",
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
