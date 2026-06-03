@@ -394,33 +394,71 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data, error } = await supabase.from("reservations").insert({
-      reservation_date: date,
-      reservation_time: time,
-      guest_count: guests,
-      zone: zone,
-      occasion: anlass,
-      customer_name: sanitize(name),
-      customer_email: sanitize(email),
-      customer_phone: sanitize(phone),
-      message: message ? sanitize(message).substring(0, 1000) : "",
-      honeypot: "",
-      status: "confirmed",
-      unit_id: unit_id,
-    }).select().single();
-
-    if (error) {
-      if (error.code === "23505") {
+    // Atomar einfügen, wenn ein konkreter Tisch zugewiesen ist (race-safe via
+    // pg_advisory_xact_lock + Konflikt-Check im RPC). Fällt zurück auf den
+    // normalen Insert, wenn KEIN Tisch zugewiesen ist (z.B. Walk-in / Admin).
+    let createdId: string | null = null;
+    if (unit_id) {
+      const payload = {
+        customer_name: sanitize(name),
+        customer_email: sanitize(email),
+        customer_phone: sanitize(phone),
+        guest_count: guests,
+        zone,
+        occasion: anlass,
+        status: "confirmed",
+        message: message ? sanitize(message).substring(0, 1000) : "",
+      };
+      const { data: rid, error: rpcErr } = await supabase.rpc("reserve_atomic", {
+        p_unit_id: unit_id,
+        p_date: date,
+        p_time: time,
+        p_duration_min: overlapDur,
+        p_payload: payload,
+      });
+      if (rpcErr) {
+        if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
+          return new Response(
+            JSON.stringify({ error: "Dieser Tisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        console.error("reserve_atomic error:", rpcErr.message);
         return new Response(
-          JSON.stringify({ error: "Dieser Zeitslot ist leider bereits belegt. Bitte wähle einen anderen." }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Fehler beim Speichern der Reservierung." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      console.error("DB error:", error.message);
-      return new Response(
-        JSON.stringify({ error: "Fehler beim Speichern der Reservierung." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      createdId = rid as string;
+    } else {
+      const { data, error } = await supabase.from("reservations").insert({
+        reservation_date: date,
+        reservation_time: time,
+        guest_count: guests,
+        zone: zone,
+        occasion: anlass,
+        customer_name: sanitize(name),
+        customer_email: sanitize(email),
+        customer_phone: sanitize(phone),
+        message: message ? sanitize(message).substring(0, 1000) : "",
+        honeypot: "",
+        status: "confirmed",
+        unit_id: null,
+      }).select().single();
+      if (error) {
+        if (error.code === "23505") {
+          return new Response(
+            JSON.stringify({ error: "Dieser Zeitslot ist leider bereits belegt. Bitte wähle einen anderen." }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        console.error("DB error:", error.message);
+        return new Response(
+          JSON.stringify({ error: "Fehler beim Speichern der Reservierung." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      createdId = data.id;
     }
 
     // Send confirmation email (fire-and-forget)
@@ -436,7 +474,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           reservation: {
-            id: data.id,
+            id: createdId,
             customer_name: sanitize(name),
             customer_email: sanitize(email),
             reservation_date: date,
@@ -455,7 +493,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, reservation_id: data.id }),
+      JSON.stringify({ success: true, reservation_id: createdId, unit_id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
