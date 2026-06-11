@@ -14,6 +14,7 @@ import AGB from "./pages/AGB";
 import NotFound from "./pages/NotFound";
 import ReservierungAendern from "./pages/ReservierungAendern";
 import ReservierungStornieren from "./pages/ReservierungStornieren";
+import ReservierungInfo from "./pages/ReservierungInfo";
 import OperationalView from "./pages/admin/OperationalView";
 import AdminLogin from "./pages/admin/AdminLogin";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -68,6 +69,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/reservierung" replace />} />
         <Route path="/reservierung" element={<Reservierung />} />
+        <Route path="/reservierung/info" element={<ReservierungInfo />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
         <Route path="/agb" element={<AGB />} />
