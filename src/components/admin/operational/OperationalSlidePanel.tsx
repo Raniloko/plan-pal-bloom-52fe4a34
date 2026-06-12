@@ -772,6 +772,38 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
           />
         </div>
       </div>
+      {showBlockDialog && (
+        <div
+          onClick={() => !saving && setShowBlockDialog(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif" }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "#fff", borderRadius: 10, padding: 20, width: 320, maxWidth: "92vw",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 4 }}>Tisch sperren</div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 14 }}>
+              Für welchen Zeitraum soll <strong>{data?.tableLabel}</strong> gesperrt sein?
+            </div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Von</label>
+            <input type="date" value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
+              style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 10 }} />
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Bis</label>
+            <input type="date" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} min={blockStart}
+              style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowBlockDialog(false)} disabled={saving} style={{
+                padding: "8px 14px", fontSize: 12, color: "#666", background: "#f3f3f3",
+                border: "1px solid #ddd", borderRadius: 6, cursor: "pointer",
+              }}>Abbrechen</button>
+              <button onClick={confirmBlock} disabled={saving} style={{
+                padding: "8px 14px", fontSize: 12, color: "#fff", fontWeight: 700, background: "#cc2222",
+                border: "none", borderRadius: 6, cursor: "pointer", opacity: saving ? 0.6 : 1,
+              }}>Sperren</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
