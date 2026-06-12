@@ -92,6 +92,8 @@ export interface PanelData {
   initialTime?: string;
   initialPax?: number;
   waitlistId?: string;
+  blockStart?: string | null;
+  blockEnd?: string | null;
 }
 
 interface UnitOption {
@@ -119,6 +121,7 @@ interface Props {
   onRefresh: () => void;
   reservations?: ReservationRef[];
   isMobile?: boolean;
+  currentDate?: string;
 }
 
 const STATUS_PILL: Record<string, React.CSSProperties> = {
@@ -142,7 +145,7 @@ const adminAction = async (body: Record<string, unknown>) => {
   return res.data;
 };
 
-export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [], isMobile = false }: Props) => {
+export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [], isMobile = false, currentDate }: Props) => {
   const [notes, setNotes] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
   const [mode, setMode] = useState<"view" | "book">("view");
@@ -153,6 +156,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [browseDate, setBrowseDate] = useState(new Date());
   const [browseDateReservations, setBrowseDateReservations] = useState<UnitDayReservation[]>([]);
   const [loadingBrowse, setLoadingBrowse] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blockStart, setBlockStart] = useState("");
+  const [blockEnd, setBlockEnd] = useState("");
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
   const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
   const isToday = format(browseDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
