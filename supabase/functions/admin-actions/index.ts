@@ -194,16 +194,41 @@ Deno.serve(async (req) => {
       }
 
       case "block_unit": {
-        const { unit_id, blocked } = body;
+        const { unit_id, blocked, start_date, end_date, reason } = body;
         if (!unit_id) return error("unit_id required", 400);
-        const newStatus = blocked ? "free" : "blocked";
-        const { error: err } = await supabase
-          .from("units")
-          .update({ status: newStatus })
-          .eq("id", unit_id);
-        if (err) return error(err.message, 500);
-        await logActivity(supabase, newStatus === "blocked" ? "block_unit" : "unblock_unit", "unit", unit_id);
-        return ok({ status: newStatus });
+        // `blocked` indicates current state: if true, the unit is already blocked → unblock.
+        // If false, we create a new block for the given date range (default: today only).
+        if (blocked) {
+          // Unblock: remove all blocks for this unit that cover the reference date,
+          // or all blocks if no date was provided.
+          const ref = start_date || new Date().toISOString().slice(0, 10);
+          const { data: existing } = await supabase
+            .from("unit_blocks")
+            .select("id")
+            .eq("unit_id", unit_id)
+            .lte("start_date", ref)
+            .gte("end_date", ref);
+          if (existing && existing.length > 0) {
+            const ids = existing.map((x: any) => x.id);
+            const { error: delErr } = await supabase.from("unit_blocks").delete().in("id", ids);
+            if (delErr) return error(delErr.message, 500);
+          }
+          // Reset legacy units.status if it was blocked
+          await supabase.from("units").update({ status: "free" }).eq("id", unit_id).eq("status", "blocked");
+          await logActivity(supabase, "unblock_unit", "unit", unit_id);
+          return ok({ status: "free" });
+        } else {
+          const today = new Date().toISOString().slice(0, 10);
+          const s = start_date || today;
+          const e = end_date || s;
+          if (e < s) return error("end_date before start_date", 400);
+          const { error: insErr } = await supabase
+            .from("unit_blocks")
+            .insert({ unit_id, start_date: s, end_date: e, reason: reason || null });
+          if (insErr) return error(insErr.message, 500);
+          await logActivity(supabase, "block_unit", "unit", unit_id, `${s} → ${e}`);
+          return ok({ status: "blocked", start_date: s, end_date: e });
+        }
       }
 
       case "update_notes": {
