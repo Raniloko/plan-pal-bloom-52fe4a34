@@ -233,6 +233,41 @@ export type Database = {
         }
         Relationships: []
       }
+      unit_blocks: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          unit_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          unit_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_blocks_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           area: string
