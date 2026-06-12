@@ -376,6 +376,14 @@ Deno.serve(async (req) => {
           .in("area", areaFilter)
           .order("position_index");
 
+        // Date-range blocks
+        const { data: dayBlocks } = await supabase
+          .from("unit_blocks")
+          .select("unit_id")
+          .lte("start_date", date)
+          .gte("end_date", date);
+        const blockedIds = new Set((dayBlocks || []).map((b: any) => b.unit_id));
+
         // Active reservations same date/area
         const { data: dayRes } = await supabase
           .from("reservations")
@@ -389,6 +397,7 @@ Deno.serve(async (req) => {
 
         const free = (allUnits || []).filter((u: any) => {
           if (u.status === "blocked") return false;
+          if (blockedIds.has(u.id)) return false;
           const conflicts = (dayRes || []).filter((r: any) => r.unit_id === u.id).some((r: any) => {
             const [ch, cm] = (r.reservation_time as string).split(":").map(Number);
             const cStart = ch * 60 + cm;
