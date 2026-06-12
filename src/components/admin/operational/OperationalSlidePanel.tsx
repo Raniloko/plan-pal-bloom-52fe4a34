@@ -729,7 +729,13 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 {data?.status === "blocked" ? "Tisch ist gesperrt" : "Aktuell keine Reservierung"}
               </span>
               <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>
-                {data?.status === "blocked" ? "Dieser Tisch ist aktuell nicht verfügbar" : "Dieser Tisch ist frei verfügbar"}
+                {data?.status === "blocked"
+                  ? (data?.blockStart && data?.blockEnd
+                      ? (data.blockStart === data.blockEnd
+                          ? `Gesperrt am ${data.blockStart}`
+                          : `Gesperrt vom ${data.blockStart} bis ${data.blockEnd}`)
+                      : "Dieser Tisch ist aktuell nicht verfügbar")
+                  : "Dieser Tisch ist frei verfügbar"}
               </span>
               {data?.unitId && (
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
