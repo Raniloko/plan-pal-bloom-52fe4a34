@@ -294,8 +294,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const confirmBlock = async () => {
     if (!data?.unitId) return;
-    if (!blockStart || !blockEnd) { toast.error("Bitte Zeitraum angeben"); return; }
-    if (blockEnd < blockStart) { toast.error("Enddatum vor Startdatum"); return; }
+    if (!blockStart) { toast.error("Bitte Datum angeben"); return; }
     setSaving(true);
     try {
       await adminAction({
@@ -303,11 +302,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
         unit_id: data.unitId,
         blocked: false,
         start_date: blockStart,
-        end_date: blockEnd,
+        end_date: blockStart,
       });
-      toast.success(blockStart === blockEnd
-        ? `Tisch gesperrt für ${blockStart}`
-        : `Tisch gesperrt vom ${blockStart} bis ${blockEnd}`);
+      toast.success(`Tisch gesperrt für ${blockStart}`);
       setShowBlockDialog(false);
       onRefresh();
       onClose();
@@ -789,13 +786,10 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
           }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 4 }}>Tisch sperren</div>
             <div style={{ fontSize: 12, color: "#666", marginBottom: 14 }}>
-              Für welchen Zeitraum soll <strong>{data?.tableLabel}</strong> gesperrt sein?
+              Für welchen Tag soll <strong>{data?.tableLabel}</strong> gesperrt sein?
             </div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Von</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Datum</label>
             <input type="date" value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 10 }} />
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Bis</label>
-            <input type="date" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} min={blockStart}
               style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 16 }} />
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={() => setShowBlockDialog(false)} disabled={saving} style={{
