@@ -92,6 +92,8 @@ export interface PanelData {
   initialTime?: string;
   initialPax?: number;
   waitlistId?: string;
+  blockStart?: string | null;
+  blockEnd?: string | null;
 }
 
 interface UnitOption {
@@ -119,6 +121,7 @@ interface Props {
   onRefresh: () => void;
   reservations?: ReservationRef[];
   isMobile?: boolean;
+  currentDate?: string;
 }
 
 const STATUS_PILL: Record<string, React.CSSProperties> = {
@@ -142,7 +145,7 @@ const adminAction = async (body: Record<string, unknown>) => {
   return res.data;
 };
 
-export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [], isMobile = false }: Props) => {
+export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefresh, reservations = [], isMobile = false, currentDate }: Props) => {
   const [notes, setNotes] = useState("");
   const [checkedIn, setCheckedIn] = useState(false);
   const [mode, setMode] = useState<"view" | "book">("view");
@@ -153,6 +156,9 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [browseDate, setBrowseDate] = useState(new Date());
   const [browseDateReservations, setBrowseDateReservations] = useState<UnitDayReservation[]>([]);
   const [loadingBrowse, setLoadingBrowse] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blockStart, setBlockStart] = useState("");
+  const [blockEnd, setBlockEnd] = useState("");
   const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
   const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
   const isToday = format(browseDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -265,10 +271,44 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const handleBlock = async () => {
     if (!data?.unitId) return;
+    // If currently blocked → unblock immediately for the viewed date.
+    if (data.status === "blocked") {
+      setSaving(true);
+      try {
+        await adminAction({ action: "block_unit", unit_id: data.unitId, blocked: true, start_date: currentDate });
+        toast.success("Tisch freigegeben");
+        onRefresh();
+        onClose();
+      } catch (e: any) {
+        toast.error(e?.message || "Fehler beim Freigeben");
+      }
+      setSaving(false);
+      return;
+    }
+    // Otherwise open dialog to pick range.
+    const today = currentDate || format(new Date(), "yyyy-MM-dd");
+    setBlockStart(today);
+    setBlockEnd(today);
+    setShowBlockDialog(true);
+  };
+
+  const confirmBlock = async () => {
+    if (!data?.unitId) return;
+    if (!blockStart || !blockEnd) { toast.error("Bitte Zeitraum angeben"); return; }
+    if (blockEnd < blockStart) { toast.error("Enddatum vor Startdatum"); return; }
     setSaving(true);
     try {
-      const res = await adminAction({ action: "block_unit", unit_id: data.unitId, blocked: data.status === "blocked" });
-      toast.success(res.status === "blocked" ? "Tisch gesperrt" : "Tisch freigegeben");
+      await adminAction({
+        action: "block_unit",
+        unit_id: data.unitId,
+        blocked: false,
+        start_date: blockStart,
+        end_date: blockEnd,
+      });
+      toast.success(blockStart === blockEnd
+        ? `Tisch gesperrt für ${blockStart}`
+        : `Tisch gesperrt vom ${blockStart} bis ${blockEnd}`);
+      setShowBlockDialog(false);
       onRefresh();
       onClose();
     } catch (e: any) {
@@ -689,7 +729,13 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                 {data?.status === "blocked" ? "Tisch ist gesperrt" : "Aktuell keine Reservierung"}
               </span>
               <span style={{ fontSize: 12, color: "#ccc", marginTop: 4 }}>
-                {data?.status === "blocked" ? "Dieser Tisch ist aktuell nicht verfügbar" : "Dieser Tisch ist frei verfügbar"}
+                {data?.status === "blocked"
+                  ? (data?.blockStart && data?.blockEnd
+                      ? (data.blockStart === data.blockEnd
+                          ? `Gesperrt am ${data.blockStart}`
+                          : `Gesperrt vom ${data.blockStart} bis ${data.blockEnd}`)
+                      : "Dieser Tisch ist aktuell nicht verfügbar")
+                  : "Dieser Tisch ist frei verfügbar"}
               </span>
               {data?.unitId && (
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
@@ -732,6 +778,38 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
           />
         </div>
       </div>
+      {showBlockDialog && (
+        <div
+          onClick={() => !saving && setShowBlockDialog(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif" }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "#fff", borderRadius: 10, padding: 20, width: 320, maxWidth: "92vw",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 4 }}>Tisch sperren</div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 14 }}>
+              Für welchen Zeitraum soll <strong>{data?.tableLabel}</strong> gesperrt sein?
+            </div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Von</label>
+            <input type="date" value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
+              style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 10 }} />
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Bis</label>
+            <input type="date" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} min={blockStart}
+              style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowBlockDialog(false)} disabled={saving} style={{
+                padding: "8px 14px", fontSize: 12, color: "#666", background: "#f3f3f3",
+                border: "1px solid #ddd", borderRadius: 6, cursor: "pointer",
+              }}>Abbrechen</button>
+              <button onClick={confirmBlock} disabled={saving} style={{
+                padding: "8px 14px", fontSize: 12, color: "#fff", fontWeight: 700, background: "#cc2222",
+                border: "none", borderRadius: 6, cursor: "pointer", opacity: saving ? 0.6 : 1,
+              }}>Sperren</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

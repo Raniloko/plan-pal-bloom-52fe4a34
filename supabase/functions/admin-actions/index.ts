@@ -93,14 +93,22 @@ Deno.serve(async (req) => {
       case "fetch_dashboard": {
         const { date } = body;
         if (!date) return error("date required", 400);
-        const [r, u, w] = await Promise.all([
+        const [r, u, w, b] = await Promise.all([
           supabase.from("reservations").select("*").eq("reservation_date", date).neq("status", "cancelled"),
           supabase.from("units").select("*").order("position_index"),
           supabase.from("waitlist").select("*").in("status", ["waiting", "notified"]).order("desired_date").order("desired_time"),
+          supabase.from("unit_blocks").select("*").lte("start_date", date).gte("end_date", date),
         ]);
         if (r.error) return error(r.error.message, 500);
         if (u.error) return error(u.error.message, 500);
-        return ok({ reservations: r.data, units: u.data, waitlist: w.data || [] });
+        const blocks = b.data || [];
+        const blockedSet = new Set(blocks.map((x: any) => x.unit_id));
+        const units = (u.data || []).map((unit: any) => ({
+          ...unit,
+          status: blockedSet.has(unit.id) ? "blocked" : unit.status,
+          active_block: blocks.find((x: any) => x.unit_id === unit.id) || null,
+        }));
+        return ok({ reservations: r.data, units, waitlist: w.data || [], unit_blocks: blocks });
       }
 
       case "check_in": {
@@ -186,16 +194,41 @@ Deno.serve(async (req) => {
       }
 
       case "block_unit": {
-        const { unit_id, blocked } = body;
+        const { unit_id, blocked, start_date, end_date, reason } = body;
         if (!unit_id) return error("unit_id required", 400);
-        const newStatus = blocked ? "free" : "blocked";
-        const { error: err } = await supabase
-          .from("units")
-          .update({ status: newStatus })
-          .eq("id", unit_id);
-        if (err) return error(err.message, 500);
-        await logActivity(supabase, newStatus === "blocked" ? "block_unit" : "unblock_unit", "unit", unit_id);
-        return ok({ status: newStatus });
+        // `blocked` indicates current state: if true, the unit is already blocked → unblock.
+        // If false, we create a new block for the given date range (default: today only).
+        if (blocked) {
+          // Unblock: remove all blocks for this unit that cover the reference date,
+          // or all blocks if no date was provided.
+          const ref = start_date || new Date().toISOString().slice(0, 10);
+          const { data: existing } = await supabase
+            .from("unit_blocks")
+            .select("id")
+            .eq("unit_id", unit_id)
+            .lte("start_date", ref)
+            .gte("end_date", ref);
+          if (existing && existing.length > 0) {
+            const ids = existing.map((x: any) => x.id);
+            const { error: delErr } = await supabase.from("unit_blocks").delete().in("id", ids);
+            if (delErr) return error(delErr.message, 500);
+          }
+          // Reset legacy units.status if it was blocked
+          await supabase.from("units").update({ status: "free" }).eq("id", unit_id).eq("status", "blocked");
+          await logActivity(supabase, "unblock_unit", "unit", unit_id);
+          return ok({ status: "free" });
+        } else {
+          const today = new Date().toISOString().slice(0, 10);
+          const s = start_date || today;
+          const e = end_date || s;
+          if (e < s) return error("end_date before start_date", 400);
+          const { error: insErr } = await supabase
+            .from("unit_blocks")
+            .insert({ unit_id, start_date: s, end_date: e, reason: reason || null });
+          if (insErr) return error(insErr.message, 500);
+          await logActivity(supabase, "block_unit", "unit", unit_id, `${s} → ${e}`);
+          return ok({ status: "blocked", start_date: s, end_date: e });
+        }
       }
 
       case "update_notes": {
@@ -343,6 +376,14 @@ Deno.serve(async (req) => {
           .in("area", areaFilter)
           .order("position_index");
 
+        // Date-range blocks
+        const { data: dayBlocks } = await supabase
+          .from("unit_blocks")
+          .select("unit_id")
+          .lte("start_date", date)
+          .gte("end_date", date);
+        const blockedIds = new Set((dayBlocks || []).map((b: any) => b.unit_id));
+
         // Active reservations same date/area
         const { data: dayRes } = await supabase
           .from("reservations")
@@ -356,6 +397,7 @@ Deno.serve(async (req) => {
 
         const free = (allUnits || []).filter((u: any) => {
           if (u.status === "blocked") return false;
+          if (blockedIds.has(u.id)) return false;
           const conflicts = (dayRes || []).filter((r: any) => r.unit_id === u.id).some((r: any) => {
             const [ch, cm] = (r.reservation_time as string).split(":").map(Number);
             const cStart = ch * 60 + cm;
