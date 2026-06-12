@@ -281,6 +281,20 @@ Deno.serve(async (req) => {
 
     // If a specific unit_id is provided, check for overlapping reservations on that unit
     if (unit_id) {
+      // Block check: is the unit blocked on this date?
+      const { data: unitBlock } = await supabase
+        .from("unit_blocks")
+        .select("id")
+        .eq("unit_id", unit_id)
+        .lte("start_date", date)
+        .gte("end_date", date)
+        .maybeSingle();
+      if (unitBlock) {
+        return new Response(
+          JSON.stringify({ error: "Dieser Tisch ist am gewählten Tag gesperrt. Bitte wähle einen anderen Tisch oder ein anderes Datum." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const { data: unitConflicts } = await supabase
         .from("reservations")
         .select("id, reservation_time")
