@@ -93,14 +93,22 @@ Deno.serve(async (req) => {
       case "fetch_dashboard": {
         const { date } = body;
         if (!date) return error("date required", 400);
-        const [r, u, w] = await Promise.all([
+        const [r, u, w, b] = await Promise.all([
           supabase.from("reservations").select("*").eq("reservation_date", date).neq("status", "cancelled"),
           supabase.from("units").select("*").order("position_index"),
           supabase.from("waitlist").select("*").in("status", ["waiting", "notified"]).order("desired_date").order("desired_time"),
+          supabase.from("unit_blocks").select("*").lte("start_date", date).gte("end_date", date),
         ]);
         if (r.error) return error(r.error.message, 500);
         if (u.error) return error(u.error.message, 500);
-        return ok({ reservations: r.data, units: u.data, waitlist: w.data || [] });
+        const blocks = b.data || [];
+        const blockedSet = new Set(blocks.map((x: any) => x.unit_id));
+        const units = (u.data || []).map((unit: any) => ({
+          ...unit,
+          status: blockedSet.has(unit.id) ? "blocked" : unit.status,
+          active_block: blocks.find((x: any) => x.unit_id === unit.id) || null,
+        }));
+        return ok({ reservations: r.data, units, waitlist: w.data || [], unit_blocks: blocks });
       }
 
       case "check_in": {
