@@ -287,6 +287,8 @@ const OperationalView = () => {
       guest: data.guest, startTime: data.startTime, endTime: data.endTime,
       pax: data.pax, reservationId: data.reservationId,
       status: data.status, unitId: unit?.id, unitNotes: unit?.notes || "",
+      blockStart: (unit as any)?.active_block?.start_date || null,
+      blockEnd: (unit as any)?.active_block?.end_date || null,
       customerEmail: reservation?.customer_email,
       customerPhone: reservation?.customer_phone,
       customerMessage: reservation?.message || "",
@@ -469,6 +471,7 @@ const OperationalView = () => {
         onRefresh={load}
         reservations={reservations.map(r => ({ id: r.id, unit_id: r.unit_id, status: r.status, customer_name: r.customer_name, reservation_time: r.reservation_time, guest_count: r.guest_count }))}
         isMobile={isMobile}
+        currentDate={dateStr}
       />
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
