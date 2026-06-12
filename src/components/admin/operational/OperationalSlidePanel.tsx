@@ -271,10 +271,44 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
 
   const handleBlock = async () => {
     if (!data?.unitId) return;
+    // If currently blocked → unblock immediately for the viewed date.
+    if (data.status === "blocked") {
+      setSaving(true);
+      try {
+        await adminAction({ action: "block_unit", unit_id: data.unitId, blocked: true, start_date: currentDate });
+        toast.success("Tisch freigegeben");
+        onRefresh();
+        onClose();
+      } catch (e: any) {
+        toast.error(e?.message || "Fehler beim Freigeben");
+      }
+      setSaving(false);
+      return;
+    }
+    // Otherwise open dialog to pick range.
+    const today = currentDate || format(new Date(), "yyyy-MM-dd");
+    setBlockStart(today);
+    setBlockEnd(today);
+    setShowBlockDialog(true);
+  };
+
+  const confirmBlock = async () => {
+    if (!data?.unitId) return;
+    if (!blockStart || !blockEnd) { toast.error("Bitte Zeitraum angeben"); return; }
+    if (blockEnd < blockStart) { toast.error("Enddatum vor Startdatum"); return; }
     setSaving(true);
     try {
-      const res = await adminAction({ action: "block_unit", unit_id: data.unitId, blocked: data.status === "blocked" });
-      toast.success(res.status === "blocked" ? "Tisch gesperrt" : "Tisch freigegeben");
+      await adminAction({
+        action: "block_unit",
+        unit_id: data.unitId,
+        blocked: false,
+        start_date: blockStart,
+        end_date: blockEnd,
+      });
+      toast.success(blockStart === blockEnd
+        ? `Tisch gesperrt für ${blockStart}`
+        : `Tisch gesperrt vom ${blockStart} bis ${blockEnd}`);
+      setShowBlockDialog(false);
       onRefresh();
       onClose();
     } catch (e: any) {
