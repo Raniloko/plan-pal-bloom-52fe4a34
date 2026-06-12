@@ -314,8 +314,16 @@ Deno.serve(async (req) => {
         .select("id, name, status, position_index, capacity")
         .eq("area", zone);
 
+      const { data: dayBlocks } = await supabase
+        .from("unit_blocks")
+        .select("unit_id")
+        .lte("start_date", date)
+        .gte("end_date", date);
+      const blockedIds = new Set((dayBlocks || []).map((b: any) => b.unit_id));
+
       const candidates = (zoneUnits || [])
         .filter((u) => u.status !== "blocked")
+        .filter((u) => !blockedIds.has(u.id))
         // Pflicht: ausreichende Kapazität für die Personenanzahl
         .filter((u) => (u.capacity ?? 99) >= guests)
         .sort((a: any, b: any) => {
