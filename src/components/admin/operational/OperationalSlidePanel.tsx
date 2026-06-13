@@ -304,7 +304,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
         start_date: blockStart,
         end_date: blockStart,
       });
-      toast.success(`Tisch gesperrt für ${blockStart}`);
+      const pretty = format(new Date(blockStart + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de });
+      toast.success(`Tisch gesperrt für ${pretty}`);
       setShowBlockDialog(false);
       onRefresh();
       onClose();
@@ -788,18 +789,43 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
             <div style={{ fontSize: 12, color: "#666", marginBottom: 14 }}>
               Für welchen Tag soll <strong>{data?.tableLabel}</strong> gesperrt sein?
             </div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Datum</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Datum auswählen</label>
             <input type="date" value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, marginBottom: 16 }} />
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }} />
+            <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+              {[0, 1, 2, 7].map((offset) => {
+                const d = addDays(new Date(), offset);
+                const iso = format(d, "yyyy-MM-dd");
+                const label = offset === 0 ? "Heute" : offset === 1 ? "Morgen" : format(d, "EEE d.M.", { locale: de });
+                const active = blockStart === iso;
+                return (
+                  <button key={offset} onClick={() => setBlockStart(iso)} style={{
+                    padding: "5px 10px", fontSize: 11, fontWeight: 600, borderRadius: 5, cursor: "pointer",
+                    border: `1px solid ${active ? "#cc2222" : "#ddd"}`,
+                    background: active ? "#fde8e8" : "#fff",
+                    color: active ? "#cc2222" : "#555",
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+            <div style={{
+              background: "#fff7e6", border: "1px solid #f0d8a0", borderRadius: 6,
+              padding: "10px 12px", marginBottom: 16, fontSize: 12, color: "#7a5a10",
+            }}>
+              {blockStart
+                ? <>Sperre wird gesetzt für <strong>{format(new Date(blockStart + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de })}</strong>. Der Tisch ist nur an diesem Tag nicht buchbar.</>
+                : "Bitte ein Datum auswählen."}
+            </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={() => setShowBlockDialog(false)} disabled={saving} style={{
                 padding: "8px 14px", fontSize: 12, color: "#666", background: "#f3f3f3",
                 border: "1px solid #ddd", borderRadius: 6, cursor: "pointer",
               }}>Abbrechen</button>
-              <button onClick={confirmBlock} disabled={saving} style={{
+              <button onClick={confirmBlock} disabled={saving || !blockStart} style={{
                 padding: "8px 14px", fontSize: 12, color: "#fff", fontWeight: 700, background: "#cc2222",
-                border: "none", borderRadius: 6, cursor: "pointer", opacity: saving ? 0.6 : 1,
-              }}>Sperren</button>
+                border: "none", borderRadius: 6, cursor: (saving || !blockStart) ? "not-allowed" : "pointer",
+                opacity: (saving || !blockStart) ? 0.6 : 1,
+              }}>Für diesen Tag sperren</button>
             </div>
           </div>
         </div>
