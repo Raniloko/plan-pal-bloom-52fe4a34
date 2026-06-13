@@ -337,7 +337,6 @@ Deno.serve(async (req) => {
       const blockedIds = new Set((dayBlocks || []).map((b: any) => b.unit_id));
 
       const candidates = (zoneUnits || [])
-        .filter((u) => u.status !== "blocked")
         .filter((u) => !blockedIds.has(u.id))
         // Pflicht: ausreichende Kapazität für die Personenanzahl
         .filter((u) => (u.capacity ?? 99) >= guests)
