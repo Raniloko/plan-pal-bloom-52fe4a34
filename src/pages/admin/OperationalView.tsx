@@ -261,6 +261,8 @@ const OperationalView = () => {
       };
     });
     units.forEach(u => {
+      // "blocked" kommt ausschließlich aus Datums-Sperren (unit_blocks),
+      // die im Backend bereits für das gewählte Datum aufgelöst wurden.
       if (u.status !== "blocked") return;
       const fpId = toFpId(u);
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
