@@ -103,9 +103,11 @@ Deno.serve(async (req) => {
         if (u.error) return error(u.error.message, 500);
         const blocks = b.data || [];
         const blockedSet = new Set(blocks.map((x: any) => x.unit_id));
+        // Wichtig: NUR Datums-Sperren zählen. Das alte units.status-Feld
+        // wird bewusst ignoriert, damit keine Sperre versehentlich dauerhaft bleibt.
         const units = (u.data || []).map((unit: any) => ({
           ...unit,
-          status: blockedSet.has(unit.id) ? "blocked" : unit.status,
+          status: blockedSet.has(unit.id) ? "blocked" : (unit.status === "blocked" ? "free" : unit.status),
           active_block: blocks.find((x: any) => x.unit_id === unit.id) || null,
         }));
         return ok({ reservations: r.data, units, waitlist: w.data || [], unit_blocks: blocks });
