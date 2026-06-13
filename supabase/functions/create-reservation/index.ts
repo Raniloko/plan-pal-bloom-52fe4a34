@@ -168,8 +168,9 @@ Deno.serve(async (req) => {
         .select("id, status")
         .eq("area", zone);
       if (zoneUnitsForCap && zoneUnitsForCap.length > 0) {
-        const available = zoneUnitsForCap.filter(u => u.status !== "blocked").length;
-        zoneCapacity = available;
+        // Kapazität = Anzahl Tische im Bereich. Tagesbezogene Sperren werden
+        // unten bei der Tisch-Auswahl ausgeschlossen, nicht hier global.
+        zoneCapacity = zoneUnitsForCap.length;
       }
     }
 
@@ -336,7 +337,6 @@ Deno.serve(async (req) => {
       const blockedIds = new Set((dayBlocks || []).map((b: any) => b.unit_id));
 
       const candidates = (zoneUnits || [])
-        .filter((u) => u.status !== "blocked")
         .filter((u) => !blockedIds.has(u.id))
         // Pflicht: ausreichende Kapazität für die Personenanzahl
         .filter((u) => (u.capacity ?? 99) >= guests)
