@@ -398,7 +398,7 @@ Deno.serve(async (req) => {
         const wantEnd = wantStart + durMin;
 
         const free = (allUnits || []).filter((u: any) => {
-          if (u.status === "blocked") return false;
+          // Sperren ausschließlich über Datums-Sperren (unit_blocks).
           if (blockedIds.has(u.id)) return false;
           const conflicts = (dayRes || []).filter((r: any) => r.unit_id === u.id).some((r: any) => {
             const [ch, cm] = (r.reservation_time as string).split(":").map(Number);
