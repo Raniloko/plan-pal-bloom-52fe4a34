@@ -57,19 +57,13 @@ Deno.serve(async (req) => {
         return error("Nicht autorisiert", 401);
       }
 
-      const anonClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-
       const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !userData?.user) {
         return error("Nicht autorisiert", 401);
       }
 
-      const userId = claimsData.claims.sub as string;
+      const userId = userData.user.id;
 
       const { data: roleData } = await supabase
         .from("user_roles")
