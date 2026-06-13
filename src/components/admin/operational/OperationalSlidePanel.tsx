@@ -304,7 +304,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
         start_date: blockStart,
         end_date: blockStart,
       });
-      toast.success(`Tisch gesperrt für ${blockStart}`);
+      const pretty = format(new Date(blockStart + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de });
+      toast.success(`Tisch gesperrt für ${pretty}`);
       setShowBlockDialog(false);
       onRefresh();
       onClose();
