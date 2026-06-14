@@ -222,8 +222,16 @@ Deno.serve(async (req) => {
         } else {
           const today = new Date().toISOString().slice(0, 10);
           const s = start_date || today;
-          const e = end_date || s;
+          const e = s;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return error("Ungültiges Sperrdatum", 400);
           if (e < s) return error("end_date before start_date", 400);
+          await supabase.from("units").update({ status: "free" }).eq("id", unit_id).eq("status", "blocked");
+          await supabase
+            .from("unit_blocks")
+            .delete()
+            .eq("unit_id", unit_id)
+            .eq("start_date", s)
+            .eq("end_date", e);
           const { error: insErr } = await supabase
             .from("unit_blocks")
             .insert({ unit_id, start_date: s, end_date: e, reason: reason || null });
@@ -258,6 +266,15 @@ Deno.serve(async (req) => {
             .single();
 
           if (thisRes) {
+            const { data: unitBlock } = await supabase
+              .from("unit_blocks")
+              .select("id")
+              .eq("unit_id", unit_id)
+              .lte("start_date", thisRes.reservation_date)
+              .gte("end_date", thisRes.reservation_date)
+              .maybeSingle();
+            if (unitBlock) return error("Dieser Tisch ist am gewählten Tag gesperrt.", 409);
+
             const { data: conflicts } = await supabase
               .from("reservations")
               .select("id, customer_name, reservation_time")

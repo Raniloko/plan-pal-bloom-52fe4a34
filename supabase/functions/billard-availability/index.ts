@@ -53,6 +53,13 @@ Deno.serve(async (req) => {
       .eq("reservation_date", date)
       .eq("zone", "billard")
       .not("status", "in", '("cancelled","checked_out")');
+    const { data: dayBlocks } = await supabase
+      .from("unit_blocks")
+      .select("unit_id")
+      .lte("start_date", date)
+      .gte("end_date", date);
+
+    const blockedIds = new Set((dayBlocks || []).map((b: any) => b.unit_id));
 
     const busy = new Set<string>();
     for (const r of reservations || []) {
@@ -73,8 +80,8 @@ Deno.serve(async (req) => {
     const result = sorted.map((u: any) => ({
       id: u.id,
       name: u.name,
-      blocked: u.status === "blocked",
-      available: u.status !== "blocked" && !busy.has(u.id),
+      blocked: blockedIds.has(u.id),
+      available: !blockedIds.has(u.id) && !busy.has(u.id),
     }));
 
     return new Response(JSON.stringify({ tables: result }), {
