@@ -484,6 +484,17 @@ Deno.serve(async (req) => {
         let newResId: string | null = null;
         let assignedUnitId: string | null = unit_id || null;
 
+        if (assignedUnitId && !allow_overbook) {
+          const { data: unitBlock } = await supabase
+            .from("unit_blocks")
+            .select("id")
+            .eq("unit_id", assignedUnitId)
+            .lte("start_date", finalDate)
+            .gte("end_date", finalDate)
+            .maybeSingle();
+          if (unitBlock) return error("Dieser Tisch ist am gewählten Tag gesperrt.", 409);
+        }
+
         if (zone === "billard" && !unit_id && !allow_overbook) {
           // Atomic auto-pick of lowest-numbered free billard table
           const { data: autoData, error: autoErr } = await supabase.rpc("reserve_billard_auto", {
