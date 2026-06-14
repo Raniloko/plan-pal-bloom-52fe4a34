@@ -522,6 +522,9 @@ Deno.serve(async (req) => {
             p_payload: payload,
           });
           if (rpcErr) {
+            if (rpcErr.message?.includes("unit_blocked") || rpcErr.code === "P0001") {
+              return error("Dieser Tisch ist am gewählten Tag gesperrt.", 409);
+            }
             if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
               return error("Tisch nicht mehr frei (gleichzeitige Buchung)", 409);
             }

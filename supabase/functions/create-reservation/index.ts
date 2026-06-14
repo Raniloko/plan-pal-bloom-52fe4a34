@@ -241,6 +241,12 @@ Deno.serve(async (req) => {
           p_payload: payload,
         });
         if (rpcErr) {
+          if (rpcErr.message?.includes("unit_blocked") || rpcErr.code === "P0001") {
+            return new Response(
+              JSON.stringify({ error: "Dieser Billardtisch ist am gewählten Tag gesperrt. Bitte wähle einen anderen Tisch oder ein anderes Datum." }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
           if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
             return new Response(
               JSON.stringify({ error: "Dieser Billardtisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),
@@ -453,6 +459,12 @@ Deno.serve(async (req) => {
         p_payload: payload,
       });
       if (rpcErr) {
+        if (rpcErr.message?.includes("unit_blocked") || rpcErr.code === "P0001") {
+          return new Response(
+            JSON.stringify({ error: "Dieser Tisch ist am gewählten Tag gesperrt. Bitte wähle einen anderen Tisch oder ein anderes Datum." }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
           return new Response(
             JSON.stringify({ error: "Dieser Tisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),
