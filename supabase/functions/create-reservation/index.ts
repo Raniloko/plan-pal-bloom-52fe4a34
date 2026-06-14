@@ -204,6 +204,20 @@ Deno.serve(async (req) => {
     // free table because the JS auto-assign read & wrote in separate steps.
     // The DB RPCs use a per-day advisory lock so concurrent picks are serialized.
     if (zone === "billard" && unit_id) {
+      const { data: unitBlock } = await supabase
+        .from("unit_blocks")
+        .select("id")
+        .eq("unit_id", unit_id)
+        .lte("start_date", date)
+        .gte("end_date", date)
+        .maybeSingle();
+      if (unitBlock) {
+        return new Response(
+          JSON.stringify({ error: "Dieser Billardtisch ist am gewählten Tag gesperrt. Bitte wähle einen anderen Tisch oder ein anderes Datum." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const payload = {
         customer_name: sanitize(name),
         customer_email: sanitize(email),
@@ -227,6 +241,12 @@ Deno.serve(async (req) => {
           p_payload: payload,
         });
         if (rpcErr) {
+          if (rpcErr.message?.includes("unit_blocked") || rpcErr.code === "P0001") {
+            return new Response(
+              JSON.stringify({ error: "Dieser Billardtisch ist am gewählten Tag gesperrt. Bitte wähle einen anderen Tisch oder ein anderes Datum." }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
           if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
             return new Response(
               JSON.stringify({ error: "Dieser Billardtisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),
@@ -439,6 +459,12 @@ Deno.serve(async (req) => {
         p_payload: payload,
       });
       if (rpcErr) {
+        if (rpcErr.message?.includes("unit_blocked") || rpcErr.code === "P0001") {
+          return new Response(
+            JSON.stringify({ error: "Dieser Tisch ist am gewählten Tag gesperrt. Bitte wähle einen anderen Tisch oder ein anderes Datum." }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
         if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
           return new Response(
             JSON.stringify({ error: "Dieser Tisch ist zur gewählten Uhrzeit bereits belegt. Bitte wähle einen anderen Tisch oder eine andere Uhrzeit." }),

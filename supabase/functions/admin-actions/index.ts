@@ -222,8 +222,16 @@ Deno.serve(async (req) => {
         } else {
           const today = new Date().toISOString().slice(0, 10);
           const s = start_date || today;
-          const e = end_date || s;
+          const e = s;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return error("Ungültiges Sperrdatum", 400);
           if (e < s) return error("end_date before start_date", 400);
+          await supabase.from("units").update({ status: "free" }).eq("id", unit_id).eq("status", "blocked");
+          await supabase
+            .from("unit_blocks")
+            .delete()
+            .eq("unit_id", unit_id)
+            .eq("start_date", s)
+            .eq("end_date", e);
           const { error: insErr } = await supabase
             .from("unit_blocks")
             .insert({ unit_id, start_date: s, end_date: e, reason: reason || null });
@@ -258,6 +266,15 @@ Deno.serve(async (req) => {
             .single();
 
           if (thisRes) {
+            const { data: unitBlock } = await supabase
+              .from("unit_blocks")
+              .select("id")
+              .eq("unit_id", unit_id)
+              .lte("start_date", thisRes.reservation_date)
+              .gte("end_date", thisRes.reservation_date)
+              .maybeSingle();
+            if (unitBlock) return error("Dieser Tisch ist am gewählten Tag gesperrt.", 409);
+
             const { data: conflicts } = await supabase
               .from("reservations")
               .select("id, customer_name, reservation_time")
@@ -467,6 +484,17 @@ Deno.serve(async (req) => {
         let newResId: string | null = null;
         let assignedUnitId: string | null = unit_id || null;
 
+        if (assignedUnitId && !allow_overbook) {
+          const { data: unitBlock } = await supabase
+            .from("unit_blocks")
+            .select("id")
+            .eq("unit_id", assignedUnitId)
+            .lte("start_date", finalDate)
+            .gte("end_date", finalDate)
+            .maybeSingle();
+          if (unitBlock) return error("Dieser Tisch ist am gewählten Tag gesperrt.", 409);
+        }
+
         if (zone === "billard" && !unit_id && !allow_overbook) {
           // Atomic auto-pick of lowest-numbered free billard table
           const { data: autoData, error: autoErr } = await supabase.rpc("reserve_billard_auto", {
@@ -494,6 +522,9 @@ Deno.serve(async (req) => {
             p_payload: payload,
           });
           if (rpcErr) {
+            if (rpcErr.message?.includes("unit_blocked") || rpcErr.code === "P0001") {
+              return error("Dieser Tisch ist am gewählten Tag gesperrt.", 409);
+            }
             if (rpcErr.message?.includes("unit_conflict") || rpcErr.code === "23505") {
               return error("Tisch nicht mehr frei (gleichzeitige Buchung)", 409);
             }

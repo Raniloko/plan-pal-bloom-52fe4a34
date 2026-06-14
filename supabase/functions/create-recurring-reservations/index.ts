@@ -125,7 +125,13 @@ Deno.serve(async (req) => {
     // Determine zone units (for capacity check / auto-assign)
     const { data: zoneUnits } = await supabase
       .from("units").select("id, name, capacity, status").eq("area", zone);
-    const zoneCapacity = (zoneUnits || []).filter(u => u.status !== "blocked").length || 1;
+    const zoneCapacity = (zoneUnits || []).length || 1;
+
+    const { data: rangeBlocks } = await supabase
+      .from("unit_blocks")
+      .select("unit_id, start_date, end_date")
+      .lte("start_date", to_date)
+      .gte("end_date", from_date);
 
     const groupId = crypto.randomUUID();
     const created: { date: string; unit_id: string | null }[] = [];
@@ -133,10 +139,17 @@ Deno.serve(async (req) => {
 
     for (const date of candidates) {
       const dayRes = (existing || []).filter(r => r.reservation_date === date && overlaps(r.reservation_time));
+      const blockedUnitIds = new Set((rangeBlocks || [])
+        .filter((b: any) => b.start_date <= date && b.end_date >= date)
+        .map((b: any) => b.unit_id));
 
       // If a specific unit was chosen, check that unit
       let chosenUnit: string | null = null;
       if (unit_id) {
+        if (blockedUnitIds.has(unit_id)) {
+          skipped.push({ date, reason: "Tisch gesperrt" });
+          continue;
+        }
         const unitConflict = dayRes.some(r => r.unit_id === unit_id);
         if (unitConflict) {
           skipped.push({ date, reason: "Tisch belegt" });
@@ -147,7 +160,7 @@ Deno.serve(async (req) => {
         // Auto-assign: smallest fitting free table
         const usedUnits = new Set(dayRes.map(r => r.unit_id).filter(Boolean));
         const free = (zoneUnits || []).filter(u =>
-          u.status !== "blocked" && !usedUnits.has(u.id)
+          !blockedUnitIds.has(u.id) && !usedUnits.has(u.id)
         );
         let pick;
         if (zone === "billard") {
