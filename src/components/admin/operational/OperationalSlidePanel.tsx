@@ -159,7 +159,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blockStart, setBlockStart] = useState("");
   const [blockEnd, setBlockEnd] = useState("");
-  const dateLabel = format(new Date(), "EEEE, d. MMMM yyyy", { locale: de });
+  const panelDateStr = currentDate || format(new Date(), "yyyy-MM-dd");
+  const dateLabel = format(new Date(panelDateStr + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de });
   const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
   const isToday = format(browseDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
@@ -171,17 +172,16 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       setCheckedIn(data?.status === "present");
       setMode((data?.initialWalkIn || data?.directBook) ? "book" : "view");
       setAssignedUnitId(data?.unitId || "");
-      setBrowseDate(new Date());
+      setBrowseDate(new Date(panelDateStr + "T00:00:00"));
       setBrowseDateReservations(data?.unitDayReservations || []);
     }
-  }, [open, data]);
+  }, [open, data, panelDateStr]);
 
   // Fetch reservations for a different date when browsing
   useEffect(() => {
     if (!open || !data?.unitId) return;
     const dateStr = format(browseDate, "yyyy-MM-dd");
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-    if (dateStr === todayStr) {
+    if (dateStr === panelDateStr) {
       setBrowseDateReservations(data?.unitDayReservations || []);
       return;
     }
@@ -205,12 +205,15 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       }
       setLoadingBrowse(false);
     }).catch(() => setLoadingBrowse(false));
-  }, [browseDate, open, data?.unitId]);
+  }, [browseDate, open, data?.unitId, data?.unitDayReservations, panelDateStr]);
 
   useEffect(() => {
     if (!open) return;
     supabase.from("units").select("id, name, area, status, capacity").order("position_index").then(({ data: u }) => {
-      const filtered = ((u as UnitOption[]) || []).filter(unit => {
+      const filtered = ((u as UnitOption[]) || []).map(unit => ({
+        ...unit,
+        status: unit.status === "blocked" ? "free" : unit.status,
+      })).filter(unit => {
         const lower = unit.name.toLowerCase();
         return !lower.startsWith("kicker") && !lower.startsWith("dart");
       });

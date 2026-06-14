@@ -41,6 +41,7 @@ interface Unit {
   status: string | null;
   notes: string | null;
   capacity?: number | null;
+  active_block?: { start_date: string; end_date: string } | null;
 }
 
 interface WaitlistEntry {
@@ -137,12 +138,23 @@ const OperationalView = () => {
     // Aktualisierung erfolgt über das 15s-Polling weiter unten.
   }, [load]);
 
+  useEffect(() => {
+    setLoadedDate(null);
+    setReservations([]);
+    setUnits(prev => prev.map(u => ({
+      ...u,
+      status: u.status === "blocked" ? "free" : u.status,
+      active_block: null,
+    })));
+  }, [dateStr]);
+
   // Include cancelled in rows for "Achtung" tab
   const rows: ResRow[] = useMemo(() => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const isToday = dateStr === todayStr;
     const isLoadedSelectedDate = loadedDate === dateStr;
+    if (!isLoadedSelectedDate) return [];
     return reservations
       .filter(r => r.status !== "checked_out")
       .sort((a, b) => a.reservation_time.localeCompare(b.reservation_time))
@@ -202,6 +214,11 @@ const OperationalView = () => {
   }, [load]);
 
   const floorTables = useMemo(() => {
+    const isLoadedSelectedDate = loadedDate === dateStr;
+    const currentReservations = isLoadedSelectedDate ? reservations : [];
+    const currentUnits = isLoadedSelectedDate
+      ? units
+      : units.map(u => ({ ...u, status: u.status === "blocked" ? "free" : u.status, active_block: null }));
     const map: Record<string, TableData> = {};
     const toFpId = (unit: { name: string; area: string }): string => {
       const name = unit.name.toLowerCase().trim();
@@ -221,7 +238,7 @@ const OperationalView = () => {
     // Group reservations per unit so we can pick the *currently relevant* one:
     // 1) checked-in (Anwesend) wins, 2) next upcoming, 3) most recent past.
     const byUnit = new Map<string, Reservation[]>();
-    reservations.forEach(r => {
+    currentReservations.forEach(r => {
       if (!r.unit_id) return;
       if (r.status === "cancelled" || r.status === "checked_out") return;
       const arr = byUnit.get(r.unit_id) || [];
@@ -233,7 +250,7 @@ const OperationalView = () => {
     const isToday = dateStr === todayStr;
     const nowMin = now.getHours() * 60 + now.getMinutes();
     byUnit.forEach((list, unitId) => {
-      const unit = units.find(u => u.id === unitId);
+      const unit = currentUnits.find(u => u.id === unitId);
       if (!unit) return;
       const fpId = toFpId(unit);
       if (!fpId) return;
@@ -260,7 +277,7 @@ const OperationalView = () => {
         pax: pick.guest_count, reservationId: pick.id,
       };
     });
-    units.forEach(u => {
+    currentUnits.forEach(u => {
       // "blocked" kommt ausschließlich aus Datums-Sperren (unit_blocks),
       // die im Backend bereits für das gewählte Datum aufgelöst wurden.
       if (u.status !== "blocked") return;
@@ -268,7 +285,7 @@ const OperationalView = () => {
       if (fpId && !map[fpId]) map[fpId] = { id: fpId, title: u.name, status: "blocked" };
     });
     return map;
-  }, [reservations, units, dateStr, durationMin]);
+  }, [reservations, units, dateStr, durationMin, loadedDate]);
 
   const areaToZone = (area: string): string => {
     const map: Record<string, string> = { billard: "billard", kicker: "billard", dart: "billard", restaurant: "hauptbereich" };
