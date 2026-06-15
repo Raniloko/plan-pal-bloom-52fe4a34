@@ -9,7 +9,6 @@ import Footer from "@/components/Footer";
 import CookieBanner from "@/components/CookieBanner";
 import Reservierung from "./pages/Reservierung";
 import Impressum from "./pages/Impressum";
-import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import ReservierungAendern from "./pages/ReservierungAendern";
 import ReservierungStornieren from "./pages/ReservierungStornieren";
@@ -68,7 +67,7 @@ const AppContent = () => {
         <Route path="/" element={<Navigate to="/reservierung" replace />} />
         <Route path="/reservierung" element={<Reservierung />} />
         <Route path="/impressum" element={<Impressum />} />
-        <Route path="/datenschutz" element={<Datenschutz />} />
+        <Route path="/datenschutz" element={<Navigate to="/reservierung" replace />} />
         <Route path="/reservierung/aendern" element={<ReservierungAendern />} />
         <Route path="/reservierung/stornieren" element={<ReservierungStornieren />} />
         <Route path="/backstage/login" element={<AdminLogin />} />
