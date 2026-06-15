@@ -739,7 +739,7 @@ const RondoReservationSystem = () => {
                   className="mt-1 h-4 w-4 accent-primary cursor-pointer flex-shrink-0"
                 />
                 <span className="text-sm text-muted-foreground">
-                  Ich habe die <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">AGB</a> und die <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Datenschutzerklärung</a> gelesen und akzeptiere diese. *
+                  Ich habe die <a href="https://www.rondo-sportsbar.de/datenschutz/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Datenschutzerklärung</a> gelesen und akzeptiere diese. *
                 </span>
               </label>
             </div>

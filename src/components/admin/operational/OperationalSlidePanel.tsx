@@ -793,8 +793,13 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
               Für welchen Tag soll <strong>{data?.tableLabel}</strong> gesperrt sein?
             </div>
             <label style={{ fontSize: 11, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Datum auswählen</label>
+            {blockStart && (
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#111", marginBottom: 6 }}>
+                Ausgewählt: {format(new Date(blockStart + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de })}
+              </div>
+            )}
             <input type="date" value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }} />
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, marginBottom: 10, fontFamily: "'DM Sans', sans-serif", color: "#111", background: "#fff", WebkitTextFillColor: "#111", colorScheme: "light" }} />
             <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
               {[0, 1, 2, 7].map((offset) => {
                 const d = addDays(new Date(), offset);
