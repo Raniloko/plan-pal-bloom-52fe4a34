@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { Link } from "react-router-dom";
 
 interface CookieConsent {
   necessary: boolean;
@@ -142,7 +141,7 @@ const CookieBanner = ({ onSettingsOpen, onSettingsClose }: CookieBannerProps) =>
           </div>
 
           <p className="text-xs text-muted-foreground mt-4">
-            <Link to="/datenschutz" className="underline hover:text-primary">Mehr erfahren in der Datenschutzerklärung</Link>
+            <a href="https://www.rondo-sportsbar.de/datenschutz/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">Mehr erfahren in der Datenschutzerklärung</a>
           </p>
 
           <div className="grid grid-cols-3 gap-2 mt-6">
@@ -169,7 +168,7 @@ const CookieBanner = ({ onSettingsOpen, onSettingsClose }: CookieBannerProps) =>
         <h4 className="font-display text-xl mb-2">Wir verwenden Cookies</h4>
         <p className="text-sm text-muted-foreground mb-4">
           Wir verwenden Cookies, um dir das beste Erlebnis auf unserer Website zu bieten. Einige Cookies sind notwendig für die Funktionalität, andere helfen uns, deine Erfahrung zu verbessern.{" "}
-          <Link to="/datenschutz" className="underline hover:text-primary">Mehr erfahren</Link>
+          <a href="https://www.rondo-sportsbar.de/datenschutz/" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">Mehr erfahren</a>
         </p>
         <div className="grid grid-cols-3 gap-2 max-w-md">
           <button onClick={handleRejectAll} className="border border-border text-foreground px-3 py-2.5 text-sm font-medium rounded-md hover:bg-secondary transition-colors">

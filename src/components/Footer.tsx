@@ -17,8 +17,6 @@ const Footer = ({ onOpenCookieSettings }: FooterProps) => {
           <span>|</span>
           <a href="https://www.rondo-sportsbar.de/impressum/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Impressum</a>
           <span>|</span>
-          <a href="/agb" className="hover:text-primary transition-colors">AGB</a>
-          <span>|</span>
           <a href="https://www.rondo-sportsbar.de/datenschutz/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Datenschutz</a>
           <span>|</span>
           <button onClick={onOpenCookieSettings} className="hover:text-primary transition-colors">Dateneinstellungen</button>
