@@ -21,6 +21,15 @@ import { SessionWarningModal } from "@/components/admin/SessionWarningModal";
 const queryClient = new QueryClient();
 
 const SUPPRESS_COOKIE_KEY = "rondo_suppress_cookie_banner";
+const OFFICIAL_PRIVACY_URL = "https://www.rondo-sportsbar.de/datenschutz/";
+
+const OfficialPrivacyRedirect = () => {
+  useEffect(() => {
+    window.location.replace(OFFICIAL_PRIVACY_URL);
+  }, []);
+
+  return null;
+};
 
 const AppContent = () => {
   const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false);
@@ -67,7 +76,7 @@ const AppContent = () => {
         <Route path="/" element={<Navigate to="/reservierung" replace />} />
         <Route path="/reservierung" element={<Reservierung />} />
         <Route path="/impressum" element={<Impressum />} />
-        <Route path="/datenschutz" element={<Navigate to="/reservierung" replace />} />
+        <Route path="/datenschutz" element={<OfficialPrivacyRedirect />} />
         <Route path="/reservierung/aendern" element={<ReservierungAendern />} />
         <Route path="/reservierung/stornieren" element={<ReservierungStornieren />} />
         <Route path="/backstage/login" element={<AdminLogin />} />
