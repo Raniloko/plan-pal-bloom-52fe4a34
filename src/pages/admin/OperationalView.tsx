@@ -177,13 +177,25 @@ const OperationalView = () => {
           offset = `+${Math.floor(minutesOverdue)} Min`;
         }
 
+        const zoneLabels: Record<string, string> = {
+          hauptbereich: "Hauptbereich",
+          fenster: "Fensterplätze",
+          billard: "Billard",
+          vip: "VIP-Bereich",
+          podest: "Podest",
+          salitos: "Salitos Lounge",
+        };
+        const tableRef = unit
+          ? unit.name
+          : (zoneLabels[(r.zone || "").toLowerCase()] || r.zone || "—");
+
         return {
           id: r.id,
           time: r.reservation_time.slice(0, 5),
           offset,
           guests: r.guest_count,
           name: r.customer_name,
-          tableRef: unit ? unit.name : r.zone,
+          tableRef,
           icon,
           highlighted: isCheckedIn || isOverdue,
           status: r.status as ResRow["status"],
