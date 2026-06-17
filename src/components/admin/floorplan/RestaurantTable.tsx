@@ -19,6 +19,7 @@ interface RestaurantTableProps {
 const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dimmed = false, showLabels = true, colorMode = "status" }: RestaurantTableProps) => {
   const [hovered, setHovered] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const s = STATUS_FILLS[data.status] || STATUS_FILLS.free;
   const isReserved = data.status === "reserved";
   const isPresent = data.status === "present";
@@ -81,6 +82,7 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
   const scale = hovered && !dimmed ? 1.06 : 1;
 
   const hasInfo = data.guest || data.startTime || data.pax;
+  const isDraggable = !!data.reservationId && !dimmed;
 
   return (
     <g
@@ -94,11 +96,23 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
         e.preventDefault();
         setDragOver(false);
         const resId = e.dataTransfer.getData("reservationId");
-        if (resId && onDrop) onDrop(resId);
+        const fromUnit = e.dataTransfer.getData("fromUnitId");
+        if (resId && onDrop && fromUnit !== id) onDrop(resId);
       }}
+      {...(isDraggable ? {
+        // SVG <g> supports draggable in modern browsers
+        draggable: true,
+        onDragStart: (e: React.DragEvent) => {
+          e.dataTransfer.setData("reservationId", data.reservationId!);
+          e.dataTransfer.setData("fromUnitId", id);
+          e.dataTransfer.effectAllowed = "move";
+          setDragging(true);
+        },
+        onDragEnd: () => setDragging(false),
+      } as any : {})}
       style={{
-        cursor: dimmed ? "default" : "pointer",
-        opacity: groupOpacity,
+        cursor: dimmed ? "default" : isDraggable ? "grab" : "pointer",
+        opacity: dragging ? 0.5 : groupOpacity,
         transform: `scale(${scale})`,
         transformOrigin: `${cx}px ${cy}px`,
         transition: "opacity 0.4s ease, transform 0.2s ease",
