@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TableData, STATUS_FILLS, TIME_SLOT_FILLS, getTimeSlot } from "./types";
+import { useTableDrag } from "./useTableDrag";
 
 interface BillardTableProps {
   id: string;
@@ -62,10 +63,17 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
   const scale = hovered && !dimmed ? 1.03 : 1;
   const hasInfo = data.guest || data.startTime || data.pax;
   const isDraggable = !!data.reservationId && !dimmed;
+  const { touchDragging, pointerProps } = useTableDrag({
+    id,
+    reservationId: data.reservationId,
+    enabled: isDraggable,
+    onDrop,
+  });
 
   return (
     <g
       id={id}
+      data-table-id={id}
       transform={rotation ? `rotate(${rotation.angle}, ${rotation.cx}, ${rotation.cy})` : undefined}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
@@ -79,6 +87,7 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
         const fromUnit = e.dataTransfer.getData("fromUnitId");
         if (resId && onDrop && fromUnit !== id) onDrop(resId);
       }}
+      {...pointerProps}
       {...(isDraggable ? {
         draggable: true,
         onDragStart: (e: React.DragEvent) => {
@@ -91,8 +100,12 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
       } as any : {})}
       style={{
         cursor: dimmed ? "default" : isDraggable ? "grab" : "pointer",
-        opacity: dragging ? 0.5 : groupOpacity,
+        opacity: dragging || touchDragging ? 0.5 : groupOpacity,
         transition: "opacity 0.4s ease",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        touchAction: isDraggable ? "none" : "manipulation",
       }}
     >
       {/* Pulse ring for "present" status */}

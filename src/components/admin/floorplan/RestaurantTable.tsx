@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TableData, STATUS_FILLS, TIME_SLOT_FILLS, getTimeSlot } from "./types";
+import { useTableDrag } from "./useTableDrag";
 
 interface RestaurantTableProps {
   id: string;
@@ -83,10 +84,17 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
 
   const hasInfo = data.guest || data.startTime || data.pax;
   const isDraggable = !!data.reservationId && !dimmed;
+  const { touchDragging, pointerProps } = useTableDrag({
+    id,
+    reservationId: data.reservationId,
+    enabled: isDraggable,
+    onDrop,
+  });
 
   return (
     <g
       id={id}
+      data-table-id={id}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setDragOver(false); }}
@@ -99,6 +107,7 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
         const fromUnit = e.dataTransfer.getData("fromUnitId");
         if (resId && onDrop && fromUnit !== id) onDrop(resId);
       }}
+      {...pointerProps}
       {...(isDraggable ? {
         // SVG <g> supports draggable in modern browsers
         draggable: true,
@@ -112,10 +121,14 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
       } as any : {})}
       style={{
         cursor: dimmed ? "default" : isDraggable ? "grab" : "pointer",
-        opacity: dragging ? 0.5 : groupOpacity,
+        opacity: dragging || touchDragging ? 0.5 : groupOpacity,
         transform: `scale(${scale})`,
         transformOrigin: `${cx}px ${cy}px`,
         transition: "opacity 0.4s ease, transform 0.2s ease",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        touchAction: isDraggable ? "none" : "manipulation",
       }}
     >
       {/* Pulse ring for "present" status (check-in animation) */}
