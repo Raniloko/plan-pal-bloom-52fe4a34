@@ -86,13 +86,15 @@ export function useTableDrag(opts: {
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!enabled || !reservationId) return;
-    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     startRef.current = { x: e.clientX, y: e.clientY };
+    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
     clearTimer();
     longPressRef.current = window.setTimeout(() => {
       activeRef.current = true;
       setTouchDragging(true);
       document.body.style.overflow = "hidden";
+      document.body.classList.add("table-dragging");
       document.addEventListener("pointermove", onGlobalMove, { passive: false });
       document.addEventListener("pointerup", onGlobalUp);
       document.addEventListener("pointercancel", onGlobalUp);
@@ -100,14 +102,15 @@ export function useTableDrag(opts: {
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try { (navigator as any).vibrate?.(15); } catch {}
       }
-    }, 280);
+    }, 220);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (activeRef.current || !startRef.current) return;
     const dx = e.clientX - startRef.current.x;
     const dy = e.clientY - startRef.current.y;
-    if (dx * dx + dy * dy > 100) clearTimer(); // moved before long-press fired -> cancel
+    // Allow small finger jitter (~14px) before we treat it as a scroll/cancel
+    if (dx * dx + dy * dy > 200) clearTimer();
   };
 
   const onPointerUp = () => {
