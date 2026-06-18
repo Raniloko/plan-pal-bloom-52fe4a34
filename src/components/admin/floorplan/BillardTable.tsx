@@ -68,6 +68,9 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
     reservationId: data.reservationId,
     enabled: isDraggable,
     onDrop,
+    label: data.title,
+    guest: data.guest,
+    time: data.startTime,
   });
 
   return (

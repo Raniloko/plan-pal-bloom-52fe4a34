@@ -89,6 +89,9 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
     reservationId: data.reservationId,
     enabled: isDraggable,
     onDrop,
+    label: data.title,
+    guest: data.guest,
+    time: data.startTime,
   });
 
   return (
