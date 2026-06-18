@@ -10,6 +10,46 @@
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
 }
+[data-table-id][data-table-pressing="1"] > rect,
+[data-table-id][data-table-drag-source="1"] > rect {
+  stroke: #c9a84c !important;
+  stroke-width: 4 !important;
+  filter: drop-shadow(0 0 10px rgba(201, 168, 76, 0.95));
+}
+.table-drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  min-width: 132px;
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 2px solid #c9a84c;
+  border-radius: 8px;
+  background: rgba(12, 12, 14, 0.94);
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 18px rgba(201, 168, 76, 0.45);
+  font-family: 'DM Sans', sans-serif;
+  transform: translate3d(-9999px, -9999px, 0);
+}
+.table-drag-ghost strong,
+.table-drag-ghost span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.table-drag-ghost strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+.table-drag-ghost span {
+  margin-top: 2px;
+  color: #c9a84c;
+  font-size: 11px;
+  font-weight: 700;
+}
 /* While a touch-drag is active, prevent the whole page from scrolling/zooming */
 body.table-dragging,
 body.table-dragging * {
