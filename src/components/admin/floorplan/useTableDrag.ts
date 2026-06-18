@@ -75,6 +75,11 @@ export function useTableDrag(opts: {
     activeRef.current = false;
     setTouchDragging(false);
     if (!wasActive || !reservationId) return;
+    // Swallow the synthetic click that follows a pointerup so the table panel
+    // doesn't open after a drag-and-drop.
+    const swallow = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener("click", swallow, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener("click", swallow, { capture: true } as any), 400);
     const el = document.elementFromPoint(e.clientX, e.clientY) as Element | null;
     const target = el?.closest("[data-table-id]") as SVGGElement | null;
     const tid = target?.getAttribute("data-table-id");
