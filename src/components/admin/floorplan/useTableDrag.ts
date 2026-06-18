@@ -69,6 +69,7 @@ export function useTableDrag(opts: {
     document.removeEventListener("pointerup", onGlobalUp);
     document.removeEventListener("pointercancel", onGlobalUp);
     document.body.style.overflow = "";
+    document.body.classList.remove("table-dragging");
     clearHighlights();
     const wasActive = activeRef.current;
     activeRef.current = false;
