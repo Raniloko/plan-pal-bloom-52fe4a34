@@ -225,6 +225,17 @@ const OperationalView = () => {
     return () => clearInterval(interval);
   }, [load]);
 
+  useEffect(() => {
+    const onDragAreaHover = (event: Event) => {
+      const area = (event as CustomEvent<{ area?: FloorArea }>).detail?.area;
+      if (!area) return;
+      setActiveArea(current => current === area ? current : area);
+      if (isMobile) setMobileTab("map");
+    };
+    window.addEventListener("table-drag-area-hover", onDragAreaHover);
+    return () => window.removeEventListener("table-drag-area-hover", onDragAreaHover);
+  }, [isMobile]);
+
   const floorTables = useMemo(() => {
     const isLoadedSelectedDate = loadedDate === dateStr;
     const currentReservations = isLoadedSelectedDate ? reservations : [];
