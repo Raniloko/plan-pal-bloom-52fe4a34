@@ -56,7 +56,7 @@ export const OperationalAreaTabs = ({
         {AREA_TABS.map(tab => {
           const active = activeArea === tab.id;
           return (
-            <button key={tab.id} onClick={() => onAreaChange(tab.id)} style={{
+            <button key={tab.id} data-floor-area-tab={tab.id} onClick={() => onAreaChange(tab.id)} style={{
               padding: "6px 16px", height: 34, fontSize: 13, fontWeight: 600,
               whiteSpace: "nowrap", cursor: "pointer",
               borderRadius: 8,
