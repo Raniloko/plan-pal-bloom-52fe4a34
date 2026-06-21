@@ -80,11 +80,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Walk-in / admin booking bypass: only honored when the caller presents
-    // a valid admin JWT. Without a verified admin token, treat the request
-    // like a normal public booking so all validations apply.
+    // Detect verified admin caller (used to bypass time-conflict checks and
+    // to allow walk-in bookings without real contact data). The check runs
+    // for EVERY request; without a valid admin JWT, all public validations
+    // and conflict checks apply normally.
     let isAdminBooking = false;
-    if (sanitize(email) === "walkin@intern.local") {
+    {
       const authHeader = req.headers.get("Authorization");
       if (authHeader?.startsWith("Bearer ")) {
         try {
@@ -113,7 +114,8 @@ Deno.serve(async (req) => {
           console.error("Admin booking auth check failed:", e);
         }
       }
-      if (!isAdminBooking) {
+      // Walk-in email is only allowed for verified admins.
+      if (sanitize(email) === "walkin@intern.local" && !isAdminBooking) {
         return new Response(
           JSON.stringify({ error: "Ungültige E-Mail-Adresse." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -193,7 +195,15 @@ Deno.serve(async (req) => {
     // reservations cannot land on the same table within that window.
     // The live-timer model only governs the in-house check-in flow,
     // not future reservation conflicts.
-    const overlapDur = zone === "billard" ? Math.min(durMin, 120) : durMin;
+    //
+    // Admin override: when a verified admin places the booking from the
+    // dashboard, time conflicts are intentionally ignored — staff may
+    // double-book a table on purpose (e.g. quick turnaround, manual
+    // override). p_duration_min = 0 makes the SQL overlap predicate
+    // ( newStart < existingEnd AND newEnd > existingStart ) never match.
+    const overlapDur = isAdminBooking
+      ? 0
+      : zone === "billard" ? Math.min(durMin, 120) : durMin;
 
     const [newH, newM] = time.split(":").map(Number);
     const newStart = newH * 60 + newM;
