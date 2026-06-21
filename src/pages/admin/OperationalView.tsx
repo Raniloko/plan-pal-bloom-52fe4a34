@@ -59,7 +59,7 @@ interface WaitlistEntry {
   notified_at: string | null;
 }
 
-const OperationalView = () => {
+const OperationalViewInner = () => {
   const isMobile = useIsMobile();
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
@@ -526,6 +526,44 @@ const OperationalView = () => {
         onClose={() => setConvertEntry(null)}
         onConverted={load}
       />
+    </div>
+  );
+};
+
+const OperationalView = () => (
+  <RebookProvider>
+    <OperationalViewInner />
+    <RebookBanner />
+  </RebookProvider>
+);
+
+const RebookBanner = () => {
+  const { session, cancel } = useRebook();
+  if (!session) return null;
+  return (
+    <div style={{
+      position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
+      zIndex: 1000, display: "flex", alignItems: "center", gap: 12,
+      padding: "10px 14px", borderRadius: 10,
+      background: "rgba(12,12,14,0.95)", color: "#fff",
+      border: "2px solid #c9a84c",
+      boxShadow: "0 12px 32px rgba(0,0,0,0.45), 0 0 18px rgba(201,168,76,0.45)",
+      fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+      maxWidth: "calc(100vw - 24px)",
+    }}>
+      <span style={{ color: "#c9a84c", fontWeight: 800 }}>Umbuchung aktiv</span>
+      <span style={{ opacity: 0.85 }}>
+        {session.guest || "Reservierung"} · {session.sourceTableLabel}
+        {session.time ? ` · ${session.time}` : ""}
+      </span>
+      <span style={{ opacity: 0.6, fontWeight: 500 }}>→ freien Tisch antippen</span>
+      <button onClick={cancel} style={{
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+        background: "transparent", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700,
+      }}>
+        <X size={14} /> Abbrechen
+      </button>
     </div>
   );
 };
