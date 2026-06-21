@@ -61,6 +61,7 @@ interface WaitlistEntry {
 
 const OperationalViewInner = () => {
   const isMobile = useIsMobile();
+  const rebook = useRebook();
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
   const [showLabels, setShowLabels] = useState(true);
@@ -227,10 +228,6 @@ const OperationalViewInner = () => {
     return () => clearInterval(interval);
   }, [load]);
 
-  useEffect(() => {
-    // Area switching during a rebook is now manual via tabs — the rebook
-    // session lives in RebookContext so it survives the area change.
-  }, []);
 
   const floorTables = useMemo(() => {
     const isLoadedSelectedDate = loadedDate === dateStr;
@@ -415,6 +412,55 @@ const OperationalViewInner = () => {
       toast.error(e?.message || "Fehler bei der Zuweisung");
     }
   };
+
+  // Wire the rebook committer: long-press → tap on free target.
+  useEffect(() => {
+    rebook.setCommitter(async ({ tableId, label }) => {
+      const reservationId = rebook.session?.reservationId;
+      const sourceLabel = rebook.session?.sourceTableLabel || "Tisch";
+      if (!reservationId) return false;
+      const unit = units.find(u => u.name.toLowerCase() === label.toLowerCase());
+      if (!unit) { toast.error("Zieltisch nicht gefunden"); return false; }
+      try {
+        const res = await supabase.functions.invoke("admin-actions", {
+          body: { action: "assign_unit", reservation_id: reservationId, unit_id: unit.id },
+        });
+        if (res.error) {
+          const ctx = (res.error as any)?.context;
+          let msg = (res.error as any)?.message || "Fehler bei der Umbuchung";
+          try {
+            const body = await ctx?.json?.();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+          toast.error(msg);
+          return false;
+        }
+        if (res.data?.error) { toast.error(res.data.error); return false; }
+        toast.success(`Umgebucht: ${sourceLabel} → ${label}`);
+        load();
+        return true;
+      } catch (e: any) {
+        toast.error(e?.message || "Fehler bei der Umbuchung");
+        return false;
+      }
+    });
+    return () => rebook.setCommitter(null);
+  }, [rebook, units, load]);
+
+  // Allow taps outside any table to cancel the mode.
+  useEffect(() => {
+    if (!rebook.active) return;
+    const onDocClick = (e: MouseEvent) => {
+      const el = e.target as Element | null;
+      if (el?.closest("[data-table-id]")) return;
+      if (el?.closest("[data-rebook-banner]")) return;
+      if (el?.closest("[data-floor-area-tab]")) return;
+      rebook.cancel();
+    };
+    // Defer so the click that started the mode isn't caught.
+    const t = window.setTimeout(() => document.addEventListener("click", onDocClick), 50);
+    return () => { window.clearTimeout(t); document.removeEventListener("click", onDocClick); };
+  }, [rebook.active, rebook]);
 
   if (loading) {
     return (
