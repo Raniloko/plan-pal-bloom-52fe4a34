@@ -17,6 +17,8 @@ import {
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
+import { RebookProvider, useRebook } from "@/contexts/RebookContext";
+import { X } from "lucide-react";
 
 interface Reservation {
   id: string;
@@ -57,8 +59,9 @@ interface WaitlistEntry {
   notified_at: string | null;
 }
 
-const OperationalView = () => {
+const OperationalViewInner = () => {
   const isMobile = useIsMobile();
+  const rebook = useRebook();
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
   const [showLabels, setShowLabels] = useState(true);
@@ -225,16 +228,6 @@ const OperationalView = () => {
     return () => clearInterval(interval);
   }, [load]);
 
-  useEffect(() => {
-    const onDragAreaHover = (event: Event) => {
-      const area = (event as CustomEvent<{ area?: FloorArea }>).detail?.area;
-      if (!area) return;
-      setActiveArea(current => current === area ? current : area);
-      if (isMobile) setMobileTab("map");
-    };
-    window.addEventListener("table-drag-area-hover", onDragAreaHover);
-    return () => window.removeEventListener("table-drag-area-hover", onDragAreaHover);
-  }, [isMobile]);
 
   const floorTables = useMemo(() => {
     const isLoadedSelectedDate = loadedDate === dateStr;
@@ -420,6 +413,55 @@ const OperationalView = () => {
     }
   };
 
+  // Wire the rebook committer: long-press → tap on free target.
+  useEffect(() => {
+    rebook.setCommitter(async ({ tableId, label }) => {
+      const reservationId = rebook.session?.reservationId;
+      const sourceLabel = rebook.session?.sourceTableLabel || "Tisch";
+      if (!reservationId) return false;
+      const unit = units.find(u => u.name.toLowerCase() === label.toLowerCase());
+      if (!unit) { toast.error("Zieltisch nicht gefunden"); return false; }
+      try {
+        const res = await supabase.functions.invoke("admin-actions", {
+          body: { action: "assign_unit", reservation_id: reservationId, unit_id: unit.id },
+        });
+        if (res.error) {
+          const ctx = (res.error as any)?.context;
+          let msg = (res.error as any)?.message || "Fehler bei der Umbuchung";
+          try {
+            const body = await ctx?.json?.();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+          toast.error(msg);
+          return false;
+        }
+        if (res.data?.error) { toast.error(res.data.error); return false; }
+        toast.success(`Umgebucht: ${sourceLabel} → ${label}`);
+        load();
+        return true;
+      } catch (e: any) {
+        toast.error(e?.message || "Fehler bei der Umbuchung");
+        return false;
+      }
+    });
+    return () => rebook.setCommitter(null);
+  }, [rebook, units, load]);
+
+  // Allow taps outside any table to cancel the mode.
+  useEffect(() => {
+    if (!rebook.active) return;
+    const onDocClick = (e: MouseEvent) => {
+      const el = e.target as Element | null;
+      if (el?.closest("[data-table-id]")) return;
+      if (el?.closest("[data-rebook-banner]")) return;
+      if (el?.closest("[data-floor-area-tab]")) return;
+      rebook.cancel();
+    };
+    // Defer so the click that started the mode isn't caught.
+    const t = window.setTimeout(() => document.addEventListener("click", onDocClick), 50);
+    return () => { window.clearTimeout(t); document.removeEventListener("click", onDocClick); };
+  }, [rebook.active, rebook]);
+
   if (loading) {
     return (
       <div style={{
@@ -530,6 +572,44 @@ const OperationalView = () => {
         onClose={() => setConvertEntry(null)}
         onConverted={load}
       />
+    </div>
+  );
+};
+
+const OperationalView = () => (
+  <RebookProvider>
+    <OperationalViewInner />
+    <RebookBanner />
+  </RebookProvider>
+);
+
+const RebookBanner = () => {
+  const { session, cancel } = useRebook();
+  if (!session) return null;
+  return (
+    <div data-rebook-banner="1" style={{
+      position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
+      zIndex: 1000, display: "flex", alignItems: "center", gap: 12,
+      padding: "10px 14px", borderRadius: 10,
+      background: "rgba(12,12,14,0.95)", color: "#fff",
+      border: "2px solid #c9a84c",
+      boxShadow: "0 12px 32px rgba(0,0,0,0.45), 0 0 18px rgba(201,168,76,0.45)",
+      fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+      maxWidth: "calc(100vw - 24px)",
+    }}>
+      <span style={{ color: "#c9a84c", fontWeight: 800 }}>Umbuchung aktiv</span>
+      <span style={{ opacity: 0.85 }}>
+        {session.guest || "Reservierung"} · {session.sourceTableLabel}
+        {session.time ? ` · ${session.time}` : ""}
+      </span>
+      <span style={{ opacity: 0.6, fontWeight: 500 }}>→ freien Tisch antippen</span>
+      <button onClick={cancel} style={{
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)",
+        background: "transparent", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700,
+      }}>
+        <X size={14} /> Abbrechen
+      </button>
     </div>
   );
 };
