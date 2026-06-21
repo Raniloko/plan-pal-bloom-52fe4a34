@@ -17,6 +17,8 @@ import {
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
+import { RebookProvider, useRebook } from "@/contexts/RebookContext";
+import { X } from "lucide-react";
 
 interface Reservation {
   id: string;
@@ -226,15 +228,9 @@ const OperationalView = () => {
   }, [load]);
 
   useEffect(() => {
-    const onDragAreaHover = (event: Event) => {
-      const area = (event as CustomEvent<{ area?: FloorArea }>).detail?.area;
-      if (!area) return;
-      setActiveArea(current => current === area ? current : area);
-      if (isMobile) setMobileTab("map");
-    };
-    window.addEventListener("table-drag-area-hover", onDragAreaHover);
-    return () => window.removeEventListener("table-drag-area-hover", onDragAreaHover);
-  }, [isMobile]);
+    // Area switching during a rebook is now manual via tabs — the rebook
+    // session lives in RebookContext so it survives the area change.
+  }, []);
 
   const floorTables = useMemo(() => {
     const isLoadedSelectedDate = loadedDate === dateStr;
@@ -432,6 +428,11 @@ const OperationalView = () => {
   }
 
   return (
+    <RebookProvider>
+      <OperationalViewInner
+        // Re-pass everything via outer closure: this wrapper exists solely
+        // to give children access to useRebook().
+      >
     <div style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
