@@ -63,7 +63,7 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
   const scale = hovered && !dimmed ? 1.03 : 1;
   const hasInfo = data.guest || data.startTime || data.pax;
   const isDraggable = !!data.reservationId && !dimmed;
-  const { touchDragging, pointerProps } = useTableDrag({
+  const { touchDragging, isRebookSource, wrapClick, pointerProps } = useTableDrag({
     id,
     reservationId: data.reservationId,
     enabled: isDraggable,
@@ -71,14 +71,16 @@ const BillardTable = ({ id, data, onClick, onDrop, x, y, w, h, rotation, strokeC
     label: data.title,
     guest: data.guest,
     time: data.startTime,
+    status: data.status,
   });
 
   return (
     <g
       id={id}
       data-table-id={id}
+      data-table-drag-source={isRebookSource ? "1" : undefined}
       transform={rotation ? `rotate(${rotation.angle}, ${rotation.cx}, ${rotation.cy})` : undefined}
-      onClick={onClick}
+      onClick={wrapClick(onClick)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setDragOver(false); }}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
