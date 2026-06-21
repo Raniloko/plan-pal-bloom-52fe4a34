@@ -428,11 +428,6 @@ const OperationalView = () => {
   }
 
   return (
-    <RebookProvider>
-      <OperationalViewInner
-        // Re-pass everything via outer closure: this wrapper exists solely
-        // to give children access to useRebook().
-      >
     <div style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
