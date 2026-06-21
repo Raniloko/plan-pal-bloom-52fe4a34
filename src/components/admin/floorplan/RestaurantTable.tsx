@@ -84,7 +84,7 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
 
   const hasInfo = data.guest || data.startTime || data.pax;
   const isDraggable = !!data.reservationId && !dimmed;
-  const { touchDragging, pointerProps } = useTableDrag({
+  const { touchDragging, isRebookSource, wrapClick, pointerProps } = useTableDrag({
     id,
     reservationId: data.reservationId,
     enabled: isDraggable,
@@ -92,13 +92,15 @@ const RestaurantTable = ({ id, data, onClick, onDrop, cx, cy, tw, th, seats, dim
     label: data.title,
     guest: data.guest,
     time: data.startTime,
+    status: data.status,
   });
 
   return (
     <g
       id={id}
       data-table-id={id}
-      onClick={onClick}
+      data-table-drag-source={isRebookSource ? "1" : undefined}
+      onClick={wrapClick(onClick)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setDragOver(false); }}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
