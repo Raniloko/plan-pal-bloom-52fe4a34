@@ -587,7 +587,7 @@ const RebookBanner = () => {
   const { session, cancel } = useRebook();
   if (!session) return null;
   return (
-    <div style={{
+    <div data-rebook-banner="1" style={{
       position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
       zIndex: 1000, display: "flex", alignItems: "center", gap: 12,
       padding: "10px 14px", borderRadius: 10,
