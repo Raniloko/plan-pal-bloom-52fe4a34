@@ -1,10 +1,11 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthOptional } from "@/contexts/AuthContext";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export const SessionWarningModal = () => {
-  const { sessionWarning, dismissWarning, signOut } = useAuth();
+  const auth = useAuthOptional();
 
-  if (!sessionWarning) return null;
+  if (!auth?.sessionWarning) return null;
+  const { dismissWarning, signOut } = auth;
 
   return (
     <>
