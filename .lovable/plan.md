@@ -1,47 +1,53 @@
-## Brauchst du AGBs?
+# Umzug auf dein eigenes Supabase-Projekt
 
-**Kurz: Nicht zwingend gesetzlich vorgeschrieben**, aber **dringend empfohlen**, sobald du Online-Reservierungen entgegennimmst. Sie schaffen Klarheit, schützen dich rechtlich (z.B. bei No-Shows) und sind ein Vertrauenssignal für Gäste.
+Ziel: Das Projekt läuft künftig nicht mehr auf der eingebauten Cloud, sondern auf deinem eigenen Supabase-Konto.
 
-Da bei dir die Stornierung kostenlos ist und kein Geld fließt, bleibt der Inhalt schlank.
+Wichtig vorab: Den Wechsel selbst kann nur du auslösen (Projekteinstellungen). Ich kann alles drumherum vorbereiten und danach wieder komplett aufbauen.
 
-## Was umgesetzt wird
+## Ablauf
 
-### 1. Neue Seite `/agb`
-Eine eigene Seite im Stil von Impressum/Datenschutz mit folgenden Abschnitten:
+1. **Du legst dein Supabase-Projekt an**
+   Auf supabase.com ein Projekt erstellen (Region Frankfurt/EU), Datenbank-Passwort sicher notieren.
 
-- **§1 Geltungsbereich** — Diese AGB gelten für alle Online-Reservierungen über die Website der Rondo - Sportsbar.
-- **§2 Vertragsschluss** — Reservierung kommt mit Erhalt der Bestätigungs-E-Mail zustande. Reservierung ist unverbindlich und kostenlos.
-- **§3 Erforderliche Angaben** — Für die Reservierung sind Name, E-Mail und Telefonnummer Pflicht. Diese Daten werden ausschließlich zur Abwicklung der Reservierung genutzt (Details siehe Datenschutzerklärung).
-- **§4 Stornierung & Änderung** — Stornierung und Änderung jederzeit kostenlos möglich, über den Link in der Bestätigungs-E-Mail oder telefonisch. Bitte rechtzeitig stornieren, damit der Tisch freigegeben werden kann.
-- **§5 No-Show** — Bei wiederholtem Nichterscheinen ohne Absage behält sich Rondo vor, zukünftige Reservierungen abzulehnen. Reservierter Tisch wird bei Verspätung über 15 Minuten ggf. anderweitig vergeben.
-- **§6 Billardtische** — Spezielle Regelung: Tisch wird für gebuchten Zeitraum reserviert. Verlängerung vor Ort nur möglich, wenn der Tisch danach frei ist.
-- **§7 Hausrecht** — Rondo behält sich vor, Reservierungen ohne Angabe von Gründen abzulehnen.
-- **§8 Haftung** — Standard-Haftungsbegrenzung auf Vorsatz und grobe Fahrlässigkeit.
-- **§9 Datenschutz** — Verweis auf Datenschutzerklärung.
-- **§10 Schlussbestimmungen** — Anwendbares Recht (deutsches Recht), Salvatorische Klausel, Gerichtsstand Hanau.
+2. **Ich sichere alle Daten** (bevor irgendetwas getrennt wird)
+   - Tische und Bereiche
+   - Alle Reservierungen inkl. Historie
+   - Tischsperren
+   - Öffnungszeiten und Einstellungen
+   - Warteliste, E-Mail-Protokoll, Aktivitätslog
+   - Liste der Admin-Konten (E-Mail-Adressen)
+   Ergebnis: eine vollständige Sicherungsdatei, die ich dir zusätzlich ablege.
 
-### 2. Footer-Link
-Im `Footer.tsx` wird "AGB" zwischen "Impressum" und "Datenschutz" verlinkt.
+3. **Du trennst die Cloud-Verbindung**
+   Projekteinstellungen → Integrationen → Cloud trennen.
+   Achtung: Das löscht die bisherigen Daten endgültig – deshalb zwingend erst Schritt 2.
 
-### 3. Pflicht-Checkbox im Reservierungs-Flow
-Im letzten Schritt von `RondoReservationSystem.tsx` (Kundendaten-Schritt, wo Name/E-Mail/Telefon eingegeben werden) wird eine Pflicht-Checkbox ergänzt:
+4. **Du verbindest dein Supabase-Projekt**
+   Ebenfalls unter Projekteinstellungen, über den Supabase-Connector.
 
-> ☐ Ich habe die [AGB](/agb) und [Datenschutzerklärung](/datenschutz) gelesen und akzeptiere diese.
+5. **Ich baue alles neu auf**
+   - Alle Tabellen, Regeln und Zugriffsrechte neu anlegen
+   - Die Buchungslogik (Doppelbuchungs-Schutz, Billard-Automatik, Sperren) wieder einrichten
+   - Alle Server-Funktionen erneut veröffentlichen (Reservierung anlegen, Verfügbarkeit, Admin-Aktionen, E-Mail-Versand)
+   - Gesicherte Daten aus Schritt 2 einspielen
+   - E-Mail-Versand-Schlüssel (Resend) wieder hinterlegen
 
-- Checkbox muss gesetzt sein, sonst ist der "Reservieren"-Button deaktiviert.
-- State `acceptedTerms: boolean` im Form-State.
-- Rein clientseitige Pflicht — keine Speicherung in der Datenbank nötig (in Deutschland reicht das aktive Setzen der Checkbox als Nachweis bei kostenlosen, unverbindlichen Reservierungen).
+6. **Admin-Zugänge**
+   Passwörter lassen sich nicht mitnehmen. Die Admin-Konten werden mit denselben E-Mail-Adressen neu angelegt, jeder setzt einmalig ein neues Passwort.
 
-### 4. Route in `App.tsx`
-Neue Route `/agb` ergänzen.
+7. **Test**
+   Kundenreservierung, Billard-Tischwahl, Bestätigungs-E-Mail, Backstage-Login und Tischplan durchklicken.
+
+## Was du bereithalten musst
+
+- Supabase-Projekt (URL, öffentlicher Schlüssel, Service-Schlüssel, DB-Passwort)
+- Resend-API-Schlüssel für die E-Mails
+- Ein Zeitfenster, in dem keine Reservierungen reinkommen (die Umstellung ist eine kurze Auszeit)
 
 ## Technische Details
 
-- Neue Datei: `src/pages/AGB.tsx` (Aufbau parallel zu `Impressum.tsx`)
-- Anpassungen: `src/App.tsx`, `src/components/Footer.tsx`, `src/components/RondoReservationSystem.tsx`
-- Keine Datenbank-Änderungen
-- Texte komplett auf Deutsch, gleiches Styling wie bestehende rechtliche Seiten
-
-## Wichtiger Hinweis
-
-Diese AGBs sind als solide Vorlage gedacht, aber **keine Rechtsberatung**. Für maximale Sicherheit empfehle ich, die fertigen AGBs einmal von einem Anwalt oder über einen AGB-Generator (z.B. IT-Recht Kanzlei, eRecht24) gegenchecken zu lassen — besonders falls später kostenpflichtige Angebote (z.B. Eventbuchungen mit Anzahlung) dazukommen.
+- Schema: `reservations`, `units`, `unit_blocks`, `waitlist`, `settings`, `user_roles`, `notifications`, `email_logs`, `activity_log`, `login_attempts` inkl. RLS-Policies und GRANTs
+- Funktionen: `has_role`, `reserve_atomic`, `reserve_billard_auto`, `update_updated_at_column` + Trigger
+- Edge Functions: `create-reservation`, `billard-availability`, `admin-actions`, `send-reservation-email`
+- Datenexport per SQL-Dump (Schema + Daten getrennt), Import nach Anbindung
+- Auth-Nutzer werden neu angelegt, `user_roles` per E-Mail-Zuordnung neu verknüpft
