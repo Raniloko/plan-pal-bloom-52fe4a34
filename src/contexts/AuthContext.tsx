@@ -191,6 +191,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Safe variant: returns null instead of throwing when no provider is mounted
+// (e.g. during hot reloads). Use in optional UI like the session warning modal.
+export const useAuthOptional = () => useContext(AuthContext) ?? null;
+
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
