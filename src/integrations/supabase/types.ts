@@ -84,18 +84,21 @@ export type Database = {
           attempted_at: string
           email: string
           id: string
+          ip: string
           success: boolean
         }
         Insert: {
           attempted_at?: string
           email: string
           id?: string
+          ip?: string
           success?: boolean
         }
         Update: {
           attempted_at?: string
           email?: string
           id?: string
+          ip?: string
           success?: boolean
         }
         Relationships: []
