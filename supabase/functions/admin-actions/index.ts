@@ -677,16 +677,17 @@ Deno.serve(async (req) => {
         const { email, log_attempt, success } = body;
         if (!email) return error("email required", 400);
 
-        // Optionally log the outcome of an actual login attempt. Rate-limited
-        // per IP so an attacker cannot easily spam fake failures to lock out
-        // an admin account.
+        // Lockouts are scoped to the requesting client IP, so an anonymous
+        // caller can only ever throttle itself — never a real admin on
+        // another network.
+        const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
+          || req.headers.get("cf-connecting-ip")
+          || "unknown";
+
         if (log_attempt === true) {
-          const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
-            || req.headers.get("cf-connecting-ip")
-            || "unknown";
-          if (!loginLogRateLimited(ip)) {
+          if (!loginLogRateLimited(clientIp)) {
             try {
-              await supabase.from("login_attempts").insert({ email, success: !!success });
+              await supabase.from("login_attempts").insert({ email, success: !!success, ip: clientIp });
               if (success) {
                 const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
                 await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoff);
@@ -700,8 +701,9 @@ Deno.serve(async (req) => {
         const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const { data: attempts } = await supabase
           .from("login_attempts")
-          .select("*")
+          .select("attempted_at")
           .eq("email", email)
+          .eq("ip", clientIp)
           .eq("success", false)
           .gte("attempted_at", cutoff)
           .order("attempted_at", { ascending: false });
@@ -720,7 +722,10 @@ Deno.serve(async (req) => {
         // Kept for backwards compatibility / direct admin tooling.
         const { email, success } = body;
         if (!email) return error("email required", 400);
-        await supabase.from("login_attempts").insert({ email, success: !!success });
+        const adminIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
+          || req.headers.get("cf-connecting-ip")
+          || "unknown";
+        await supabase.from("login_attempts").insert({ email, success: !!success, ip: adminIp });
         if (success) {
           const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoff);
