@@ -722,7 +722,10 @@ Deno.serve(async (req) => {
         // Kept for backwards compatibility / direct admin tooling.
         const { email, success } = body;
         if (!email) return error("email required", 400);
-        await supabase.from("login_attempts").insert({ email, success: !!success });
+        const adminIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim()
+          || req.headers.get("cf-connecting-ip")
+          || "unknown";
+        await supabase.from("login_attempts").insert({ email, success: !!success, ip: adminIp });
         if (success) {
           const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           await supabase.from("login_attempts").delete().eq("email", email).lt("attempted_at", cutoff);
