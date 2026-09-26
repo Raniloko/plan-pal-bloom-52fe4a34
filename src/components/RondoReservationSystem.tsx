@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, CalendarPlus, Download, Sparkles } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { downloadIcs, googleCalendarUrl, type CalendarEvent } from "@/lib/calendar";
+
+const CONTACT_STORAGE_KEY = "rondo_guest_contact";
 
 type ReservationZone = "hauptbereich" | "fenster" | "billard" | "vip" | "podest" | "salitos" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
@@ -105,6 +108,30 @@ const RondoReservationSystem = () => {
     acceptedTerms: false,
   });
   const [submitted, setSubmitted] = useState(false);
+  const [returningGuest, setReturningGuest] = useState(false);
+
+  // Stammgast-Autofill: gespeicherte Kontaktdaten aus dem Browser übernehmen
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CONTACT_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { name?: string; email?: string; phone?: string };
+      if (!saved?.name && !saved?.email && !saved?.phone) return;
+      setData(prev => ({
+        ...prev,
+        name: saved.name ?? prev.name,
+        email: saved.email ?? prev.email,
+        phone: saved.phone ?? prev.phone,
+      }));
+      setReturningGuest(true);
+    } catch { /* noop */ }
+  }, []);
+
+  const clearSavedContact = () => {
+    try { localStorage.removeItem(CONTACT_STORAGE_KEY); } catch { /* noop */ }
+    setReturningGuest(false);
+    setData(prev => ({ ...prev, name: "", email: "", phone: "" }));
+  };
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -246,6 +273,15 @@ const RondoReservationSystem = () => {
     return zoneKeys.every((zone) => isZoneFullyBooked(zone, time));
   }, [isZoneFullyBooked, zoneKeys]);
 
+  // Ampel: wie viele Tische sind zu dieser Uhrzeit insgesamt noch frei?
+  const freeSlotsAtTime = useCallback((time: string) => {
+    return zoneKeys.reduce((sum, zone) => {
+      if (dayBlocks.some(b => b.area === zone)) return sum;
+      const free = effectiveCapacity(zone) - getCountForZoneAtTime(time, zone);
+      return sum + Math.max(0, free);
+    }, 0);
+  }, [zoneKeys, dayBlocks, effectiveCapacity, getCountForZoneAtTime]);
+
   // Find the earliest later time slot where the given zone has free capacity.
   const findNextFreeTimeForZone = useCallback((zone: ZoneKey, fromTime: string): string | null => {
     if (!data.date) return null;
@@ -369,6 +405,13 @@ const RondoReservationSystem = () => {
         return;
       }
 
+      try {
+        localStorage.setItem(
+          CONTACT_STORAGE_KEY,
+          JSON.stringify({ name: data.name, email: data.email, phone: data.phone }),
+        );
+      } catch { /* noop */ }
+
       setSubmitted(true);
     } catch {
       setSubmitError("Verbindungsfehler. Bitte versuche es erneut.");
@@ -405,6 +448,21 @@ const RondoReservationSystem = () => {
     window.scrollTo({ top, behavior: "smooth" });
   }, [step]);
 
+  const zoneLabel = ZONES.find(z => z.value === data.zone)?.label ?? "";
+  const calendarEvent: CalendarEvent = {
+    date: data.date,
+    time: data.time,
+    durationMin: SLOT_DURATION_MIN,
+    title: "Reservierung Rondo Sportsbar",
+    description: [
+      `Reservierung für ${data.guests} Personen`,
+      zoneLabel ? `Bereich: ${zoneLabel}` : "",
+      data.zone === "billard" && data.billardUnitName ? `Tisch: ${data.billardUnitName}` : "",
+      `Auf den Namen: ${data.name}`,
+    ].filter(Boolean).join("\n"),
+    location: "Rondo Sportsbar",
+  };
+
   if (submitted) {
     return (
       <div className="text-center py-12">
@@ -428,6 +486,30 @@ const RondoReservationSystem = () => {
           <p className="text-sm"><strong>Telefon:</strong> {data.phone}</p>
           {data.message && <p className="text-sm"><strong>Nachricht:</strong> {data.message}</p>}
         </div>
+
+        <div className="mt-8 max-w-sm mx-auto">
+          <p className="text-sm font-semibold mb-3">Termin nicht vergessen</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href={googleCalendarUrl(calendarEvent)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <CalendarPlus size={16} /> Google Kalender
+            </a>
+            <button
+              onClick={() => downloadIcs(calendarEvent)}
+              className="flex-1 flex items-center justify-center gap-2 border border-primary text-primary rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <Download size={16} /> Apple / Outlook
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Du wirst 2 Stunden vorher automatisch erinnert.
+          </p>
+        </div>
+
         <p className="text-xs text-muted-foreground mt-6">
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
@@ -497,12 +579,15 @@ const RondoReservationSystem = () => {
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                       {getTimesForDate(data.date).map((t) => {
                         const disabled = isTimeInPast(data.date, t) || isTimeFullyBooked(t);
+                        const free = freeSlotsAtTime(t);
+                        const scarce = !disabled && free > 0 && free <= 3;
                         return (
                           <button
                             key={t}
                             disabled={disabled}
+                            title={disabled ? "Nicht verfügbar" : scarce ? `Nur noch ${free} Tische frei` : "Viele Tische frei"}
                             onClick={() => setData({ ...data, time: t, zone: "" })}
-                            className={`px-3 py-2 text-sm rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                            className={`relative px-3 py-2 text-sm rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                               data.time === t
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : disabled
@@ -511,11 +596,21 @@ const RondoReservationSystem = () => {
                             }`}
                           >
                             {t}
+                            {!disabled && data.time !== t && (
+                              <span
+                                aria-hidden
+                                className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${scarce ? "bg-amber-400" : "bg-emerald-500"}`}
+                              />
+                            )}
                           </button>
                         );
                       })}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Wähle deine gewünschte Uhrzeit.</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Viel frei</span>
+                      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Fast ausgebucht</span>
+                      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" /> Ausgebucht</span>
+                    </div>
                   </>
                 )}
               </div>
@@ -544,6 +639,16 @@ const RondoReservationSystem = () => {
             <p className="text-center text-sm text-muted-foreground">
               Für Gruppen ab 11 Personen empfehlen wir unseren VIP-Raum.
             </p>
+            {data.guests >= 10 && (
+              <div className="mt-6 max-w-md mx-auto bg-primary/10 border border-primary/30 rounded-lg p-4 text-left animate-fade-in">
+                <p className="text-sm font-semibold text-primary mb-1">Große Gruppe – wir planen mit dir</p>
+                <p className="text-sm text-foreground">
+                  Ab 10 Personen kümmern wir uns persönlich um euch. Schreib uns im nächsten Schritt
+                  kurz in die Nachricht, was ihr euch wünscht – z.&nbsp;B. welches Spiel laufen soll,
+                  ob es ein Geburtstag ist oder ob ihr Snacks und Getränke vorbestellen wollt.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -719,6 +824,20 @@ const RondoReservationSystem = () => {
         {step === 4 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Deine Kontaktdaten</h3>
+            {returningGuest && (
+              <div className="mb-4 max-w-md flex items-start gap-3 bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
+                <Sparkles size={16} className="text-primary mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="text-foreground">Willkommen zurück! Wir haben deine Daten vorausgefüllt.</p>
+                  <button
+                    onClick={clearSavedContact}
+                    className="text-primary underline hover:no-underline text-xs mt-1"
+                  >
+                    Daten löschen
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="space-y-4 max-w-md">
               <div>
                 <label className="block text-sm font-medium mb-1">Name *</label>
