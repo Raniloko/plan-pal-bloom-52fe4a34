@@ -448,6 +448,21 @@ const RondoReservationSystem = () => {
     window.scrollTo({ top, behavior: "smooth" });
   }, [step]);
 
+  const zoneLabel = ZONES.find(z => z.value === data.zone)?.label ?? "";
+  const calendarEvent: CalendarEvent = {
+    date: data.date,
+    time: data.time,
+    durationMin: SLOT_DURATION_MIN,
+    title: "Reservierung Rondo Sportsbar",
+    description: [
+      `Reservierung für ${data.guests} Personen`,
+      zoneLabel ? `Bereich: ${zoneLabel}` : "",
+      data.zone === "billard" && data.billardUnitName ? `Tisch: ${data.billardUnitName}` : "",
+      `Auf den Namen: ${data.name}`,
+    ].filter(Boolean).join("\n"),
+    location: "Rondo Sportsbar",
+  };
+
   if (submitted) {
     return (
       <div className="text-center py-12">
