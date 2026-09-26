@@ -8,6 +8,13 @@
       "when": 1789895098049,
       "tag": "0000_security_login_ip_notifications_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790406831821,
+      "tag": "0001_block_reservations_2026_12_12",
+      "breakpoints": true
     }
   ]
 }
