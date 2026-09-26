@@ -15,6 +15,7 @@ import {
   RecurringBookingDialog,
 } from "@/components/admin/operational";
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
+import { DayBlocksBar } from "@/components/admin/operational/DayBlocksBar";
 import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
@@ -488,6 +489,8 @@ const OperationalViewInner = () => {
         onOpenRecurring={() => setRecurringOpen(true)}
         isMobile={isMobile}
       />
+      <DayBlocksBar date={dateStr} dateLabel={format(selectedDate, "dd.MM.yyyy")} />
+
 
       {/* Mobile tab bar */}
       {isMobile && (

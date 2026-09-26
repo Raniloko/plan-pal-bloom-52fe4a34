@@ -179,6 +179,23 @@ const RondoReservationSystem = () => {
     void fetchAvailability(data.date);
   }, [data.date, fetchAvailability]);
 
+  // Gesperrte Tage / Bereiche für das gewählte Datum
+  const [dayBlocks, setDayBlocks] = useState<{ area: string | null; reason: string | null }[]>([]);
+  useEffect(() => {
+    if (!data.date) { setDayBlocks([]); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: rows } = await supabase
+        .from("blocked_days")
+        .select("area, reason")
+        .eq("block_date", data.date);
+      if (!cancelled) setDayBlocks(rows || []);
+    })();
+    return () => { cancelled = true; };
+  }, [data.date]);
+  const dayFullyBlocked = dayBlocks.find(b => b.area === null) || null;
+  const isAreaBlocked = (zone: string) => dayBlocks.some(b => b.area === zone);
+
   useEffect(() => {
     if (!data.date) return;
 
@@ -464,6 +481,12 @@ const RondoReservationSystem = () => {
                   <div className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
                     Bitte zuerst ein Datum wählen.
                   </div>
+                ) : dayFullyBlocked ? (
+                  <div className="rounded-md border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
+                    <p className="font-semibold text-primary">An diesem Tag sind keine Reservierungen möglich.</p>
+                    {dayFullyBlocked.reason && <p className="text-foreground mt-1">{dayFullyBlocked.reason}</p>}
+                    <p className="text-muted-foreground mt-1">Bitte wähle ein anderes Datum.</p>
+                  </div>
                 ) : (
                   <>
                     {availabilityLoading && (
@@ -558,8 +581,9 @@ const RondoReservationSystem = () => {
                   zone === "billard" &&
                   Boolean(data.time) &&
                   Number(data.time.split(":")[0]) >= 20;
-                const disabled = isFull || billardClosed;
-                const nextFree = isFull && !billardClosed && data.time ? findNextFreeTimeForZone(zone, data.time) : null;
+                const areaBlocked = isAreaBlocked(zone);
+                const disabled = isFull || billardClosed || areaBlocked;
+                const nextFree = isFull && !billardClosed && !areaBlocked && data.time ? findNextFreeTimeForZone(zone, data.time) : null;
 
                 return (
                   <button
@@ -576,7 +600,12 @@ const RondoReservationSystem = () => {
                   >
                     <p className="font-semibold">{z.label}</p>
                     <p className="text-xs text-muted-foreground">{z.desc}</p>
-                    {billardClosed && (
+                    {areaBlocked && (
+                      <p className="mt-2 text-xs font-semibold text-primary">
+                        An diesem Tag gesperrt.
+                      </p>
+                    )}
+                    {billardClosed && !areaBlocked && (
                       <p className="mt-2 text-xs font-semibold text-primary">
                         Ab 20:00 Uhr keine Billard-Reservierung mehr möglich.
                       </p>

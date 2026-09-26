@@ -15,6 +15,13 @@
       "when": 1790406831821,
       "tag": "0001_block_reservations_2026_12_12",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790407027839,
+      "tag": "0002_blocked_days",
+      "breakpoints": true
     }
   ]
 }
