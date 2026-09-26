@@ -41,6 +41,30 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_days: {
+        Row: {
+          area: string | null
+          block_date: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          area?: string | null
+          block_date: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          area?: string | null
+          block_date?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           email_type: string
