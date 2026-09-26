@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, CalendarPlus, Download, Sparkles } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { downloadIcs, googleCalendarUrl, type CalendarEvent } from "@/lib/calendar";
+
+const CONTACT_STORAGE_KEY = "rondo_guest_contact";
 
 type ReservationZone = "hauptbereich" | "fenster" | "billard" | "vip" | "podest" | "salitos" | "";
 type ReservationAnlass = "sport" | "feier" | "essen" | "billard" | "sonstiges";
@@ -245,6 +248,15 @@ const RondoReservationSystem = () => {
   const isTimeFullyBooked = useCallback((time: string) => {
     return zoneKeys.every((zone) => isZoneFullyBooked(zone, time));
   }, [isZoneFullyBooked, zoneKeys]);
+
+  // Ampel: wie viele Tische sind zu dieser Uhrzeit insgesamt noch frei?
+  const freeSlotsAtTime = useCallback((time: string) => {
+    return zoneKeys.reduce((sum, zone) => {
+      if (dayBlocks.some(b => b.area === zone)) return sum;
+      const free = effectiveCapacity(zone) - getCountForZoneAtTime(time, zone);
+      return sum + Math.max(0, free);
+    }, 0);
+  }, [zoneKeys, dayBlocks, effectiveCapacity, getCountForZoneAtTime]);
 
   // Find the earliest later time slot where the given zone has free capacity.
   const findNextFreeTimeForZone = useCallback((zone: ZoneKey, fromTime: string): string | null => {
@@ -497,12 +509,15 @@ const RondoReservationSystem = () => {
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                       {getTimesForDate(data.date).map((t) => {
                         const disabled = isTimeInPast(data.date, t) || isTimeFullyBooked(t);
+                        const free = freeSlotsAtTime(t);
+                        const scarce = !disabled && free > 0 && free <= 3;
                         return (
                           <button
                             key={t}
                             disabled={disabled}
+                            title={disabled ? "Nicht verfügbar" : scarce ? `Nur noch ${free} Tische frei` : "Viele Tische frei"}
                             onClick={() => setData({ ...data, time: t, zone: "" })}
-                            className={`px-3 py-2 text-sm rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                            className={`relative px-3 py-2 text-sm rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                               data.time === t
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : disabled
@@ -511,11 +526,21 @@ const RondoReservationSystem = () => {
                             }`}
                           >
                             {t}
+                            {!disabled && data.time !== t && (
+                              <span
+                                aria-hidden
+                                className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${scarce ? "bg-amber-400" : "bg-emerald-500"}`}
+                              />
+                            )}
                           </button>
                         );
                       })}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Wähle deine gewünschte Uhrzeit.</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Viel frei</span>
+                      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Fast ausgebucht</span>
+                      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" /> Ausgebucht</span>
+                    </div>
                   </>
                 )}
               </div>
@@ -544,6 +569,16 @@ const RondoReservationSystem = () => {
             <p className="text-center text-sm text-muted-foreground">
               Für Gruppen ab 11 Personen empfehlen wir unseren VIP-Raum.
             </p>
+            {data.guests >= 10 && (
+              <div className="mt-6 max-w-md mx-auto bg-primary/10 border border-primary/30 rounded-lg p-4 text-left animate-fade-in">
+                <p className="text-sm font-semibold text-primary mb-1">Große Gruppe – wir planen mit dir</p>
+                <p className="text-sm text-foreground">
+                  Ab 10 Personen kümmern wir uns persönlich um euch. Schreib uns im nächsten Schritt
+                  kurz in die Nachricht, was ihr euch wünscht – z.&nbsp;B. welches Spiel laufen soll,
+                  ob es ein Geburtstag ist oder ob ihr Snacks und Getränke vorbestellen wollt.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
