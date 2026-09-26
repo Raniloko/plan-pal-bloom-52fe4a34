@@ -108,6 +108,30 @@ const RondoReservationSystem = () => {
     acceptedTerms: false,
   });
   const [submitted, setSubmitted] = useState(false);
+  const [returningGuest, setReturningGuest] = useState(false);
+
+  // Stammgast-Autofill: gespeicherte Kontaktdaten aus dem Browser übernehmen
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CONTACT_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { name?: string; email?: string; phone?: string };
+      if (!saved?.name && !saved?.email && !saved?.phone) return;
+      setData(prev => ({
+        ...prev,
+        name: saved.name ?? prev.name,
+        email: saved.email ?? prev.email,
+        phone: saved.phone ?? prev.phone,
+      }));
+      setReturningGuest(true);
+    } catch { /* noop */ }
+  }, []);
+
+  const clearSavedContact = () => {
+    try { localStorage.removeItem(CONTACT_STORAGE_KEY); } catch { /* noop */ }
+    setReturningGuest(false);
+    setData(prev => ({ ...prev, name: "", email: "", phone: "" }));
+  };
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -381,6 +405,13 @@ const RondoReservationSystem = () => {
         return;
       }
 
+      try {
+        localStorage.setItem(
+          CONTACT_STORAGE_KEY,
+          JSON.stringify({ name: data.name, email: data.email, phone: data.phone }),
+        );
+      } catch { /* noop */ }
+
       setSubmitted(true);
     } catch {
       setSubmitError("Verbindungsfehler. Bitte versuche es erneut.");
@@ -440,6 +471,30 @@ const RondoReservationSystem = () => {
           <p className="text-sm"><strong>Telefon:</strong> {data.phone}</p>
           {data.message && <p className="text-sm"><strong>Nachricht:</strong> {data.message}</p>}
         </div>
+
+        <div className="mt-8 max-w-sm mx-auto">
+          <p className="text-sm font-semibold mb-3">Termin nicht vergessen</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href={googleCalendarUrl(calendarEvent)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <CalendarPlus size={16} /> Google Kalender
+            </a>
+            <button
+              onClick={() => downloadIcs(calendarEvent)}
+              className="flex-1 flex items-center justify-center gap-2 border border-primary text-primary rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <Download size={16} /> Apple / Outlook
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Du wirst 2 Stunden vorher automatisch erinnert.
+          </p>
+        </div>
+
         <p className="text-xs text-muted-foreground mt-6">
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
@@ -754,6 +809,20 @@ const RondoReservationSystem = () => {
         {step === 4 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Deine Kontaktdaten</h3>
+            {returningGuest && (
+              <div className="mb-4 max-w-md flex items-start gap-3 bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
+                <Sparkles size={16} className="text-primary mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="text-foreground">Willkommen zurück! Wir haben deine Daten vorausgefüllt.</p>
+                  <button
+                    onClick={clearSavedContact}
+                    className="text-primary underline hover:no-underline text-xs mt-1"
+                  >
+                    Daten löschen
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="space-y-4 max-w-md">
               <div>
                 <label className="block text-sm font-medium mb-1">Name *</label>
