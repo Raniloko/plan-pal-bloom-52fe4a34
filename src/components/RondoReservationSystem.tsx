@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, CalendarPlus, Download, Sparkles } from "lucide-react";
+import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
-import { downloadIcs, googleCalendarUrl, type CalendarEvent } from "@/lib/calendar";
 
 const CONTACT_STORAGE_KEY = "rondo_guest_contact";
 
@@ -448,20 +447,6 @@ const RondoReservationSystem = () => {
     window.scrollTo({ top, behavior: "smooth" });
   }, [step]);
 
-  const zoneLabel = ZONES.find(z => z.value === data.zone)?.label ?? "";
-  const calendarEvent: CalendarEvent = {
-    date: data.date,
-    time: data.time,
-    durationMin: SLOT_DURATION_MIN,
-    title: "Reservierung Rondo Sportsbar",
-    description: [
-      `Reservierung für ${data.guests} Personen`,
-      zoneLabel ? `Bereich: ${zoneLabel}` : "",
-      data.zone === "billard" && data.billardUnitName ? `Tisch: ${data.billardUnitName}` : "",
-      `Auf den Namen: ${data.name}`,
-    ].filter(Boolean).join("\n"),
-    location: "Rondo Sportsbar",
-  };
 
   if (submitted) {
     return (
@@ -487,32 +472,10 @@ const RondoReservationSystem = () => {
           {data.message && <p className="text-sm"><strong>Nachricht:</strong> {data.message}</p>}
         </div>
 
-        <div className="mt-8 max-w-sm mx-auto">
-          <p className="text-sm font-semibold mb-3">Termin nicht vergessen</p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <a
-              href={googleCalendarUrl(calendarEvent)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors"
-            >
-              <CalendarPlus size={16} /> Google Kalender
-            </a>
-            <button
-              onClick={() => downloadIcs(calendarEvent)}
-              className="flex-1 flex items-center justify-center gap-2 border border-primary text-primary rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              <Download size={16} /> Apple / Outlook
-            </button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Du wirst 2 Stunden vorher automatisch erinnert.
-          </p>
-        </div>
-
-        <p className="text-xs text-muted-foreground mt-6">
+        <p className="text-xs text-muted-foreground mt-8">
           Wir bestätigen deine Reservierung telefonisch oder per E-Mail.
         </p>
+
         <button
           onClick={() => { setSubmitted(false); setStep(0); setData({ date: "", time: "", guests: 2, zone: "", anlass: [], sonstigesText: "", name: "", email: "", phone: "", message: "", billardUnitId: "", billardUnitName: "", acceptedTerms: false }); }}
           className="mt-6 border border-primary text-primary px-6 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
