@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, CalendarPlus, Download, Sparkles } from "lucide-react";
+import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
-import { downloadIcs, googleCalendarUrl, type CalendarEvent } from "@/lib/calendar";
 
 const CONTACT_STORAGE_KEY = "rondo_guest_contact";
 
