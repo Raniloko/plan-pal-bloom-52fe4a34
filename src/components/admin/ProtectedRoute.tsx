@@ -30,38 +30,16 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     setRoleChecked(false);
     setCheckFailed(false);
     (async () => {
-      // Try up to 2x — the first call after a reload can race with the token
-      // refresh and come back 401 even though the user is a valid admin.
-      let success = false;
-      let transient = false;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const res = await supabase.functions.invoke("admin-actions", {
-            body: { action: "check_admin" },
-          });
-          if (cancelled) return;
-          if (!res.error && res.data?.success === true) {
-            success = true;
-            transient = false;
-            break;
-          }
-          const msg = String(res.error?.message || "");
-          transient = /401|non-2xx|network|fetch/i.test(msg);
-          if (!transient) break;
-          // Give the AuthContext a moment to refresh the token.
-          await new Promise(r => setTimeout(r, 600));
-        } catch (err) {
-          if (cancelled) return;
-          transient = true;
-          await new Promise(r => setTimeout(r, 600));
-        }
-      }
+      const { data: role, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
       if (cancelled) return;
+      const success = !error && role?.role === "admin";
       setIsAdmin(success);
-      // Only treat as a hard failure (-> redirect) when it's NOT a transient
-      // network/401 issue. Otherwise keep showing the loader so a brief
-      // backend hiccup on reload doesn't bounce the user to /login.
-      setCheckFailed(!success && !transient);
+      setCheckFailed(Boolean(error));
       setRoleChecked(true);
     })();
     return () => { cancelled = true; };

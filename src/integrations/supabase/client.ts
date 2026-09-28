@@ -5,9 +5,11 @@ import { brokeredPreviewStorage } from './previewAuthStorage';
 
 // Vite exposes VITE_* variables, while the connected Supabase integration
 // provides the same values under NEXT_PUBLIC_* in this project.
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+// Prefer the connected integration values so an old Vite variable cannot point
+// the app at a different Supabase project after a restore or branch switch.
+const SUPABASE_URL = import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 
 function isNewSupabaseApiKey(value: string): boolean {

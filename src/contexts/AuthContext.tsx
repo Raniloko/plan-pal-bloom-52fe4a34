@@ -125,33 +125,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string, rememberMe = false) => {
-    // Check brute-force lockout first (no logging yet)
-    try {
-      const checkRes = await supabase.functions.invoke("admin-actions", {
-        body: { action: "check_login_attempts", email },
-      });
-      if (checkRes.data?.locked) {
-        const mins = checkRes.data.minutes_remaining || 30;
-        return { error: `Konto gesperrt. Bitte warten Sie ${mins} Minuten.` };
-      }
-    } catch { /* proceed if check fails */ }
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    // Log this attempt (server-side, via the same public action so it cannot
-    // be invoked independently to spam fake failures).
-    try {
-      await supabase.functions.invoke("admin-actions", {
-        body: {
-          action: "check_login_attempts",
-          email,
-          log_attempt: true,
-          success: !error,
-        },
-      });
-    } catch { /* non-blocking */ }
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) return { error: "E-Mail oder Passwort falsch" };
+    if (authData.session) {
+      setSession(authData.session);
+      setUser(authData.user);
+    }
     lastActivity.current = Date.now();
     try {
       if (rememberMe) localStorage.setItem("admin_keep_logged_in", "1");

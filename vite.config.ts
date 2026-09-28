@@ -14,6 +14,8 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  // Expose the connected Supabase integration variables to the Vite client.
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
