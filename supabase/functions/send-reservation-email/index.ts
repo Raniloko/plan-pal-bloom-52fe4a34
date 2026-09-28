@@ -314,7 +314,8 @@ Deno.serve(async (req) => {
     const cancellationToken = !is_cancellation ? (dbRes.cancellation_token || "") : "";
     
     // Use app URLs instead of raw Edge Function URLs
-    const APP_URL = Deno.env.get("APP_URL") || "https://rondo-sportsbar-reservierung.lovable.app";
+    const APP_URL = Deno.env.get("APP_URL") || "https://rondo-sportsbar-reservieren.de";
+    const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Rondo Sportsbar <reservierung@rondo-sportsbar-reservieren.de>";
     const cancelUrl = `${APP_URL}/reservierung/stornieren?id=${encodeURIComponent(dbRes.id)}&token=${encodeURIComponent(cancellationToken)}`;
     const modifyUrl = `${APP_URL}/reservierung/aendern?id=${encodeURIComponent(dbRes.id)}&token=${encodeURIComponent(cancellationToken)}`;
 
