@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
+    // Vercel preview hostnames are generated per preview deployment.
+    allowedHosts: true,
     hmr: {
       overlay: false,
     },
