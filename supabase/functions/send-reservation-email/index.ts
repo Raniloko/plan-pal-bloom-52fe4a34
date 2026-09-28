@@ -343,7 +343,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Rondo Sportsbar <info@dev-lab24.de>",
+        from: EMAIL_FROM,
         to: [dbRes.customer_email],
         subject: `${subjectPrefix} – ${formatDate(dbRes.reservation_date)}, ${dbRes.reservation_time} Uhr`,
         html,
