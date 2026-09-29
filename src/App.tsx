@@ -116,8 +116,8 @@ const AppContent = () => {
         <Route path="/backstage" element={<ProtectedRoute><OperationalView /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isAdmin && <Footer />}
-      {!isAdmin && !isReservierung && !suppressCookie && (
+      {!isAdmin && !isEmbed && <Footer />}
+      {!isAdmin && !isReservierung && !isEmbed && !suppressCookie && (
         <CookieBanner
           onSettingsOpen={cookieSettingsOpen}
           onSettingsClose={() => setCookieSettingsOpen(false)}
