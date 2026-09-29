@@ -36,6 +36,39 @@ const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/backstage");
   const isReservierung = location.pathname.startsWith("/reservierung");
+  // Embed mode: the reservation page is shown inside an iframe on the
+  // WordPress site (rondo-sportsbar.de) with ?embed=1 — hide our own
+  // navigation/footer so it blends into the host page.
+  const isEmbed =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("embed") === "1";
+
+  // Report the document height to the parent page so the iframe on the
+  // WordPress site can resize itself to fit the current booking step.
+  useEffect(() => {
+    if (!isEmbed) return;
+    const PARENT_ORIGINS = [
+      "https://rondo-sportsbar.de",
+      "https://www.rondo-sportsbar.de",
+    ];
+    const send = () => {
+      const height = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight
+      );
+      PARENT_ORIGINS.forEach((origin) => {
+        try { window.parent.postMessage({ type: "rondo:height", height }, origin); } catch { /* ignore */ }
+      });
+    };
+    const ro = new ResizeObserver(send);
+    ro.observe(document.body);
+    window.addEventListener("load", send);
+    send();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("load", send);
+    };
+  }, [isEmbed]);
 
   // Swap the PWA manifest + theme so the admin area installs as its own app
   // ("Rondo Admin") on Android/iOS, separate from the public reservation app.
