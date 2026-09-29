@@ -104,7 +104,7 @@ const AppContent = () => {
 
   return (
     <>
-      {!isAdmin && <Navigation />}
+      {!isAdmin && !isEmbed && <Navigation />}
       <Routes>
         <Route path="/" element={<Navigate to="/reservierung" replace />} />
         <Route path="/reservierung" element={<Reservierung />} />
