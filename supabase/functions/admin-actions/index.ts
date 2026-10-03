@@ -195,6 +195,48 @@ Deno.serve(async (req) => {
         return ok({ status: "cancelled" });
       }
 
+      case "edit_reservation": {
+        const { reservation_id, customer_name, customer_email, customer_phone, reservation_time, guest_count, message } = body;
+        if (!reservation_id) return error("reservation_id required", 400);
+
+        const updates: Record<string, unknown> = {};
+        if (typeof customer_name === "string") {
+          const name = customer_name.trim();
+          if (!name || name.length > 100) return error("Ungültiger Name", 400);
+          updates.customer_name = name;
+        }
+        if (typeof customer_email === "string") {
+          const email = customer_email.trim();
+          if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255)) return error("Ungültige E-Mail", 400);
+          updates.customer_email = email;
+        }
+        if (typeof customer_phone === "string") {
+          const phone = customer_phone.trim();
+          if (phone.length > 30) return error("Ungültige Telefonnummer", 400);
+          updates.customer_phone = phone;
+        }
+        if (typeof reservation_time === "string") {
+          if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(reservation_time)) return error("Ungültige Uhrzeit", 400);
+          updates.reservation_time = reservation_time;
+        }
+        if (typeof guest_count === "number") {
+          if (guest_count < 1 || guest_count > 50) return error("Ungültige Personenanzahl", 400);
+          updates.guest_count = guest_count;
+        }
+        if (typeof message === "string") {
+          updates.message = message.substring(0, 1000).replace(/<[^>]*>/g, "");
+        }
+        if (Object.keys(updates).length === 0) return error("Keine Änderungen", 400);
+
+        const { error: err } = await supabase
+          .from("reservations")
+          .update(updates)
+          .eq("id", reservation_id);
+        if (err) return error(err.message, 500);
+        await logActivity(supabase, "edit_reservation", "reservation", reservation_id, JSON.stringify(updates));
+        return ok({ success: true });
+      }
+
       case "block_unit": {
         const { unit_id, blocked, start_date, end_date, reason } = body;
         if (!unit_id) return error("unit_id required", 400);
