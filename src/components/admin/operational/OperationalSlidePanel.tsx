@@ -180,8 +180,37 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       setAssignedUnitId(data?.unitId || "");
       setBrowseDate(new Date(panelDateStr + "T00:00:00"));
       setBrowseDateReservations(data?.unitDayReservations || []);
+      setEditing(false);
+      setEditName(data?.guest || "");
+      setEditEmail(data?.customerEmail || "");
+      setEditPhone(data?.customerPhone || "");
+      setEditTime(data?.startTime || "");
+      setEditPax(data?.pax || 2);
     }
   }, [open, data, panelDateStr]);
+
+  const handleSaveEdit = async () => {
+    if (!data?.reservationId) return;
+    if (!editName.trim()) { toast.error("Name darf nicht leer sein"); return; }
+    setSaving(true);
+    try {
+      await adminAction({
+        action: "edit_reservation",
+        reservation_id: data.reservationId,
+        customer_name: editName,
+        customer_email: editEmail,
+        customer_phone: editPhone,
+        reservation_time: editTime,
+        guest_count: editPax,
+      });
+      toast.success("Reservierung aktualisiert");
+      setEditing(false);
+      onRefresh();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler beim Speichern");
+    }
+    setSaving(false);
+  };
 
   // Fetch reservations for a different date when browsing
   useEffect(() => {
