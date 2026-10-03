@@ -707,7 +707,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                         <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} style={{
                           width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
                           border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "'DM Sans', sans-serif", background: "#fff", color: "#111111",
                         }} />
                       </div>
                     ))}
@@ -717,7 +717,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                         <input type="time" step={900} value={editTime} onChange={e => setEditTime(e.target.value)} style={{
                           width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
                           border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "'DM Sans', sans-serif", background: "#fff", color: "#111111",
                         }} />
                       </div>
                       <div style={{ flex: 1 }}>
@@ -725,7 +725,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                         <input type="number" min={1} max={50} value={editPax} onChange={e => setEditPax(Number(e.target.value))} style={{
                           width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
                           border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "'DM Sans', sans-serif", background: "#fff", color: "#111111",
                         }} />
                       </div>
                     </div>
