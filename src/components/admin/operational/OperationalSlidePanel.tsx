@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
@@ -159,6 +159,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blockStart, setBlockStart] = useState("");
   const [blockEnd, setBlockEnd] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editPax, setEditPax] = useState(2);
   const panelDateStr = currentDate || format(new Date(), "yyyy-MM-dd");
   const dateLabel = format(new Date(panelDateStr + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de });
   const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
