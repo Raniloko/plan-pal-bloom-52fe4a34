@@ -686,10 +686,59 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                       <LogOut size={10} /> Gast geht
                     </button>
                   )}
+                  <button onClick={() => setEditing(e => !e)} disabled={saving} style={{ ...btnBase, color: "#3a7bd5", borderColor: "#b8d0e8" }}>
+                    <Pencil size={10} /> Bearbeiten
+                  </button>
                   <button onClick={handleCancel} disabled={saving} style={{ ...btnBase, color: "#cc2222", borderColor: "#e8c0c0" }}>
                     <Ban size={10} /> Stornieren
                   </button>
                 </div>
+
+                {editing && (
+                  <div style={{ marginTop: 10, background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#333", marginBottom: 8 }}>Reservierung bearbeiten</div>
+                    {([
+                      { label: "Name", value: editName, set: setEditName, type: "text" },
+                      { label: "E-Mail", value: editEmail, set: setEditEmail, type: "email" },
+                      { label: "Telefon", value: editPhone, set: setEditPhone, type: "tel" },
+                    ] as const).map(f => (
+                      <div key={f.label} style={{ marginBottom: 6 }}>
+                        <label style={{ display: "block", fontSize: 9, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 2 }}>{f.label}</label>
+                        <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} style={{
+                          width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
+                          border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }} />
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: "block", fontSize: 9, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 2 }}>Uhrzeit</label>
+                        <input type="time" step={900} value={editTime} onChange={e => setEditTime(e.target.value)} style={{
+                          width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
+                          border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: "block", fontSize: 9, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 2 }}>Personen</label>
+                        <input type="number" min={1} max={50} value={editPax} onChange={e => setEditPax(Number(e.target.value))} style={{
+                          width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
+                          border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => setEditing(false)} disabled={saving} style={{ ...btnBase, color: "#666" }}>
+                        Abbrechen
+                      </button>
+                      <button onClick={handleSaveEdit} disabled={saving} style={{ ...btnBase, background: "#222", color: "#fff", borderColor: "#222" }}>
+                        <Check size={10} /> Speichern
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Table assignment dropdown */}
