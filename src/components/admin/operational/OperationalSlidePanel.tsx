@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { de } from "date-fns/locale";
-import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, CalendarDays, LogIn, Lock, Mail, Ban, Check, UserPlus, MapPin, LogOut, Timer, Users, Phone, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
@@ -159,6 +159,12 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [blockStart, setBlockStart] = useState("");
   const [blockEnd, setBlockEnd] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editPax, setEditPax] = useState(2);
   const panelDateStr = currentDate || format(new Date(), "yyyy-MM-dd");
   const dateLabel = format(new Date(panelDateStr + "T00:00:00"), "EEEE, d. MMMM yyyy", { locale: de });
   const browseDateLabel = format(browseDate, "EEE, d. MMM yyyy", { locale: de });
@@ -174,8 +180,37 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       setAssignedUnitId(data?.unitId || "");
       setBrowseDate(new Date(panelDateStr + "T00:00:00"));
       setBrowseDateReservations(data?.unitDayReservations || []);
+      setEditing(false);
+      setEditName(data?.guest || "");
+      setEditEmail(data?.customerEmail || "");
+      setEditPhone(data?.customerPhone || "");
+      setEditTime(data?.startTime || "");
+      setEditPax(data?.pax || 2);
     }
   }, [open, data, panelDateStr]);
+
+  const handleSaveEdit = async () => {
+    if (!data?.reservationId) return;
+    if (!editName.trim()) { toast.error("Name darf nicht leer sein"); return; }
+    setSaving(true);
+    try {
+      await adminAction({
+        action: "edit_reservation",
+        reservation_id: data.reservationId,
+        customer_name: editName,
+        customer_email: editEmail,
+        customer_phone: editPhone,
+        reservation_time: editTime,
+        guest_count: editPax,
+      });
+      toast.success("Reservierung aktualisiert");
+      setEditing(false);
+      onRefresh();
+    } catch (e: any) {
+      toast.error(e?.message || "Fehler beim Speichern");
+    }
+    setSaving(false);
+  };
 
   // Fetch reservations for a different date when browsing
   useEffect(() => {
@@ -651,10 +686,59 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
                       <LogOut size={10} /> Gast geht
                     </button>
                   )}
+                  <button onClick={() => setEditing(e => !e)} disabled={saving} style={{ ...btnBase, color: "#3a7bd5", borderColor: "#b8d0e8" }}>
+                    <Pencil size={10} /> Bearbeiten
+                  </button>
                   <button onClick={handleCancel} disabled={saving} style={{ ...btnBase, color: "#cc2222", borderColor: "#e8c0c0" }}>
                     <Ban size={10} /> Stornieren
                   </button>
                 </div>
+
+                {editing && (
+                  <div style={{ marginTop: 10, background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#333", marginBottom: 8 }}>Reservierung bearbeiten</div>
+                    {([
+                      { label: "Name", value: editName, set: setEditName, type: "text" },
+                      { label: "E-Mail", value: editEmail, set: setEditEmail, type: "email" },
+                      { label: "Telefon", value: editPhone, set: setEditPhone, type: "tel" },
+                    ] as const).map(f => (
+                      <div key={f.label} style={{ marginBottom: 6 }}>
+                        <label style={{ display: "block", fontSize: 9, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 2 }}>{f.label}</label>
+                        <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} style={{
+                          width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
+                          border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }} />
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: "block", fontSize: 9, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 2 }}>Uhrzeit</label>
+                        <input type="time" step={900} value={editTime} onChange={e => setEditTime(e.target.value)} style={{
+                          width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
+                          border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: "block", fontSize: 9, fontWeight: 700, color: "#999", textTransform: "uppercase", marginBottom: 2 }}>Personen</label>
+                        <input type="number" min={1} max={50} value={editPax} onChange={e => setEditPax(Number(e.target.value))} style={{
+                          width: "100%", padding: "7px 10px", fontSize: 12, borderRadius: 6,
+                          border: "1px solid #ddd", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => setEditing(false)} disabled={saving} style={{ ...btnBase, color: "#666" }}>
+                        Abbrechen
+                      </button>
+                      <button onClick={handleSaveEdit} disabled={saving} style={{ ...btnBase, background: "#222", color: "#fff", borderColor: "#222" }}>
+                        <Check size={10} /> Speichern
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Table assignment dropdown */}
