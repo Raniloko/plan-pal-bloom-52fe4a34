@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff, Lock, Loader2 } from "lucide-react";
 
@@ -10,10 +10,21 @@ const AdminLogin = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [remember, setRemember] = useState<boolean>(() => {
-    try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
+    try { return localStorage.getItem("admin_keep_logged_in") !== "0"; } catch { return true; }
   });
-  const { signIn } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Already signed in (e.g. app opened at /backstage/login) → go straight to the dashboard.
+  if (user && !loading) return <Navigate to="/backstage" replace />;
+  if (authLoading) {
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0a0a" }}>
+        <Loader2 size={28} style={{ color: "#c8b830", animation: "spin 1s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
