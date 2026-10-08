@@ -192,8 +192,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     lastActivity.current = Date.now();
     try {
-      if (rememberMe) localStorage.setItem("admin_keep_logged_in", "1");
-      else localStorage.removeItem("admin_keep_logged_in");
+      if (rememberMe) {
+        localStorage.setItem("admin_keep_logged_in", "1");
+        writeBackupToken(authData.session?.refresh_token);
+      } else {
+        localStorage.removeItem("admin_keep_logged_in");
+        clearBackupToken();
+      }
     } catch { /* ignore */ }
     setKeepLoggedIn(rememberMe);
     return { error: null };
@@ -205,6 +210,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setSessionWarning(false);
     try { localStorage.removeItem("admin_keep_logged_in"); } catch { /* ignore */ }
+    clearBackupToken();
     setKeepLoggedIn(false);
   }, []);
 
