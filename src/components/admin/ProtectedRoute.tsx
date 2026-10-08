@@ -30,16 +30,27 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     setRoleChecked(false);
     setCheckFailed(false);
     (async () => {
-      const { data: role, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+      // Retry on network errors: a mobile app waking from standby often has
+      // no connection for a few seconds — don't log the admin out for that.
+      for (let attempt = 0; attempt < 6 && !cancelled; attempt++) {
+        const { data: role, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (cancelled) return;
+        if (!error) {
+          setIsAdmin(role?.role === "admin");
+          setCheckFailed(role?.role !== "admin");
+          setRoleChecked(true);
+          return;
+        }
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+      }
       if (cancelled) return;
-      const success = !error && role?.role === "admin";
-      setIsAdmin(success);
-      setCheckFailed(Boolean(error));
+      setIsAdmin(false);
+      setCheckFailed(true);
       setRoleChecked(true);
     })();
     return () => { cancelled = true; };
