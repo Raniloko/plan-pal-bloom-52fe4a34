@@ -5,6 +5,26 @@ import type { User, Session } from "@supabase/supabase-js";
 const INACTIVITY_LIMIT = 2 * 60 * 60 * 1000; // 2 hours
 const WARNING_BEFORE = 5 * 60 * 1000; // warn 5 min before
 
+// Backup of the refresh token in a long-lived cookie, used only when the user
+// ticked "Angemeldet bleiben". Mobile WebViews may clear localStorage but keep cookies.
+const BACKUP_COOKIE = "rondo_admin_rt";
+const readBackupToken = (): string | null => {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|; )${BACKUP_COOKIE}=([^;]*)`));
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch { return null; }
+};
+const writeBackupToken = (token: string | undefined) => {
+  if (!token) return;
+  try {
+    const secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${BACKUP_COOKIE}=${encodeURIComponent(token)}; Max-Age=${60 * 60 * 24 * 365}; Path=/; SameSite=Lax${secure}`;
+  } catch { /* ignore */ }
+};
+const clearBackupToken = () => {
+  try { document.cookie = `${BACKUP_COOKIE}=; Max-Age=0; Path=/`; } catch { /* ignore */ }
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -84,16 +104,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, keepLoggedIn]);
 
   useEffect(() => {
+    let unsub: (() => void) | undefined;
     (async () => {
-      const { data: { session: initial } } = await supabase.auth.getSession();
+      let { data: { session: initial } } = await supabase.auth.getSession();
+
+      const wantsPersistent = (() => {
+        try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
+      })() || Boolean(readBackupToken());
+
+      // Mobile WebViews (median.co, iOS home-screen apps) sometimes wipe
+      // localStorage. Restore from the backup cookie if that happened.
+      if (!initial && wantsPersistent) {
+        const backup = readBackupToken();
+        if (backup) {
+          try {
+            const { data, error } = await supabase.auth.refreshSession({ refresh_token: backup });
+            if (!error && data.session) {
+              initial = data.session;
+              try { localStorage.setItem("admin_keep_logged_in", "1"); } catch { /* ignore */ }
+              setKeepLoggedIn(true);
+            }
+          } catch { /* offline — keep trying on next open */ }
+        }
+      }
+
       if (initial) {
         setSession(initial);
         setUser(initial.user ?? null);
       }
-
-      const wantsPersistent = (() => {
-        try { return localStorage.getItem("admin_keep_logged_in") === "1"; } catch { return false; }
-      })();
 
       if (wantsPersistent && initial?.refresh_token) {
         try {
@@ -101,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!error && data.session) {
             setSession(data.session);
             setUser(data.session.user);
+            writeBackupToken(data.session.refresh_token);
           }
         } catch { /* keep hydrated session */ }
       }
@@ -108,7 +147,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       initializing.current = false;
       setLoading(false);
 
-      // Subscribe AFTER session is restored
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_OUT") {
           setSession(null);
@@ -116,12 +154,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else if (session) {
           setSession(session);
           setUser(session.user);
+          if (readBackupToken() || localStorage.getItem("admin_keep_logged_in") === "1") {
+            writeBackupToken(session.refresh_token);
+          }
         }
         setLoading(false);
       });
 
-      return () => subscription.unsubscribe();
+      // Refresh silently whenever the app comes back to the foreground.
+      const onVisible = () => {
+        if (document.visibilityState === "visible") {
+          supabase.auth.startAutoRefresh?.();
+          supabase.auth.getSession().catch(() => {});
+        } else {
+          supabase.auth.stopAutoRefresh?.();
+        }
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      window.addEventListener("focus", onVisible);
+
+      unsub = () => {
+        subscription.unsubscribe();
+        document.removeEventListener("visibilitychange", onVisible);
+        window.removeEventListener("focus", onVisible);
+      };
     })();
+    return () => unsub?.();
   }, []);
 
   const signIn = useCallback(async (email: string, password: string, rememberMe = false) => {
@@ -134,8 +192,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     lastActivity.current = Date.now();
     try {
-      if (rememberMe) localStorage.setItem("admin_keep_logged_in", "1");
-      else localStorage.removeItem("admin_keep_logged_in");
+      if (rememberMe) {
+        localStorage.setItem("admin_keep_logged_in", "1");
+        writeBackupToken(authData.session?.refresh_token);
+      } else {
+        localStorage.removeItem("admin_keep_logged_in");
+        clearBackupToken();
+      }
     } catch { /* ignore */ }
     setKeepLoggedIn(rememberMe);
     return { error: null };
@@ -147,6 +210,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(null);
     setSessionWarning(false);
     try { localStorage.removeItem("admin_keep_logged_in"); } catch { /* ignore */ }
+    clearBackupToken();
     setKeepLoggedIn(false);
   }, []);
 
