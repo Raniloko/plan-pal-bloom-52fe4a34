@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DevicesDialog } from "@/components/admin/operational/DevicesDialog";
 import { format } from "date-fns";
 import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -80,6 +81,7 @@ const OperationalViewInner = () => {
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [convertEntry, setConvertEntry] = useState<WaitlistEntry | null>(null);
