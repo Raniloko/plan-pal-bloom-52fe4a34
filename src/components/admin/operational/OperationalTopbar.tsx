@@ -3,7 +3,7 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight,
-  Users, Settings, Bell, LogOut, Repeat,
+  Users, Settings, Bell, LogOut, Repeat, MonitorSmartphone,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,6 +19,7 @@ interface Props {
   onOpenSettings: () => void;
   onOpenNotifications: () => void;
   onOpenRecurring: () => void;
+  onOpenDevices?: () => void;
   isMobile?: boolean;
 }
 
@@ -39,7 +40,7 @@ const IcoBtn = ({ children, borderL, onClick, active }: { children: React.ReactN
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenSettings, onOpenNotifications, onOpenRecurring, isMobile = false,
+  onOpenSettings, onOpenNotifications, onOpenRecurring, onOpenDevices, isMobile = false,
 }: Props) => {
   const [time, setTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -148,6 +149,7 @@ export const OperationalTopbar = ({
       {/* Right icons */}
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", height: "100%" }}>
         <IcoBtn borderL onClick={onOpenRecurring}><Repeat size={16} /></IcoBtn>
+        {onOpenDevices && <IcoBtn borderL onClick={onOpenDevices}><MonitorSmartphone size={16} /></IcoBtn>}
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
             <Users size={14} style={{ color: "#666", marginRight: 6 }} />

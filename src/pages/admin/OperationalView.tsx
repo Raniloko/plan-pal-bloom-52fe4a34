@@ -487,6 +487,7 @@ const OperationalViewInner = () => {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
         onOpenRecurring={() => setRecurringOpen(true)}
+        onOpenDevices={() => setDevicesOpen(true)}
         isMobile={isMobile}
       />
       <DayBlocksBar date={dateStr} dateLabel={format(selectedDate, "dd.MM.yyyy")} />
@@ -562,6 +563,7 @@ const OperationalViewInner = () => {
       />
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <DevicesDialog open={devicesOpen} onClose={() => setDevicesOpen(false)} />
       <NotificationsPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
       <RecurringBookingDialog
         open={recurringOpen}
