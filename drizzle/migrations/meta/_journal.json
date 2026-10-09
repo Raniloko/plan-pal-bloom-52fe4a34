@@ -29,6 +29,13 @@
       "when": 1790592545944,
       "tag": "0003_apply_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791556324181,
+      "tag": "0004_admin_sessions",
+      "breakpoints": true
     }
   ]
 }
