@@ -50,6 +50,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    let callerUserId = "";
+    let callerSessionId = "";
     if (!PUBLIC_ACTIONS.includes(action)) {
       // Auth check: verify the caller is an authenticated admin
       const authHeader = req.headers.get("Authorization");
@@ -70,6 +72,8 @@ Deno.serve(async (req) => {
       }
 
       const userId = claimsData.claims.sub as string;
+      callerUserId = userId;
+      callerSessionId = String((claimsData.claims as Record<string, unknown>).session_id ?? "");
 
       const { data: roleData } = await supabase
         .from("user_roles")
@@ -88,6 +92,30 @@ Deno.serve(async (req) => {
         // Reaching this point already proves the caller is an authenticated admin
         // (the auth/role gate above runs for every non-public action).
         return ok({ admin: true });
+      }
+
+      case "list_sessions": {
+        const { data, error: e } = await supabase.rpc("admin_list_sessions", { p_user_id: callerUserId });
+        if (e) return error("Sitzungen konnten nicht geladen werden", 500);
+        return ok({ sessions: data || [], current_session_id: callerSessionId });
+      }
+
+      case "revoke_session": {
+        const sid = String(body.session_id || "");
+        if (!/^[0-9a-f-]{36}$/i.test(sid)) return error("Ungültige Sitzung", 400);
+        if (sid === callerSessionId) return error("Aktuelle Sitzung bitte über Abmelden beenden", 400);
+        const { data, error: e } = await supabase.rpc("admin_revoke_session", { p_user_id: callerUserId, p_session_id: sid });
+        if (e) return error("Abmelden fehlgeschlagen", 500);
+        await logActivity(supabase, "revoke_session", "session", sid, "Gerät abgemeldet");
+        return ok({ revoked: data });
+      }
+
+      case "revoke_other_sessions": {
+        if (!callerSessionId) return error("Aktuelle Sitzung unbekannt", 400);
+        const { data, error: e } = await supabase.rpc("admin_revoke_other_sessions", { p_user_id: callerUserId, p_keep: callerSessionId });
+        if (e) return error("Abmelden fehlgeschlagen", 500);
+        await logActivity(supabase, "revoke_other_sessions", "session", undefined, `${data} Geräte abgemeldet`);
+        return ok({ revoked: data });
       }
 
       case "fetch_dashboard": {
