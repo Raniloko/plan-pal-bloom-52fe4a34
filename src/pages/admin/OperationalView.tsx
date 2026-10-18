@@ -5,6 +5,7 @@ import { DevicesDialog } from "@/components/admin/operational/DevicesDialog";
 import { format } from "date-fns";
 import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAdminTheme } from "@/hooks/useAdminTheme";
 import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
@@ -14,6 +15,7 @@ import {
   SettingsDialog,
   NotificationsPanel,
   RecurringBookingDialog,
+  StatsPanel,
 } from "@/components/admin/operational";
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import { DayBlocksBar } from "@/components/admin/operational/DayBlocksBar";
@@ -84,6 +86,8 @@ const OperationalViewInner = () => {
   const [devicesOpen, setDevicesOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const { theme, toggle: toggleTheme } = useAdminTheme();
   const [convertEntry, setConvertEntry] = useState<WaitlistEntry | null>(null);
 
   const [durationMin, setDurationMin] = useState(120);
@@ -477,7 +481,7 @@ const OperationalViewInner = () => {
   }
 
   return (
-    <div style={{
+    <div className="admin-theme" data-theme={theme} style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
     }}>
@@ -490,8 +494,13 @@ const OperationalViewInner = () => {
         onOpenNotifications={() => setNotificationsOpen(true)}
         onOpenRecurring={() => setRecurringOpen(true)}
         onOpenDevices={() => setDevicesOpen(true)}
+        onOpenStats={() => setStatsOpen(v => !v)}
+        statsActive={statsOpen}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         isMobile={isMobile}
       />
+      <StatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} date={dateStr} units={units} />
       <DayBlocksBar date={dateStr} dateLabel={format(selectedDate, "dd.MM.yyyy")} />
 
 
