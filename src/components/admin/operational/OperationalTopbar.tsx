@@ -3,13 +3,14 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight,
-  Users, Settings, Bell, LogOut, Repeat, MonitorSmartphone,
+  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Sun, Moon,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import type { AdminTheme } from "@/hooks/useAdminTheme";
 
 interface Props {
   totalReservations: number;
@@ -20,19 +21,22 @@ interface Props {
   onOpenNotifications: () => void;
   onOpenRecurring: () => void;
   onOpenDevices?: () => void;
+  onOpenStats?: () => void;
+  statsActive?: boolean;
+  theme?: AdminTheme;
+  onToggleTheme?: () => void;
   isMobile?: boolean;
 }
 
-const Div = () => <div style={{ width: 1, alignSelf: "stretch", background: "#2a2a2a" }} />;
-
-const IcoBtn = ({ children, borderL, onClick, active }: { children: React.ReactNode; borderL?: boolean; onClick?: () => void; active?: boolean }) => (
-  <button onClick={onClick} style={{
-    width: 38, height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-    color: active ? "#fff" : "#666", background: active ? "#1e1e1e" : "transparent", border: "none",
-    borderLeft: borderL ? "1px solid #2a2a2a" : undefined, cursor: "pointer",
-  }}
-    onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "#1e1e1e"; }}
-    onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "#666"; e.currentTarget.style.background = "transparent"; }}}
+const IcoBtn = ({ children, onClick, active, label }: { children: React.ReactNode; onClick?: () => void; active?: boolean; label: string }) => (
+  <button
+    onClick={onClick}
+    aria-label={label}
+    title={label}
+    className={cn(
+      "flex h-full w-[38px] items-center justify-center border-l border-adm-border transition-colors hover:bg-adm-surface-2 hover:text-adm-text",
+      active ? "bg-adm-surface-2 text-adm-text" : "text-adm-muted",
+    )}
   >
     {children}
   </button>
@@ -40,7 +44,7 @@ const IcoBtn = ({ children, borderL, onClick, active }: { children: React.ReactN
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenSettings, onOpenNotifications, onOpenRecurring, onOpenDevices, isMobile = false,
+  onOpenRecurring, onOpenDevices, onOpenStats, statsActive, theme, onToggleTheme, isMobile = false,
 }: Props) => {
   const [time, setTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -49,6 +53,7 @@ export const OperationalTopbar = ({
   const navigate = useNavigate();
 
   const shortDate = format(selectedDate, "EEE., d MMM", { locale: de });
+  const today = isToday(selectedDate);
 
   useEffect(() => {
     const tick = () => {
@@ -60,41 +65,28 @@ export const OperationalTopbar = ({
     return () => clearInterval(id);
   }, []);
 
-  const goToday = () => {
-    onDateChange(new Date());
-  };
+  const navBtn = "flex h-full w-7 items-center justify-center text-adm-muted hover:text-adm-text";
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", height: isMobile ? 44 : 52, minHeight: isMobile ? 44 : 52,
-      background: "#111111", borderBottom: "1px solid #2a2a2a",
-      fontFamily: "'DM Sans', sans-serif",
-    }}>
-      {/* Logo */}
-      <div style={{ padding: isMobile ? "0 8px" : "0 12px", display: "flex", alignItems: "center", height: "100%" }}>
-        <img src="/images/rondo-logo.png" alt="Rondo" style={{ height: isMobile ? 22 : 28 }} />
+    <div className={cn(
+      "flex items-center border-b border-adm-border bg-adm-bg font-['DM_Sans',sans-serif] text-adm-text",
+      isMobile ? "h-11 min-h-11" : "h-[52px] min-h-[52px]",
+    )}>
+      <div className={cn("flex h-full items-center border-r border-adm-border", isMobile ? "px-2" : "px-3")}>
+        <img src="/images/rondo-logo.png" alt="Rondo" className={isMobile ? "h-[22px]" : "h-7"} />
       </div>
-      <Div />
 
-      {/* Jetzt */}
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
           <button
             onClick={(e) => {
-              if (isToday(selectedDate)) {
-                // already today, open calendar
-              } else {
-                e.preventDefault();
-                goToday();
-              }
+              if (!today) { e.preventDefault(); onDateChange(new Date()); }
             }}
-            style={{
-              display: "flex", alignItems: "center", gap: isMobile ? 4 : 6, padding: isMobile ? "0 6px" : "0 12px", height: "100%",
-              fontSize: isMobile ? 11 : 13, fontWeight: 600,
-              color: isToday(selectedDate) ? "#4ade80" : "#fff",
-              background: "transparent", border: "none",
-              borderRight: "1px solid #2a2a2a", cursor: "pointer",
-            }}
+            className={cn(
+              "flex h-full items-center gap-1.5 border-r border-adm-border font-semibold",
+              isMobile ? "px-1.5 text-[11px]" : "px-3 text-[13px]",
+              today ? "text-adm-success" : "text-adm-text",
+            )}
           >
             <CalendarDays size={isMobile ? 12 : 14} /> {isMobile ? "" : "Jetzt"}
           </button>
@@ -110,19 +102,11 @@ export const OperationalTopbar = ({
         </PopoverContent>
       </Popover>
 
-      {/* Date nav */}
-      <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
-        <button onClick={() => onDateChange(subDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronLeft size={14} /></button>
+      <div className="flex h-full items-center border-r border-adm-border">
+        <button aria-label="Vorheriger Tag" onClick={() => onDateChange(subDays(selectedDate, 1))} className={navBtn}><ChevronLeft size={14} /></button>
         <Popover open={dateCalOpen} onOpenChange={setDateCalOpen}>
           <PopoverTrigger asChild>
-            <button
-              style={{
-                fontSize: isMobile ? 11 : 14, fontWeight: 600, color: "#fff",
-                padding: "0 6px", whiteSpace: "nowrap", background: "transparent",
-                border: "none", cursor: "pointer", height: "100%",
-              }}
-              title="Datum wählen"
-            >
+            <button title="Datum wählen" className={cn("h-full whitespace-nowrap px-1.5 font-semibold", isMobile ? "text-[11px]" : "text-sm")}>
               {isMobile ? format(selectedDate, "d.MM", { locale: de }) : shortDate}
             </button>
           </PopoverTrigger>
@@ -136,29 +120,29 @@ export const OperationalTopbar = ({
             />
           </PopoverContent>
         </Popover>
-        <button onClick={() => onDateChange(addDays(selectedDate, 1))} style={{ width: 28, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", background: "transparent", border: "none", cursor: "pointer" }}><ChevronRight size={14} /></button>
+        <button aria-label="Nächster Tag" onClick={() => onDateChange(addDays(selectedDate, 1))} className={navBtn}><ChevronRight size={14} /></button>
       </div>
 
-      {/* Time - hide on mobile */}
       {!isMobile && (
-        <div style={{ display: "flex", alignItems: "center", height: "100%", borderRight: "1px solid #2a2a2a" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", padding: "0 12px", fontVariantNumeric: "tabular-nums", fontFamily: "monospace" }}>{time}</span>
-        </div>
+        <div className="flex h-full items-center border-r border-adm-border px-3 font-mono text-sm font-bold tabular-nums">{time}</div>
       )}
 
-      {/* Right icons */}
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", height: "100%" }}>
-        <IcoBtn borderL onClick={onOpenRecurring}><Repeat size={16} /></IcoBtn>
-        {onOpenDevices && <IcoBtn borderL onClick={onOpenDevices}><MonitorSmartphone size={16} /></IcoBtn>}
+      <div className="ml-auto flex h-full items-center">
+        {onOpenStats && <IcoBtn label="Statistiken" onClick={onOpenStats} active={statsActive}><BarChart3 size={16} /></IcoBtn>}
+        <IcoBtn label="Serienreservierung" onClick={onOpenRecurring}><Repeat size={16} /></IcoBtn>
+        {onOpenDevices && <IcoBtn label="Geräte" onClick={onOpenDevices}><MonitorSmartphone size={16} /></IcoBtn>}
+        {onToggleTheme && (
+          <IcoBtn label={theme === "light" ? "Dunkles Design" : "Helles Design"} onClick={onToggleTheme}>
+            {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+          </IcoBtn>
+        )}
         {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", padding: "0 12px", height: "100%", borderLeft: "1px solid #2a2a2a" }}>
-            <Users size={14} style={{ color: "#666", marginRight: 6 }} />
-            <span style={{ fontSize: 13, color: "#888" }}>
-              <span style={{ fontWeight: 700, color: "#fff" }}>{totalReservations}</span>/{totalGuests}
-            </span>
+          <div className="flex h-full items-center gap-1.5 border-l border-adm-border px-3 text-[13px] text-adm-muted">
+            <Users size={14} />
+            <span><b className="text-adm-text">{totalReservations}</b>/{totalGuests}</span>
           </div>
         )}
-        <IcoBtn borderL onClick={async () => { await signOut(); navigate("/backstage/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
+        <IcoBtn label="Abmelden" onClick={async () => { await signOut(); navigate("/backstage/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
       </div>
     </div>
   );

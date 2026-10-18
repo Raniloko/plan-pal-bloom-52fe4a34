@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Lock, X, Plus } from "lucide-react";
+import { adm } from "@/components/admin/theme";
 
 const AREAS: { value: string; label: string }[] = [
   { value: "", label: "Ganzer Tag (alle Bereiche)" },
@@ -49,9 +50,9 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
   return (
     <div style={{
       display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "6px 12px",
-      background: hasBlocks ? "rgba(220,60,60,0.15)" : "#1a1a1a",
-      borderBottom: `1px solid ${hasBlocks ? "rgba(220,60,60,0.5)" : "#2a2a2a"}`,
-      color: "#fff", fontSize: 12,
+      background: hasBlocks ? "rgba(220,60,60,0.15)" : adm.surface,
+      borderBottom: `1px solid ${hasBlocks ? "rgba(220,60,60,0.5)" : adm.border}`,
+      color: adm.text, fontSize: 12,
     }}>
       {hasBlocks && <Lock size={14} color="#ff6b6b" />}
       {hasBlocks ? blocks.map(b => (
@@ -60,11 +61,11 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
           background: "rgba(220,60,60,0.3)", fontWeight: 700,
         }}>
           Gesperrt: {areaLabel(b.area)}{b.reason ? ` – ${b.reason}` : ""}
-          <button onClick={() => remove(b.id)} title="Sperre aufheben" style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0, display: "flex" }}>
+          <button onClick={() => remove(b.id)} title="Sperre aufheben" style={{ background: "none", border: "none", color: adm.text, cursor: "pointer", padding: 0, display: "flex" }}>
             <X size={13} />
           </button>
         </span>
-      )) : <span style={{ color: "#888" }}>Keine Sperren am {dateLabel}</span>}
+      )) : <span style={{ color: adm.muted }}>Keine Sperren am {dateLabel}</span>}
       <button onClick={() => setOpen(v => !v)} style={{
         marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px",
         borderRadius: 6, border: "1px solid #c9a84c", background: "transparent", color: "#c9a84c",
@@ -75,11 +76,11 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
       {open && (
         <div style={{ width: "100%", display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 6 }}>
           <span style={{ alignSelf: "center", color: "#c9a84c", fontWeight: 700 }}>{dateLabel}:</span>
-          <select value={area} onChange={e => setArea(e.target.value)} style={{ background: "#111", color: "#fff", border: "1px solid #333", borderRadius: 6, padding: "4px 8px" }}>
+          <select value={area} onChange={e => setArea(e.target.value)} style={{ background: adm.bg, color: adm.text, border: `1px solid ${adm.border}`, borderRadius: 6, padding: "4px 8px" }}>
             {AREAS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
           </select>
           <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Grund (optional, für Gäste sichtbar)"
-            style={{ flex: 1, minWidth: 160, background: "#111", color: "#fff", border: "1px solid #333", borderRadius: 6, padding: "4px 8px" }} />
+            style={{ flex: 1, minWidth: 160, background: adm.bg, color: adm.text, border: `1px solid ${adm.border}`, borderRadius: 6, padding: "4px 8px" }} />
           <button onClick={add} disabled={saving} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: "#c9a84c", color: "#111", fontWeight: 800, cursor: "pointer" }}>
             Sperren
           </button>

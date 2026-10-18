@@ -141,6 +141,20 @@ Deno.serve(async (req) => {
         return ok({ reservations: r.data, units, waitlist: w.data || [], unit_blocks: blocks });
       }
 
+      case "fetch_stats_range": {
+        const { from, to } = body;
+        if (!from || !to) return error("from and to required", 400);
+        const [r, u] = await Promise.all([
+          supabase.from("reservations")
+            .select("reservation_date,reservation_time,guest_count,zone,status,unit_id")
+            .gte("reservation_date", from).lte("reservation_date", to),
+          supabase.from("units").select("id,area,name"),
+        ]);
+        if (r.error) return error(r.error.message, 500);
+        if (u.error) return error(u.error.message, 500);
+        return ok({ reservations: r.data || [], units: u.data || [] });
+      }
+
       case "check_in": {
         const { reservation_id, checked_in } = body;
         if (!reservation_id) return error("reservation_id required", 400);

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Repeat, X } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { adm } from "@/components/admin/theme";
 
 interface UnitOption {
   id: string;
@@ -35,10 +36,10 @@ const WEEKDAYS = [
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "8px 10px", fontSize: 13,
-  border: "1px solid #3a3a3a", borderRadius: 6, outline: "none",
-  background: "#1a1a1a", color: "#fff", fontFamily: "'DM Sans', sans-serif",
+  border: `1px solid ${adm.border}`, borderRadius: 6, outline: "none",
+  background: adm.surface, color: adm.text, fontFamily: "'DM Sans', sans-serif",
 };
-const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: "#999", marginBottom: 4, display: "block", textTransform: "uppercase", letterSpacing: 0.4 };
+const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: adm.muted, marginBottom: 4, display: "block", textTransform: "uppercase", letterSpacing: 0.4 };
 
 const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) => {
   const { getTimesForDate } = useOpeningHours();
@@ -116,33 +117,33 @@ const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) =
 
   return (
     <div onClick={close} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+      position: "fixed", inset: 0, background: adm.overlay,
       zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "#0e0e0e", border: "1px solid #2a2a2a", borderRadius: 12,
+        background: adm.bg, border: `1px solid ${adm.border}`, borderRadius: 12,
         width: "100%", maxWidth: 540, maxHeight: "90vh", overflowY: "auto",
         fontFamily: "'DM Sans', sans-serif",
       }}>
         {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", gap: 10, padding: "14px 18px",
-          borderBottom: "1px solid #2a2a2a",
+          borderBottom: `1px solid ${adm.border}`,
         }}>
           <Repeat size={18} color="#c9a84c" />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Stammkunden-Reservierung</div>
-            <div style={{ fontSize: 11, color: "#777" }}>Wiederkehrend über mehrere Tage anlegen</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: adm.text }}>Stammkunden-Reservierung</div>
+            <div style={{ fontSize: 11, color: adm.muted }}>Wiederkehrend über mehrere Tage anlegen</div>
           </div>
           <button onClick={close} style={{
-            background: "transparent", border: "none", color: "#888", cursor: "pointer", padding: 4,
+            background: "transparent", border: "none", color: adm.muted, cursor: "pointer", padding: 4,
           }}><X size={18} /></button>
         </div>
 
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
           {result ? (
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#4ade80", marginBottom: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: adm.success, marginBottom: 8 }}>
                 ✓ {result.created_count} Reservierung(en) angelegt
               </div>
               {result.skipped.length > 0 && (
@@ -150,10 +151,10 @@ const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) =
                   <div style={{ fontSize: 12, fontWeight: 600, color: "#e07820", marginBottom: 6 }}>
                     {result.skipped.length} Tag(e) übersprungen:
                   </div>
-                  <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 6, padding: 10, maxHeight: 200, overflowY: "auto" }}>
+                  <div style={{ background: adm.surface, border: `1px solid ${adm.border}`, borderRadius: 6, padding: 10, maxHeight: 200, overflowY: "auto" }}>
                     {result.skipped.map((s, i) => (
-                      <div key={i} style={{ fontSize: 12, color: "#bbb", marginBottom: 3 }}>
-                        <span style={{ color: "#fff", fontWeight: 600 }}>{s.date}</span> – {s.reason}
+                      <div key={i} style={{ fontSize: 12, color: adm.text2, marginBottom: 3 }}>
+                        <span style={{ color: adm.text, fontWeight: 600 }}>{s.date}</span> – {s.reason}
                       </div>
                     ))}
                   </div>
@@ -231,9 +232,9 @@ const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) =
                     return (
                       <button key={w.v} type="button" onClick={() => toggleWd(w.v)} style={{
                         padding: "8px 14px", fontSize: 12, fontWeight: 700, borderRadius: 6, cursor: "pointer",
-                        border: sel ? "1.5px solid #c9a84c" : "1px solid #3a3a3a",
-                        background: sel ? "#c9a84c22" : "#1a1a1a",
-                        color: sel ? "#c9a84c" : "#888",
+                        border: sel ? `1.5px solid ${adm.gold}` : `1px solid ${adm.border}`,
+                        background: sel ? adm.goldTint : adm.surface,
+                        color: sel ? adm.gold : adm.muted,
                       }}>{w.l}</button>
                     );
                   })}
@@ -246,8 +247,8 @@ const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) =
               </div>
 
               <div style={{
-                background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 6,
-                padding: 10, fontSize: 11, color: "#999", lineHeight: 1.5,
+                background: adm.surface, border: `1px solid ${adm.border}`, borderRadius: 6,
+                padding: 10, fontSize: 11, color: adm.muted, lineHeight: 1.5,
               }}>
                 Bereits belegte Tage werden automatisch übersprungen und am Ende aufgelistet.
               </div>
@@ -255,11 +256,11 @@ const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) =
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button onClick={close} style={{
                   flex: 1, padding: 11, fontSize: 13, fontWeight: 600, borderRadius: 6,
-                  background: "#1a1a1a", color: "#999", border: "1px solid #3a3a3a", cursor: "pointer",
+                  background: adm.surface, color: adm.muted, border: `1px solid ${adm.border}`, cursor: "pointer",
                 }}>Abbrechen</button>
                 <button onClick={submit} disabled={saving || !name.trim()} style={{
                   flex: 2, padding: 11, fontSize: 13, fontWeight: 700, borderRadius: 6,
-                  background: !name.trim() ? "#444" : "#c9a84c", color: "#111", border: "none", cursor: "pointer",
+                  background: !name.trim() ? adm.border : "#c9a84c", color: "#111", border: "none", cursor: "pointer",
                   opacity: saving ? 0.6 : 1,
                 }}>{saving ? "Wird angelegt..." : "Reservierungen anlegen"}</button>
               </div>

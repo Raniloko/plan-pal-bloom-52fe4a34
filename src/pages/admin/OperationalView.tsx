@@ -5,6 +5,7 @@ import { DevicesDialog } from "@/components/admin/operational/DevicesDialog";
 import { format } from "date-fns";
 import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAdminTheme } from "@/hooks/useAdminTheme";
 import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
@@ -14,6 +15,7 @@ import {
   SettingsDialog,
   NotificationsPanel,
   RecurringBookingDialog,
+  StatsPanel,
 } from "@/components/admin/operational";
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import { DayBlocksBar } from "@/components/admin/operational/DayBlocksBar";
@@ -21,6 +23,7 @@ import type { ColorMode, ViewMode } from "@/components/admin/operational/Operati
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
 import { X } from "lucide-react";
+import { adm } from "@/components/admin/theme";
 
 interface Reservation {
   id: string;
@@ -84,6 +87,8 @@ const OperationalViewInner = () => {
   const [devicesOpen, setDevicesOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const { theme, toggle: toggleTheme } = useAdminTheme();
   const [convertEntry, setConvertEntry] = useState<WaitlistEntry | null>(null);
 
   const [durationMin, setDurationMin] = useState(120);
@@ -469,7 +474,7 @@ const OperationalViewInner = () => {
     return (
       <div style={{
         position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'DM Sans', sans-serif", background: "#f2f2f2", color: "#666", fontSize: 14,
+        fontFamily: "'DM Sans', sans-serif", background: adm.bg, color: adm.muted, fontSize: 14,
       }}>
         Dashboard wird geladen...
       </div>
@@ -490,26 +495,31 @@ const OperationalViewInner = () => {
         onOpenNotifications={() => setNotificationsOpen(true)}
         onOpenRecurring={() => setRecurringOpen(true)}
         onOpenDevices={() => setDevicesOpen(true)}
+        onOpenStats={() => setStatsOpen(v => !v)}
+        statsActive={statsOpen}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         isMobile={isMobile}
       />
+      <StatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} date={dateStr} units={units} />
       <DayBlocksBar date={dateStr} dateLabel={format(selectedDate, "dd.MM.yyyy")} />
 
 
       {/* Mobile tab bar */}
       {isMobile && (
         <div style={{
-          display: "flex", height: 40, background: "#1e1e1e", borderBottom: "1px solid #2a2a2a",
+          display: "flex", height: 40, background: adm.surface, borderBottom: `1px solid ${adm.border}`,
         }}>
           <button onClick={() => setMobileTab("list")} style={{
             flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: mobileTab === "list" ? "rgba(255,255,255,0.1)" : "transparent",
-            color: mobileTab === "list" ? "#fff" : "#666",
+            background: mobileTab === "list" ? adm.surface2 : "transparent",
+            color: mobileTab === "list" ? adm.text : adm.muted,
             borderBottom: mobileTab === "list" ? "2px solid #c9a84c" : "2px solid transparent",
           }}>Reservierungen</button>
           <button onClick={() => setMobileTab("map")} style={{
             flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: mobileTab === "map" ? "rgba(255,255,255,0.1)" : "transparent",
-            color: mobileTab === "map" ? "#fff" : "#666",
+            background: mobileTab === "map" ? adm.surface2 : "transparent",
+            color: mobileTab === "map" ? adm.text : adm.muted,
             borderBottom: mobileTab === "map" ? "2px solid #c9a84c" : "2px solid transparent",
           }}>Grundriss</button>
         </div>

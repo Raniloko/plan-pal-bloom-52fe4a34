@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check, Timer } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { adm } from "@/components/admin/theme";
 
 interface UnitOption {
   id: string;
@@ -297,22 +298,22 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
         }}>
           <Check size={24} color="#fff" />
         </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: "#111" }}>{isWalkIn ? "Walk-in erstellt" : "Reservierung erstellt"}</span>
-        <span style={{ fontSize: 12, color: "#999", marginTop: 4 }}>{guest} · {pax} Pers. · {startTime}</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: adm.text }}>{isWalkIn ? "Walk-in erstellt" : "Reservierung erstellt"}</span>
+        <span style={{ fontSize: 12, color: adm.muted, marginTop: 4 }}>{guest} · {pax} Pers. · {startTime}</span>
       </div>
     );
   }
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "8px 10px", fontSize: 12, border: "1px solid #ddd",
+    width: "100%", padding: "8px 10px", fontSize: 12, border: `1px solid ${adm.border}`,
     borderRadius: 6, outline: "none", fontFamily: "'DM Sans', sans-serif",
-    background: "#fff", color: "#111",
+    background: adm.surface, color: adm.text,
   };
-  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: "#555", marginBottom: 4, display: "block" };
+  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: adm.text2, marginBottom: 4, display: "block" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 2 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: adm.text, marginBottom: 2 }}>
         {isWalkIn ? "Walk-in Gast" : "Neue Reservierung"} {tableLabel ? `· ${tableLabel}` : ""}
       </div>
 
@@ -320,16 +321,16 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
       <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
         <button type="button" onClick={() => setIsWalkIn(false)} style={{
           padding: "5px 14px", fontSize: 11, borderRadius: 20, cursor: "pointer",
-          border: !isWalkIn ? "1.5px solid #c9a84c" : "1px solid #ddd",
-          background: !isWalkIn ? "#c9a84c22" : "#fff",
-          color: !isWalkIn ? "#111" : "#666", fontWeight: !isWalkIn ? 700 : 400,
+          border: !isWalkIn ? `1.5px solid ${adm.gold}` : `1px solid ${adm.border}`,
+          background: !isWalkIn ? adm.goldTint : adm.surface,
+          color: !isWalkIn ? adm.text : adm.text2, fontWeight: !isWalkIn ? 700 : 400,
           fontFamily: "'DM Sans', sans-serif",
         }}>Reservierung</button>
         <button type="button" onClick={() => setIsWalkIn(true)} style={{
           padding: "5px 14px", fontSize: 11, borderRadius: 20, cursor: "pointer",
-          border: isWalkIn ? "1.5px solid #4ade80" : "1px solid #ddd",
-          background: isWalkIn ? "#4ade8022" : "#fff",
-          color: isWalkIn ? "#111" : "#666", fontWeight: isWalkIn ? 700 : 400,
+          border: isWalkIn ? `1.5px solid ${adm.success}` : `1px solid ${adm.border}`,
+          background: isWalkIn ? adm.successTint : adm.surface,
+          color: isWalkIn ? adm.text : adm.text2, fontWeight: isWalkIn ? 700 : 400,
           fontFamily: "'DM Sans', sans-serif",
         }}>Walk-in</button>
       </div>
@@ -401,7 +402,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
           };
           const zoneUnits = (groupedUnits ? Object.values(groupedUnits).flat() : []).filter(u => areaMatch(u.area));
           if (zoneUnits.length === 0) {
-            return <div style={{ fontSize: 11, color: "#999" }}>Keine Tische in diesem Bereich.</div>;
+            return <div style={{ fontSize: 11, color: adm.muted }}>Keine Tische in diesem Bereich.</div>;
           }
           return (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -422,9 +423,9 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
                       title={`${u.name} (${cap}P.)`}
                       style={{
                         padding: "5px 9px", fontSize: 11, borderRadius: 4,
-                        border: selected ? "1.5px solid #c9a84c" : "1px solid #ddd",
-                        background: selected ? "#c9a84c22" : "#fff",
-                        color: selected ? "#111" : "#555",
+                        border: selected ? `1.5px solid ${adm.gold}` : `1px solid ${adm.border}`,
+                        background: selected ? adm.goldTint : adm.surface,
+                        color: selected ? adm.text : adm.text2,
                         cursor: "pointer", fontWeight: selected ? 700 : 500,
                         fontFamily: "'DM Sans', sans-serif",
                       }}
@@ -438,12 +439,12 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
           );
         })()}
         {selectedUnitIds.length === 0 && isBillard && (
-          <div style={{ fontSize: 10, color: "#e07820", marginTop: 3 }}>
+          <div style={{ fontSize: 10, color: adm.warn, marginTop: 3 }}>
             Es wird automatisch ein freier Billardtisch gewählt.
           </div>
         )}
         {selectedUnitIds.length > 1 && (
-          <div style={{ fontSize: 10, color: "#666", marginTop: 4 }}>
+          <div style={{ fontSize: 10, color: adm.text2, marginTop: 4 }}>
             Hinweis: Es wird pro Tisch eine eigene Reservierung mit denselben Daten angelegt.
           </div>
         )}
@@ -463,9 +464,9 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
                 )}
                 style={{
                   padding: "4px 10px", fontSize: 11, borderRadius: 4,
-                  border: selected ? "1.5px solid #c9a84c" : "1px solid #ddd",
-                  background: selected ? "#c9a84c22" : "#fff",
-                  color: selected ? "#111" : "#666",
+                  border: selected ? `1.5px solid ${adm.gold}` : `1px solid ${adm.border}`,
+                  background: selected ? adm.goldTint : adm.surface,
+                  color: selected ? adm.text : adm.text2,
                   cursor: "pointer", fontWeight: selected ? 700 : 400,
                   fontFamily: "'DM Sans', sans-serif",
                 }}
@@ -481,11 +482,11 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
         </div>
       )}
       {isBillard && (
-        <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ background: adm.surface2, border: `1px solid ${adm.surface2}`, borderRadius: 8, padding: 12, display: "flex", alignItems: "center", gap: 10 }}>
           <Timer size={16} color="#c9a84c" />
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>Live-Timer Abrechnung</div>
-            <div style={{ fontSize: 10, color: "#999" }}>Kosten werden ab Check-in bis Check-out berechnet (0,23 €/Min)</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: adm.text }}>Live-Timer Abrechnung</div>
+            <div style={{ fontSize: 10, color: adm.muted }}>Kosten werden ab Check-in bis Check-out berechnet (0,23 €/Min)</div>
           </div>
         </div>
       )}
@@ -497,7 +498,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
       <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
         <button onClick={onCancel} style={{
           flex: 1, padding: "10px", fontSize: 12, fontWeight: 600, borderRadius: 6,
-          background: "#f2f2f2", color: "#666", border: "1px solid #ddd", cursor: "pointer",
+          background: adm.bg, color: adm.text2, border: `1px solid ${adm.border}`, cursor: "pointer",
         }}>Abbrechen</button>
         <button onClick={handleSubmit} disabled={saving || (!isWalkIn && !guest.trim())} style={{
           flex: 1, padding: "10px", fontSize: 12, fontWeight: 700, borderRadius: 6,

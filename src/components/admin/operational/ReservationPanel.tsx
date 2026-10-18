@@ -3,6 +3,7 @@ import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send
 import { LegendDialog } from "./LegendDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adm } from "@/components/admin/theme";
 
 export interface ResRow {
   id: string;
@@ -79,18 +80,18 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
   const filtered = subTab === "platziert" ? platziert : subTab === "achtung" ? achtung : bevorstehend;
 
   const subTabs: { key: SubTab; label: string; count: number; color: string; icon: React.ReactNode }[] = [
-    { key: "platziert", label: "Platziert", count: platziert.length, color: "#2a7a2a", icon: <CheckCheck size={8} /> },
-    { key: "bevorstehend", label: "Bevorsteh.", count: bevorstehend.length, color: "#555", icon: <Users size={8} /> },
-    { key: "achtung", label: "Achtung", count: achtung.length, color: "#cc5500", icon: <AlertTriangle size={8} /> },
+    { key: "platziert", label: "Platziert", count: platziert.length, color: adm.success, icon: <CheckCheck size={8} /> },
+    { key: "bevorstehend", label: "Bevorsteh.", count: bevorstehend.length, color: adm.text2, icon: <Users size={8} /> },
+    { key: "achtung", label: "Achtung", count: achtung.length, color: adm.warn, icon: <AlertTriangle size={8} /> },
   ];
 
   const renderIcon = (icon: ResRow["icon"], status?: ResRow["status"]) => {
-    if (status === "cancelled") return <Ban size={15} color="#cc2222" />;
+    if (status === "cancelled") return <Ban size={15} color={adm.danger} />;
     switch (icon) {
       case "ob": return <span style={{ background: "#e07820", color: "#fff", fontSize: 8, fontWeight: 700, padding: "2px 5px", borderRadius: 2 }}>OB</span>;
-      case "double": return <CheckCheck size={15} color="#2a7a2a" />;
-      case "single": return <Check size={15} color="#2a7a2a" />;
-      case "chkps": return <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Check size={13} color="#2a7a2a" /><PauseCircle size={13} color="#888" /></span>;
+      case "double": return <CheckCheck size={15} color={adm.success} />;
+      case "single": return <Check size={15} color={adm.success} />;
+      case "chkps": return <span style={{ display: "flex", alignItems: "center", gap: 2 }}><Check size={13} color={adm.success} /><PauseCircle size={13} color={adm.muted} /></span>;
       default: return null;
     }
   };
@@ -102,17 +103,17 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
 
   return (
     <div style={{
-      width: isMobile ? "100%" : 390, minWidth: isMobile ? undefined : 390, background: "#f2f2f2",
-      borderRight: isMobile ? "none" : "1px solid #ddd",
+      width: isMobile ? "100%" : 390, minWidth: isMobile ? undefined : 390, background: adm.bg,
+      borderRight: isMobile ? "none" : `1px solid ${adm.border}`,
       display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif",
     }}>
       {/* Header tabs */}
-      <div style={{ display: "flex", alignItems: "center", height: 42, background: "#1e1e1e", borderBottom: "1px solid #2a2a2a", padding: "0 10px", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", height: 42, background: adm.surface, borderBottom: `1px solid ${adm.border}`, padding: "0 10px", gap: 4 }}>
         <button onClick={() => setResTab("res")} style={{
           padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 6,
-          background: resTab === "res" ? "rgba(255,255,255,0.12)" : "transparent",
-          color: resTab === "res" ? "#fff" : "#666",
+          background: resTab === "res" ? adm.surface2 : "transparent",
+          color: resTab === "res" ? adm.text : adm.muted,
         }}>
           <span style={{ background: "#3a8c3a", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}>{rows.length}</span>
           Reservierungen
@@ -120,19 +121,19 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
         <button onClick={() => setResTab("wait")} style={{
           padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 6,
-          background: resTab === "wait" ? "rgba(255,255,255,0.12)" : "transparent",
-          color: resTab === "wait" ? "#fff" : "#666",
+          background: resTab === "wait" ? adm.surface2 : "transparent",
+          color: resTab === "wait" ? adm.text : adm.muted,
         }}>
           <span style={{ background: "#e07820", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}>{waitlist.length}</span>
           Warteliste
         </button>
         <button onClick={onNewClick} style={{
-          marginLeft: "auto", padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+          marginLeft: "auto", padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
           background: "#c9a84c", color: "#111", border: "none", cursor: "pointer",
         }}>+ Neu</button>
         {onWalkInClick && (
           <button onClick={onWalkInClick} style={{
-            marginLeft: 6, padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+            marginLeft: 6, padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
             background: "#4ade80", color: "#111", border: "none", cursor: "pointer",
           }}>+ Walk-in</button>
         )}
@@ -142,19 +143,19 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
       {resTab === "res" ? (
         <>
           {/* Sub-tabs */}
-          <div style={{ display: "flex", alignItems: "center", background: "#f2f2f2", borderBottom: "2px solid #ddd", padding: "0 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", background: adm.bg, borderBottom: `2px solid ${adm.border}`, padding: "0 12px" }}>
             {subTabs.map(t => (
               <button key={t.key} onClick={() => setSubTab(t.key)} style={{
                 display: "flex", alignItems: "center", gap: 4, padding: "10px 12px",
                 fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer",
                 background: "transparent",
-                color: subTab === t.key ? "#111" : "#888",
-                borderBottom: subTab === t.key ? "2px solid #111" : "2px solid transparent",
+                color: subTab === t.key ? adm.text : adm.muted,
+                borderBottom: subTab === t.key ? `2px solid ${adm.text}` : "2px solid transparent",
                 marginBottom: -2,
               }}>
                 <span style={{
                   fontSize: 9, fontWeight: 700, color: "#fff", padding: "1px 6px", borderRadius: 10,
-                  background: subTab === t.key ? "#333" : t.color,
+                  background: subTab === t.key ? adm.text2 : t.color,
                   display: "flex", alignItems: "center", gap: 2,
                 }}>
                   {t.icon} {t.count}
@@ -165,21 +166,21 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           </div>
 
           {/* Column header */}
-          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2", gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>Uhrzeit ↕ Gast</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#444" }}>Name</span>
+          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg, gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text2 }}>Uhrzeit ↕ Gast</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text2 }}>Name</span>
             <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-              <Filter size={12} color="#888" />
+              <Filter size={12} color={adm.muted} />
               <LegendDialog />
-              <Bell size={12} color="#888" />
+              <Bell size={12} color={adm.muted} />
             </span>
           </div>
 
           {/* Summary */}
-          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: "1px solid #e0e0e0", gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ÜBERSICHT</span>
-            <span style={{ fontSize: 10, color: "#777" }}>Gesamt {filtered.length}</span>
-            <span style={{ fontSize: 10, color: "#777", display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
+          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>ÜBERSICHT</span>
+            <span style={{ fontSize: 10, color: adm.text2 }}>Gesamt {filtered.length}</span>
+            <span style={{ fontSize: 10, color: adm.text2, display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
           </div>
 
           {/* Rows */}
@@ -187,8 +188,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
             {filtered.map(r => {
               const sel = r.id === selectedRowId;
               const isCancelled = r.status === "cancelled";
-              const borderL = isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : r.status === "checked_in" ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
-              const bg = sel ? "#eaeaea" : isCancelled ? "#fef2f2" : r.overdue ? "#fef2f2" : r.status === "checked_in" ? "#edf4ed" : "#fff";
+              const borderL = isCancelled ? adm.danger : r.overdue ? "#cc3300" : r.status === "checked_in" ? "#2a7a2a" : sel ? "#c9a84c" : "transparent";
+              const bg = sel ? adm.surface2 : isCancelled ? adm.dangerSoft : r.overdue ? adm.dangerSoft : r.status === "checked_in" ? adm.successSoft : adm.surface;
               return (
                 <div key={r.id} onClick={() => onRowClick(r)}
                   draggable={!isCancelled && r.status !== "checked_in"}
@@ -198,14 +199,14 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                   }}
                   style={{
                   display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
-                  minHeight: 58, borderBottom: "1px solid #e0e0e0",
+                  minHeight: 58, borderBottom: `1px solid ${adm.border}`,
                   borderLeft: `3px solid ${borderL}`, background: bg,
                   padding: "0 14px 0 11px", alignItems: "center", cursor: isCancelled ? "default" : "grab",
                   opacity: isCancelled ? 0.6 : 1,
                 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : "#111" }}>{r.time}</div>
-                    <div style={{ fontSize: 10, color: isCancelled ? "#cc2222" : r.overdue ? "#cc3300" : "#999", fontWeight: r.overdue ? 700 : 400 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isCancelled ? adm.danger : r.overdue ? adm.danger : adm.text }}>{r.time}</div>
+                    <div style={{ fontSize: 10, color: isCancelled ? adm.danger : r.overdue ? adm.danger : adm.muted, fontWeight: r.overdue ? 700 : 400 }}>
                       {isCancelled ? "Storniert" : r.overdue ? r.offset : r.status === "checked_in" ? (() => {
                         const [h, m] = r.time.split(":").map(Number);
                         const start = new Date(); start.setHours(h, m, 0, 0);
@@ -216,28 +217,28 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                         const isBillardWeekday = r.zone === "billard" && dow >= 1 && dow <= 4;
                         if (remaining <= 0) {
                           if (isBillardWeekday) return null;
-                          return <span style={{ color: "#cc3300", fontWeight: 700 }}>⏱ Überzogen</span>;
+                          return <span style={{ color: adm.danger, fontWeight: 700 }}>⏱ Überzogen</span>;
                         }
-                        if (remaining <= 15) return <span style={{ color: "#e07820", fontWeight: 600 }}>⏱ {remaining} Min</span>;
+                        if (remaining <= 15) return <span style={{ color: adm.warn, fontWeight: 600 }}>⏱ {remaining} Min</span>;
                         const rh = Math.floor(remaining / 60);
                         const rm = remaining % 60;
                         return `⏱ ${rh > 0 ? `${rh}h ` : ""}${rm}min`;
                       })() : r.offset}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#111", textAlign: "center" }}>{r.guests}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: adm.text, textAlign: "center" }}>{r.guests}</div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: isCancelled ? "#999" : "#111", textDecoration: isCancelled ? "line-through" : "none" }}>{r.name}</div>
-                    <div style={{ fontSize: 10, color: "#999" }}>{r.tableRef}</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: isCancelled ? adm.muted : adm.text, textDecoration: isCancelled ? "line-through" : "none" }}>{r.name}</div>
+                    <div style={{ fontSize: 10, color: adm.muted }}>{r.tableRef}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {isCancelled ? <Ban size={15} color="#cc2222" /> : r.overdue ? <AlertTriangle size={15} color="#cc3300" /> : renderIcon(r.icon, r.status)}
+                    {isCancelled ? <Ban size={15} color={adm.danger} /> : r.overdue ? <AlertTriangle size={15} color={adm.danger} /> : renderIcon(r.icon, r.status)}
                   </div>
                 </div>
               );
             })}
             {filtered.length === 0 && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: adm.muted }}>
                 <span style={{ fontSize: 14 }}>Keine Einträge</span>
               </div>
             )}
@@ -246,30 +247,30 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
       ) : (
         <>
           {/* Waitlist header */}
-          <div style={{ display: "flex", alignItems: "center", padding: "8px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2", gap: 8 }}>
-            <Clock size={12} color="#e07820" />
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#333" }}>WARTELISTE</span>
-            <span style={{ fontSize: 10, color: "#777" }}>{waitlist.length} Einträge</span>
+          <div style={{ display: "flex", alignItems: "center", padding: "8px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg, gap: 8 }}>
+            <Clock size={12} color={adm.warn} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: adm.text }}>WARTELISTE</span>
+            <span style={{ fontSize: 10, color: adm.text2 }}>{waitlist.length} Einträge</span>
             <span style={{ marginLeft: "auto" }}>
               <LegendDialog />
             </span>
           </div>
 
           {/* Column header */}
-          <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 60px 36px", padding: "6px 14px", borderBottom: "1px solid #ddd", background: "#f2f2f2" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>ZEIT</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>NAME / BEREICH</span>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#333" }}>STATUS</span>
+          <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 60px 36px", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>ZEIT</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>NAME / BEREICH</span>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>STATUS</span>
             <span />
           </div>
 
           {/* Waitlist rows */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {waitlist.length === 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: "#999" }}>
-                <Clock size={32} color="#ddd" style={{ marginBottom: 8 }} />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: adm.muted }}>
+                <Clock size={32} color={adm.border} style={{ marginBottom: 8 }} />
                 <span style={{ fontSize: 14 }}>Warteliste ist leer</span>
-                <span style={{ fontSize: 11, color: "#bbb", marginTop: 4 }}>Gäste werden hier angezeigt wenn alle Plätze belegt sind</span>
+                <span style={{ fontSize: 11, color: adm.muted, marginTop: 4 }}>Gäste werden hier angezeigt wenn alle Plätze belegt sind</span>
               </div>
             ) : (
               waitlist.map(w => {
@@ -279,18 +280,18 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                     onClick={() => onWaitlistClick?.(w)}
                     style={{
                     display: "grid", gridTemplateColumns: "70px 1fr 60px 36px",
-                    minHeight: 58, borderBottom: "1px solid #e0e0e0",
-                    borderLeft: `3px solid ${isNotified ? "#3a8c3a" : "#e07820"}`,
-                    background: isNotified ? "#edf4ed" : "#fff",
+                    minHeight: 58, borderBottom: `1px solid ${adm.border}`,
+                    borderLeft: `3px solid ${isNotified ? adm.success : "#e07820"}`,
+                    background: isNotified ? adm.successSoft : adm.surface,
                     padding: "0 14px 0 11px", alignItems: "center", cursor: "pointer",
                   }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{w.desired_time?.slice(0, 5)}</div>
-                      <div style={{ fontSize: 10, color: "#666" }}>{w.desired_date}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: adm.text }}>{w.desired_time?.slice(0, 5)}</div>
+                      <div style={{ fontSize: 10, color: adm.text2 }}>{w.desired_date}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#111" }}>{w.guest_name}</div>
-                      <div style={{ fontSize: 10, color: "#666" }}>{areaLabel(w.area)} · {w.guest_phone}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: adm.text }}>{w.guest_name}</div>
+                      <div style={{ fontSize: 10, color: adm.text2 }}>{areaLabel(w.area)} · {w.guest_phone}</div>
                     </div>
                     <div>
                       <span style={{
@@ -309,7 +310,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                             title="Gast benachrichtigen"
                             style={{
                               width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-                              background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", color: "#555",
+                              background: adm.surface, border: `1px solid ${adm.border}`, borderRadius: 4, cursor: "pointer", color: adm.text2,
                             }}
                           >
                             <Send size={11} />

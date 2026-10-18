@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Clock, Users } from "lucide-react";
+import { adm } from "@/components/admin/theme";
 
 interface TimelineReservation {
   id: string;
@@ -17,9 +18,9 @@ interface Props {
 const DURATION_HOURS = 2;
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; dot: string; text: string }> = {
-  checked_in: { bg: "#e8f5e8", border: "#b8d8b8", dot: "#2a7a2a", text: "#2a7a2a" },
-  confirmed: { bg: "#e8f0ff", border: "#b0c8f0", dot: "#3a7bd5", text: "#3a7bd5" },
-  pending: { bg: "#fff3e0", border: "#f0c88a", dot: "#e07820", text: "#e07820" },
+  checked_in: { bg: adm.successSoft, border: adm.border, dot: "#2a7a2a", text: "#2a7a2a" },
+  confirmed: { bg: adm.infoSoft, border: adm.border, dot: "#3a7bd5", text: "#3a7bd5" },
+  pending: { bg: adm.warnSoft, border: adm.border, dot: "#e07820", text: "#e07820" },
 };
 
 const timeToMinutes = (t: string) => {
@@ -61,20 +62,20 @@ export const TableTimeline = ({ reservations, currentTime }: Props) => {
   for (let h = startHour; h <= endHour; h++) hourMarks.push(h * 60);
 
   return (
-    <div style={{ background: "#f8f8f8", border: "1px solid #eaeaea", borderRadius: 8, padding: 14, marginBottom: 12 }}>
+    <div style={{ background: adm.surface2, border: `1px solid ${adm.surface2}`, borderRadius: 8, padding: 14, marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        <Clock size={13} color="#555" />
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>Tagesübersicht</span>
-        <span style={{ fontSize: 10, color: "#999", marginLeft: "auto" }}>{sorted.length} Reservierung{sorted.length !== 1 ? "en" : ""}</span>
+        <Clock size={13} color={adm.text2} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: adm.text }}>Tagesübersicht</span>
+        <span style={{ fontSize: 10, color: adm.muted, marginLeft: "auto" }}>{sorted.length} Reservierung{sorted.length !== 1 ? "en" : ""}</span>
       </div>
 
       {/* Timeline bar */}
-      <div style={{ position: "relative", height: 8, background: "#e0e0e0", borderRadius: 4, marginBottom: 6 }}>
+      <div style={{ position: "relative", height: 8, background: adm.border, borderRadius: 4, marginBottom: 6 }}>
         {/* Hour marks */}
         {hourMarks.map(hm => (
           <div key={hm} style={{
             position: "absolute", left: `${getPercent(hm)}%`, top: -2, width: 1, height: 12,
-            background: "#ccc",
+            background: adm.border,
           }} />
         ))}
         {/* Reservation blocks */}
@@ -104,7 +105,7 @@ export const TableTimeline = ({ reservations, currentTime }: Props) => {
         {hourMarks.map(hm => (
           <span key={hm} style={{
             position: "absolute", left: `${getPercent(hm)}%`, transform: "translateX(-50%)",
-            fontSize: 9, color: "#999",
+            fontSize: 9, color: adm.muted,
           }}>{minutesToTime(hm)}</span>
         ))}
       </div>
@@ -120,8 +121,8 @@ export const TableTimeline = ({ reservations, currentTime }: Props) => {
         return (
           <div key={r.id} style={{
             display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-            background: isActive ? colors.bg : isPast ? "#f5f5f5" : "#fff",
-            border: `1px solid ${isActive ? colors.border : "#eaeaea"}`,
+            background: isActive ? colors.bg : isPast ? adm.surface2 : adm.surface,
+            border: `1px solid ${isActive ? colors.border: adm.surface2}`,
             borderRadius: 6, marginBottom: 4,
             opacity: isPast ? 0.5 : 1,
           }}>
@@ -132,14 +133,14 @@ export const TableTimeline = ({ reservations, currentTime }: Props) => {
             }} />
             {/* Time */}
             <div style={{ minWidth: 80 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: adm.text }}>
                 {r.reservation_time.slice(0, 5)}
               </div>
-              <div style={{ fontSize: 10, color: "#999" }}>bis {endTime}</div>
+              <div style={{ fontSize: 10, color: adm.muted }}>bis {endTime}</div>
             </div>
             {/* Name */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: adm.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {r.customer_name}
               </div>
               <div style={{ fontSize: 10, color: colors.text, fontWeight: 600 }}>
@@ -147,7 +148,7 @@ export const TableTimeline = ({ reservations, currentTime }: Props) => {
               </div>
             </div>
             {/* Guest count */}
-            <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: "#555", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: adm.text2, flexShrink: 0 }}>
               <Users size={11} /> {r.guest_count}
             </div>
           </div>
