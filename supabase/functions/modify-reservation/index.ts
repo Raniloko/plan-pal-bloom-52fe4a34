@@ -6,14 +6,31 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const VALID_ZONES = ["hauptbereich", "billard", "vip", "podest", "fenster"];
+// Same rules as create-reservation, so a booking can be changed to
+// anything it could have been created with.
+const VALID_ZONES = ["hauptbereich", "fenster", "billard", "vip", "podest", "salitos"];
 const VALID_OCCASIONS = ["sport", "feier", "essen", "billard", "sonstiges"];
-const VALID_TIMES: string[] = [];
-for (let h = 14; h <= 23; h++) {
-  for (const m of ["00", "15", "30", "45"]) {
-    VALID_TIMES.push(`${h}:${m}`);
-  }
+const ZONE_CAPACITY: Record<string, number> = {
+  hauptbereich: 7, fenster: 3, billard: 8, vip: 6, podest: 4, salitos: 15,
+};
+
+function isValidTime(t: unknown): t is string {
+  if (typeof t !== "string" || !/^\d{2}:\d{2}$/.test(t)) return false;
+  const [h, m] = t.split(":").map(Number);
+  return h >= 0 && h <= 23 && [0, 15, 30, 45].includes(m);
 }
+
+/** "sport, feier" or "sonstiges: Geburtstag" – every part must be known. */
+function isValidOccasion(o: unknown): o is string {
+  if (typeof o !== "string") return false;
+  const parts = o.split(",").map(s => s.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every(p => VALID_OCCASIONS.includes(p) || p.startsWith("sonstiges:"));
+}
+
+const toMin = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -96,10 +113,13 @@ Deno.serve(async (req) => {
         const { date, time, guests, zone, occasion, message } = body;
         const errors: string[] = [];
         if (!date || typeof date !== "string") errors.push("Datum fehlt.");
-        if (!VALID_TIMES.includes(time)) errors.push("Ungültige Uhrzeit.");
+        if (!isValidTime(time)) errors.push("Ungültige Uhrzeit.");
         if (!guests || typeof guests !== "number" || guests < 1 || guests > 50) errors.push("Personenanzahl ungültig.");
         if (!VALID_ZONES.includes(zone)) errors.push("Ungültiger Bereich.");
-        if (!VALID_OCCASIONS.includes(occasion)) errors.push("Ungültiger Anlass.");
+        if (!isValidOccasion(occasion) || occasion.length > 300) errors.push("Ungültiger Anlass.");
+        if (zone === "billard" && isValidTime(time) && Number(time.slice(0, 2)) >= 20) {
+          errors.push("Billard ist ab 20:00 Uhr nicht mehr reservierbar.");
+        }
 
         // Validate date format (YYYY-MM-DD)
         if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.push("Ungültiges Datumsformat.");
@@ -118,6 +138,62 @@ Deno.serve(async (req) => {
           return new Response(JSON.stringify({ error: "Reservierung nicht gefunden oder storniert." }), { status: 404, headers: jsonHeaders });
         }
 
+        const slotChanged = original.reservation_date !== date
+          || String(original.reservation_time).slice(0, 5) !== time
+          || original.zone !== zone;
+
+        if (slotChanged) {
+          // Closed day or area?
+          const { data: blocks } = await supabase
+            .from("blocked_days").select("area").eq("block_date", date);
+          if ((blocks || []).some((b: { area: string | null }) => b.area === null || b.area === zone)) {
+            return new Response(JSON.stringify({ error: "An diesem Tag ist der Bereich leider gesperrt. Bitte wähle ein anderes Datum oder einen anderen Bereich." }), { status: 409, headers: jsonHeaders });
+          }
+
+          // Capacity in the target zone, not counting this booking itself.
+          const { data: zoneUnits } = await supabase.from("units").select("id").eq("area", zone);
+          const capacity = zoneUnits && zoneUnits.length > 0 ? zoneUnits.length : (ZONE_CAPACITY[zone] ?? 1);
+          const { data: settingsRow } = await supabase.from("settings").select("value").eq("key", "reservation_duration").maybeSingle();
+          const durMin = settingsRow?.value ? Number(settingsRow.value) : 120;
+          const overlapDur = zone === "billard" ? Math.min(durMin, 120) : durMin;
+          const { data: existing } = await supabase
+            .from("reservations")
+            .select("id, reservation_time")
+            .eq("reservation_date", date)
+            .eq("zone", zone)
+            .neq("id", id)
+            .not("status", "in", '("cancelled","checked_out")');
+          const start = toMin(time);
+          const overlapping = (existing || []).filter((r: { reservation_time: string }) => {
+            const rStart = toMin(r.reservation_time);
+            return start < rStart + overlapDur && start + overlapDur > rStart;
+          }).length;
+          if (overlapping >= capacity) {
+            return new Response(JSON.stringify({ error: "Dieser Bereich ist zur gewählten Uhrzeit bereits vollständig belegt. Bitte wähle eine andere Uhrzeit oder einen anderen Bereich." }), { status: 409, headers: jsonHeaders });
+          }
+        }
+
+        // A table assigned by the team only stays if it still fits: same
+        // area and no other booking on that table in the new time window.
+        let unitId: string | null = original.unit_id ?? null;
+        if (unitId && slotChanged) {
+          if (original.zone !== zone) {
+            unitId = null;
+          } else {
+            const { data: sameUnit } = await supabase
+              .from("reservations")
+              .select("reservation_time")
+              .eq("unit_id", unitId)
+              .eq("reservation_date", date)
+              .neq("id", id)
+              .not("status", "in", '("cancelled","checked_out")');
+            const start = toMin(time);
+            if ((sameUnit || []).some((r: { reservation_time: string }) => Math.abs(toMin(r.reservation_time) - start) < 120)) {
+              unitId = null;
+            }
+          }
+        }
+
         const sanitizedMessage = (message || "").substring(0, 1000).replace(/<[^>]*>/g, "");
 
         const { error: updateError } = await supabase.from("reservations").update({
@@ -127,6 +203,7 @@ Deno.serve(async (req) => {
           zone,
           occasion,
           message: sanitizedMessage,
+          unit_id: unitId,
         }).eq("id", id);
 
         if (updateError) {
