@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 
 const Navigation = () => {
   return (
-    <div className="fixed top-4 left-4 z-50">
+    <div className="fixed left-[calc(1rem+var(--sal))] top-[calc(1rem+var(--sat))] z-50">
       <a
         href="https://www.rondo-sportsbar.de/"
         target="_blank"

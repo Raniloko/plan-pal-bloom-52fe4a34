@@ -54,7 +54,7 @@ export const NotificationsPanel = ({ open, onClose }: Props) => {
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: adm.overlay, zIndex: 9998 }} />
       <div style={{
-        position: "fixed", top: 52, right: 0, width: 380, height: "calc(100vh - 52px)",
+        position: "fixed", top: "calc(52px + var(--sat))", right: 0, width: 380, maxWidth: "100%", height: "calc(100dvh - 52px - var(--sat))", paddingBottom: "var(--sab)",
         background: adm.bg, borderLeft: `1px solid ${adm.border}`, zIndex: 9999,
         display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif",
       }}>

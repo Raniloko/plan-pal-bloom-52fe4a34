@@ -2,7 +2,7 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Rondo-Sportsbar-Reservierung</title>
     <meta name="description" content="Rondo Reservation System: A web application for managing restaurant and event reservations with a visual floor plan.">
     <meta name="author" content="Rondo Sportsbar" />
@@ -14,6 +14,20 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Rondo">
     <link rel="apple-touch-icon" href="/icon-192.png">
+    <script>
+      // Staff install the admin from /backstage via "Zum Home-Bildschirm".
+      // Swap manifest, name and icon before Safari reads them, so the
+      // home-screen app is "Rondo Admin" and always opens the dashboard.
+      (function () {
+        if (location.pathname.indexOf("/backstage") !== 0) return;
+        var set = function (sel, attr, val) { var el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
+        set('link[rel="manifest"]', "href", "/admin-manifest.webmanifest");
+        set('link[rel="apple-touch-icon"]', "href", "/admin-apple-touch-icon.png");
+        set('meta[name="apple-mobile-web-app-title"]', "content", "Rondo Admin");
+        set('meta[name="theme-color"]', "content", "#0d0d0d");
+        document.title = "Rondo Admin";
+      })();
+    </script>
 
     
     

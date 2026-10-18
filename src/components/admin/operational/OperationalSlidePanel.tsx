@@ -589,6 +589,8 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       {open && <div onClick={onClose} style={{ position: "fixed", inset: 0, background: adm.overlay, zIndex: 199 }} />}
       <div style={{
         position: "fixed", top: 0, right: open ? 0 : (isMobile ? "-100%" : -460), height: "100%",
+        // Dark strip under the notch keeps the white status bar text readable
+        borderTop: "var(--sat) solid #0d0d0d", paddingBottom: "var(--sab)",
         width: isMobile ? "100%" : 420,
         background: adm.surface, borderLeft: isMobile ? "none" : `1px solid ${adm.border}`, zIndex: 200,
         transition: "right 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",

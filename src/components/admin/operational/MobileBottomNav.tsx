@@ -40,7 +40,7 @@ export const MobileBottomNav = ({ tab, onTabChange, reservationCount, waitlistCo
           <DropdownMenuTrigger asChild>
             <button
               aria-label="Neu"
-              className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-4 z-[150] flex h-14 w-14 items-center justify-center rounded-full bg-[#c9a84c] text-[#111] shadow-lg shadow-black/25 active:scale-95"
+              className="fixed bottom-[calc(72px+var(--sab))] right-4 z-[150] flex h-14 w-14 items-center justify-center rounded-full bg-[#c9a84c] text-[#111] shadow-lg shadow-black/25 active:scale-95"
             >
               <Plus size={26} strokeWidth={2.5} />
             </button>
@@ -52,7 +52,7 @@ export const MobileBottomNav = ({ tab, onTabChange, reservationCount, waitlistCo
         </DropdownMenu>
       )}
 
-      <nav className="flex shrink-0 border-t border-adm-border bg-adm-surface pb-[env(safe-area-inset-bottom)] font-['DM_Sans',sans-serif]">
+      <nav className="flex shrink-0 border-t border-adm-border bg-adm-surface pb-[var(--sab)] font-['DM_Sans',sans-serif]">
         {items.map(it => {
           const active = tab === it.key;
           return (

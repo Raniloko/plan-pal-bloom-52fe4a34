@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { registerStaffDevice } from "@/lib/medianPush";
 import { adm } from "@/components/admin/theme";
 import { invokeAdmin } from "@/lib/adminApi";
 import { areaLabel } from "@/components/admin/areaLabels";
@@ -246,6 +247,10 @@ const OperationalViewInner = () => {
 
   const liveStatus = useAdminLiveSync(load);
 
+  // Median app: link this phone to the staff member for push notifications
+  const { user, signOut } = useAuth();
+  useEffect(() => { if (user?.id) registerStaffDevice(user.id); }, [user?.id]);
+
   // ⌘K / Ctrl+K opens the command palette
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -423,7 +428,6 @@ const OperationalViewInner = () => {
 
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
-  const { signOut } = useAuth();
   const navigate = useNavigate();
   const showMap = () => { if (isMobile) setMobileTab("map"); };
   const paletteActions: PaletteAction[] = [
@@ -528,6 +532,8 @@ const OperationalViewInner = () => {
     <div style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
+      // Keep the UI out of the notch; the dark strip keeps the white status bar text readable.
+      paddingTop: "var(--sat)", paddingLeft: "var(--sal)", paddingRight: "var(--sar)", background: "#0d0d0d",
     }}>
       <OperationalTopbar
         totalReservations={rows.filter(r => r.status !== "cancelled").length}
@@ -658,7 +664,7 @@ const RebookBanner = () => {
   if (!session) return null;
   return (
     <div data-rebook-banner="1" style={{
-      position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
+      position: "fixed", top: "calc(12px + var(--sat))", left: "50%", transform: "translateX(-50%)",
       zIndex: 1000, display: "flex", alignItems: "center", gap: 12,
       padding: "10px 14px", borderRadius: 10,
       background: "rgba(12,12,14,0.95)", color: "#fff",

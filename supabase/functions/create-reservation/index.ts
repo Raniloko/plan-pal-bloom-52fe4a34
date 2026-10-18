@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyStaff } from "../_shared/staffNotify.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -304,6 +305,13 @@ Deno.serve(async (req) => {
         }
       }
 
+      if (!isAdminBooking) {
+        await notifyStaff(supabase, "new", {
+          id: billardResId as string, customer_name: sanitize(name), reservation_date: date,
+          reservation_time: time, guest_count: guests, zone,
+        });
+      }
+
       return new Response(
         JSON.stringify({ success: true, reservation_id: billardResId, unit_id: billardUnitId }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -548,6 +556,13 @@ Deno.serve(async (req) => {
       if ((emailErr as Error)?.message !== "__skip_walkin_email__") {
         console.error("Email sending failed (non-blocking):", emailErr);
       }
+    }
+
+    if (!isAdminBooking) {
+      await notifyStaff(supabase, "new", {
+        id: createdId as string, customer_name: sanitize(name), reservation_date: date,
+        reservation_time: time, guest_count: guests, zone,
+      });
     }
 
     return new Response(

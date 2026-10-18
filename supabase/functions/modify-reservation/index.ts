@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyStaff } from "../_shared/staffNotify.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -236,6 +237,12 @@ Deno.serve(async (req) => {
         } catch (emailErr) {
           console.error("Email failed:", emailErr);
         }
+
+        const before = `vorher ${String(original.reservation_date).slice(8, 10)}.${String(original.reservation_date).slice(5, 7)}. ${String(original.reservation_time).slice(0, 5)} Uhr, ${original.guest_count} Pers.`;
+        await notifyStaff(supabase, "modified", {
+          id, customer_name: original.customer_name, reservation_date: date,
+          reservation_time: time, guest_count: guests, zone,
+        }, before);
 
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders });
       }
