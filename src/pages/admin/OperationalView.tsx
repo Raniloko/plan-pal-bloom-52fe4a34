@@ -35,6 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { adm } from "@/components/admin/theme";
 import { invokeAdmin } from "@/lib/adminApi";
+import { areaLabel } from "@/components/admin/areaLabels";
 
 interface Reservation {
   id: string;
@@ -203,17 +204,9 @@ const OperationalViewInner = () => {
           offset = `+${Math.floor(minutesOverdue)} Min`;
         }
 
-        const zoneLabels: Record<string, string> = {
-          hauptbereich: "Hauptbereich",
-          fenster: "Fensterplätze",
-          billard: "Billard",
-          vip: "VIP-Bereich",
-          podest: "Podest",
-          salitos: "Salitos Lounge",
-        };
         const tableRef = unit
           ? unit.name
-          : (zoneLabels[(r.zone || "").toLowerCase()] || r.zone || "—");
+          : (areaLabel((r.zone || "").toLowerCase()) || "—");
 
         return {
           id: r.id,

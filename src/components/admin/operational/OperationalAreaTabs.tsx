@@ -2,13 +2,14 @@ import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FloorArea } from "@/components/admin/floorplan/types";
 import { adm } from "@/components/admin/theme";
+import { AREA_LABELS } from "@/components/admin/areaLabels";
 
 export const AREA_TABS: { id: FloorArea; label: string }[] = [
-  { id: "hauptbereich", label: "Restaurant 140 Zoll" },
-  { id: "fenster", label: "Restaurant 75 Zoll" },
-  { id: "salitos", label: "Salitos Lounge / Outdoor" },
-  { id: "billard", label: "Billard" },
-  { id: "vip", label: "VIP-Raum" },
+  { id: "hauptbereich", label: AREA_LABELS.hauptbereich },
+  { id: "fenster", label: AREA_LABELS.fenster },
+  { id: "salitos", label: AREA_LABELS.salitos },
+  { id: "billard", label: AREA_LABELS.billard },
+  { id: "vip", label: AREA_LABELS.vip },
 ];
 
 export type ColorMode = "status" | "timeSlot";

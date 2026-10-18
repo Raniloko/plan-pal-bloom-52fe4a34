@@ -1,4 +1,5 @@
 import { addDays, format, parseISO } from "date-fns";
+import { areaLabel } from "@/components/admin/areaLabels";
 
 export interface StatReservation {
   reservation_date: string;
@@ -15,14 +16,6 @@ export interface StatUnit {
   status?: string | null;
 }
 
-export const AREA_LABELS: Record<string, string> = {
-  hauptbereich: "Hauptbereich",
-  fenster: "Fenster",
-  billard: "Billard",
-  vip: "VIP",
-  podest: "Podest",
-  salitos: "Salitos",
-};
 
 const isActive = (r: StatReservation) => r.status !== "cancelled";
 
@@ -90,7 +83,7 @@ export const areaUtilization = (list: StatReservation[], units: StatUnit[]): Are
       const booked = inArea.filter(u => bookedIds.has(u.id)).length;
       return {
         area,
-        label: AREA_LABELS[area] ?? area,
+        label: areaLabel(area),
         total: inArea.length,
         booked,
         guests: guestsByArea.get(area) ?? 0,
