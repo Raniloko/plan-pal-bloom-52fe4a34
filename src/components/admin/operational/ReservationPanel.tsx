@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Bell, CheckCheck, Check, PauseCircle, Users, AlertTriangle, Clock, Send, Ban, Filter, ArrowRightCircle } from "lucide-react";
 import { LegendDialog } from "./LegendDialog";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 export interface ResRow {
   id: string;
@@ -58,7 +58,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
   const handleNotify = async (entry: WaitlistEntry) => {
     setNotifying(entry.id);
     try {
-      const res = await supabase.functions.invoke("admin-actions", {
+      const res = await invokeAdmin({
         body: { action: "notify_waitlist", waitlist_id: entry.id },
       });
       if (res.error) throw res.error;

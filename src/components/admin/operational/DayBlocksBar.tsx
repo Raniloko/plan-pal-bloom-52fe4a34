@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Lock, X, Plus } from "lucide-react";
 import { adm } from "@/components/admin/theme";
+import { ADMIN_SYNC_WINDOW_EVENT, announceChange } from "@/lib/adminSync";
 
 const AREAS: { value: string; label: string }[] = [
   { value: "", label: "Ganzer Tag (alle Bereiche)" },
@@ -29,6 +30,11 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
     setBlocks((data as Block[]) || []);
   }, [date]);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const onRemote = () => { void load(); };
+    window.addEventListener(ADMIN_SYNC_WINDOW_EVENT, onRemote);
+    return () => window.removeEventListener(ADMIN_SYNC_WINDOW_EVENT, onRemote);
+  }, [load]);
 
   const add = async () => {
     setSaving(true);
@@ -37,12 +43,14 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
     if (error) { toast.error("Sperre konnte nicht gespeichert werden"); return; }
     toast.success(`${areaLabel(area || null)} am ${dateLabel} gesperrt`);
     setOpen(false); setReason(""); setArea("");
+    void announceChange();
     load();
   };
   const remove = async (id: string) => {
     const { error } = await supabase.from("blocked_days").delete().eq("id", id);
     if (error) { toast.error("Sperre konnte nicht entfernt werden"); return; }
     toast.success("Sperre aufgehoben");
+    void announceChange();
     load();
   };
 

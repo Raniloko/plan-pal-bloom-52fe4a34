@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DevicesDialog } from "@/components/admin/operational/DevicesDialog";
-import { format } from "date-fns";
+import { addDays, format, subDays } from "date-fns";
 import { RondoFloorPlan, UnitListView } from "@/components/admin/floorplan";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAdminTheme } from "@/hooks/useAdminTheme";
+import { useAdminLiveSync } from "@/hooks/useAdminLiveSync";
 import type { TableData, FloorArea } from "@/components/admin/floorplan";
 import {
   OperationalTopbar,
@@ -16,14 +17,22 @@ import {
   NotificationsPanel,
   RecurringBookingDialog,
   StatsPanel,
+  CommandPalette,
 } from "@/components/admin/operational";
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import { DayBlocksBar } from "@/components/admin/operational/DayBlocksBar";
-import type { ColorMode, ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
+import { AREA_TABS, type ColorMode, type ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
+import type { PaletteAction } from "@/components/admin/operational/CommandPalette";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
-import { X } from "lucide-react";
+import {
+  X, Plus, UserPlus, CalendarDays, ChevronLeft, ChevronRight, BarChart3, SunMoon, Settings, Bell,
+  Repeat, MonitorSmartphone, LayoutGrid, List, MapPin, LogOut,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 interface Reservation {
   id: string;
@@ -88,6 +97,8 @@ const OperationalViewInner = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null);
   const { theme, toggle: toggleTheme } = useAdminTheme();
   const [convertEntry, setConvertEntry] = useState<WaitlistEntry | null>(null);
 
@@ -99,7 +110,7 @@ const OperationalViewInner = () => {
   const load = useCallback(async () => {
     const requestDate = dateStr;
     try {
-      let res = await supabase.functions.invoke("admin-actions", {
+      let res = await invokeAdmin({
         body: { action: "fetch_dashboard", date: requestDate },
       });
       if (res.error) {
@@ -110,7 +121,7 @@ const OperationalViewInner = () => {
           console.warn("[admin] dashboard 401 — versuche Session-Refresh");
           const { data: refreshed } = await supabase.auth.refreshSession();
           if (refreshed?.session) {
-            res = await supabase.functions.invoke("admin-actions", {
+            res = await invokeAdmin({
               body: { action: "fetch_dashboard", date: requestDate },
             });
           } else {
@@ -129,8 +140,9 @@ const OperationalViewInner = () => {
       setUnits((d.units as Unit[]) || []);
       setWaitlist((d.waitlist as WaitlistEntry[]) || []);
       setLoadedDate(requestDate);
+      setLastLoadedAt(new Date());
 
-      const settingsRes = await supabase.functions.invoke("admin-actions", {
+      const settingsRes = await invokeAdmin({
         body: { action: "get_settings" },
       });
       if (currentDateStrRef.current !== requestDate) return;
@@ -235,6 +247,20 @@ const OperationalViewInner = () => {
     const interval = setInterval(() => load(), 15000);
     return () => clearInterval(interval);
   }, [load]);
+
+  const liveStatus = useAdminLiveSync(load);
+
+  // ⌘K / Ctrl+K opens the command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(v => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
 
   const floorTables = useMemo(() => {
@@ -401,6 +427,30 @@ const OperationalViewInner = () => {
 
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const showMap = () => { if (isMobile) setMobileTab("map"); };
+  const paletteActions: PaletteAction[] = [
+    { id: "new", group: "Aktionen", label: "Neue Reservierung", icon: <Plus />, keywords: ["buchen", "anlegen"], run: handleNewReservation },
+    { id: "walkin", group: "Aktionen", label: "Walk-in Gast", icon: <UserPlus />, run: handleNewWalkIn },
+    { id: "recurring", group: "Aktionen", label: "Serienreservierung", icon: <Repeat />, run: () => setRecurringOpen(true) },
+    { id: "today", group: "Datum", label: "Heute", icon: <CalendarDays />, keywords: ["jetzt"], run: () => setSelectedDate(new Date()) },
+    { id: "prev", group: "Datum", label: "Vorheriger Tag", icon: <ChevronLeft />, keywords: ["gestern"], run: () => setSelectedDate(d => subDays(d, 1)) },
+    { id: "next", group: "Datum", label: "Nächster Tag", icon: <ChevronRight />, keywords: ["morgen"], run: () => setSelectedDate(d => addDays(d, 1)) },
+    ...AREA_TABS.map(a => ({
+      id: `area-${a.id}`, group: "Bereich", label: a.label, icon: <MapPin />, keywords: ["bereich", "grundriss"],
+      run: () => { setActiveArea(a.id); setViewMode("floorplan"); showMap(); },
+    })),
+    { id: "view-map", group: "Ansicht", label: "Grundriss anzeigen", icon: <LayoutGrid />, run: () => { setViewMode("floorplan"); showMap(); } },
+    { id: "view-list", group: "Ansicht", label: "Tischliste anzeigen", icon: <List />, run: () => { setViewMode("list"); showMap(); } },
+    { id: "stats", group: "Ansicht", label: "Statistiken", icon: <BarChart3 />, run: () => setStatsOpen(true) },
+    { id: "theme", group: "Ansicht", label: theme === "dark" ? "Helles Design" : "Dunkles Design", icon: <SunMoon />, keywords: ["theme", "dark", "light"], run: toggleTheme },
+    { id: "notifications", group: "System", label: "Benachrichtigungen", icon: <Bell />, run: () => setNotificationsOpen(true) },
+    { id: "settings", group: "System", label: "Einstellungen", icon: <Settings />, keywords: ["öffnungszeiten", "dauer"], run: () => setSettingsOpen(true) },
+    { id: "devices", group: "System", label: "Geräte", icon: <MonitorSmartphone />, keywords: ["sitzungen"], run: () => setDevicesOpen(true) },
+    { id: "logout", group: "System", label: "Abmelden", icon: <LogOut />, run: async () => { await signOut(); navigate("/backstage/login", { replace: true }); } },
+  ];
+
   // Drag-and-drop: assign reservation to a table
   const handleTableDrop = async (_tableId: string, tableData: TableData, reservationId: string) => {
     const unit = units.find(u => u.name.toLowerCase() === tableData.title.toLowerCase());
@@ -409,7 +459,7 @@ const OperationalViewInner = () => {
       return;
     }
     try {
-      const res = await supabase.functions.invoke("admin-actions", {
+      const res = await invokeAdmin({
         body: { action: "assign_unit", reservation_id: reservationId, unit_id: unit.id },
       });
       if (res.error) throw res.error;
@@ -430,7 +480,7 @@ const OperationalViewInner = () => {
       const unit = units.find(u => u.name.toLowerCase() === label.toLowerCase());
       if (!unit) { toast.error("Zieltisch nicht gefunden"); return false; }
       try {
-        const res = await supabase.functions.invoke("admin-actions", {
+        const res = await invokeAdmin({
           body: { action: "assign_unit", reservation_id: reservationId, unit_id: unit.id },
         });
         if (res.error) {
@@ -499,7 +549,19 @@ const OperationalViewInner = () => {
         statsActive={statsOpen}
         theme={theme}
         onToggleTheme={toggleTheme}
+        onOpenPalette={() => setPaletteOpen(true)}
+        liveStatus={liveStatus}
+        lastLoadedAt={lastLoadedAt}
         isMobile={isMobile}
+      />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        rows={rows}
+        waitlist={waitlist}
+        actions={paletteActions}
+        onSelectRow={handleRowClick}
+        onSelectWaitlist={handleWaitlistClick}
       />
       <StatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} date={dateStr} units={units} />
       <DayBlocksBar date={dateStr} dateLabel={format(selectedDate, "dd.MM.yyyy")} />

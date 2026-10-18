@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { invokeAdmin } from "@/lib/adminApi";
 
 interface WaitlistEntry {
   id: string;
@@ -58,7 +58,7 @@ export const WaitlistConvertDialog = ({ entry, open, onClose, onConverted }: Pro
     setLoading(true);
     (async () => {
       try {
-        const res = await supabase.functions.invoke("admin-actions", {
+        const res = await invokeAdmin({
           body: {
             action: "get_available_units",
             area: entry.area,
@@ -87,7 +87,7 @@ export const WaitlistConvertDialog = ({ entry, open, onClose, onConverted }: Pro
     }
     setSubmitting(true);
     try {
-      const res = await supabase.functions.invoke("admin-actions", {
+      const res = await invokeAdmin({
         body: {
           action: "convert_waitlist",
           waitlist_id: entry.id,

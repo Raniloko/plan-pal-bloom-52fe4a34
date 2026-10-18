@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { X, Smartphone, Monitor, LogOut, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 interface Props { open: boolean; onClose: () => void; }
 
@@ -33,7 +33,7 @@ export const DevicesDialog = ({ open, onClose }: Props) => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.functions.invoke("admin-actions", { body: { action: "list_sessions" } });
+    const { data, error } = await invokeAdmin({ body: { action: "list_sessions" } });
     if (error || data?.error) toast.error("Geräte konnten nicht geladen werden");
     else { setRows(data.sessions || []); setCurrent(data.current_session_id || ""); }
     setLoading(false);
@@ -43,7 +43,7 @@ export const DevicesDialog = ({ open, onClose }: Props) => {
 
   const revoke = async (id: string) => {
     setBusy(id);
-    const { data, error } = await supabase.functions.invoke("admin-actions", { body: { action: "revoke_session", session_id: id } });
+    const { data, error } = await invokeAdmin({ body: { action: "revoke_session", session_id: id } });
     if (error || data?.error) toast.error(data?.error || "Abmelden fehlgeschlagen");
     else { toast.success("Gerät abgemeldet"); await load(); }
     setBusy(null);
@@ -52,7 +52,7 @@ export const DevicesDialog = ({ open, onClose }: Props) => {
   const revokeOthers = async () => {
     if (!confirm("Alle anderen Geräte abmelden?")) return;
     setBusy("all");
-    const { data, error } = await supabase.functions.invoke("admin-actions", { body: { action: "revoke_other_sessions" } });
+    const { data, error } = await invokeAdmin({ body: { action: "revoke_other_sessions" } });
     if (error || data?.error) toast.error("Abmelden fehlgeschlagen");
     else { toast.success(`${data.revoked} Gerät(e) abgemeldet`); await load(); }
     setBusy(null);

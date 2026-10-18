@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FloorArea } from "@/components/admin/floorplan/types";
 import { adm } from "@/components/admin/theme";
 
-const AREA_TABS: { id: FloorArea; label: string }[] = [
+export const AREA_TABS: { id: FloorArea; label: string }[] = [
   { id: "hauptbereich", label: "Restaurant 140 Zoll" },
   { id: "fenster", label: "Restaurant 75 Zoll" },
   { id: "salitos", label: "Salitos Lounge / Outdoor" },

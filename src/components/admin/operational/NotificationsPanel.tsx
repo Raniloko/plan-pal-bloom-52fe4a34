@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { X, Bell, Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 interface Notification {
   id: string;
@@ -28,7 +28,7 @@ export const NotificationsPanel = ({ open, onClose }: Props) => {
     (async () => {
       setLoading(true);
       try {
-        const res = await supabase.functions.invoke("admin-actions", {
+        const res = await invokeAdmin({
           body: { action: "fetch_notifications" },
         });
         setItems(res.data?.notifications || []);
@@ -40,7 +40,7 @@ export const NotificationsPanel = ({ open, onClose }: Props) => {
   const markRead = async (id: string) => {
     setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     try {
-      await supabase.functions.invoke("admin-actions", {
+      await invokeAdmin({
         body: { action: "mark_notification_read", notification_id: id },
       });
     } catch { /* ignore */ }

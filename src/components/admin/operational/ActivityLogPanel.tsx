@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { X, Activity, Clock, User, MapPin, Settings, Ban, LogIn, LogOut, FileText } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 interface LogEntry {
   id: string;
@@ -38,7 +38,7 @@ export const ActivityLogPanel = ({ open, onClose }: Props) => {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    supabase.functions.invoke("admin-actions", {
+    invokeAdmin({
       body: { action: "fetch_activity_log" },
     }).then(({ data }) => {
       setEntries((data?.entries as LogEntry[]) || []);

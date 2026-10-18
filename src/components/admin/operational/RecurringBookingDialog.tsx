@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Repeat, X } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 import { adm } from "@/components/admin/theme";
+import { announceChange } from "@/lib/adminSync";
 
 interface UnitOption {
   id: string;
@@ -98,6 +99,7 @@ const RecurringBookingDialog = ({ open, onClose, onSuccess, allUnits }: Props) =
         },
       });
       if (res.error) throw res.error;
+      void announceChange();
       const body = res.data;
       if (body?.error) { toast.error(body.error); setSaving(false); return; }
       setResult({ created_count: body.created_count || 0, skipped: body.skipped || [] });

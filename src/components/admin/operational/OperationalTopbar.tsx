@@ -3,7 +3,7 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight,
-  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Sun, Moon,
+  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Sun, Moon, Search,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import type { AdminTheme } from "@/hooks/useAdminTheme";
+import type { LiveStatus } from "@/hooks/useAdminLiveSync";
 
 interface Props {
   totalReservations: number;
@@ -25,8 +26,32 @@ interface Props {
   statsActive?: boolean;
   theme?: AdminTheme;
   onToggleTheme?: () => void;
+  onOpenPalette?: () => void;
+  liveStatus?: LiveStatus;
+  lastLoadedAt?: Date | null;
   isMobile?: boolean;
 }
+
+const LIVE_LABEL: Record<LiveStatus, string> = {
+  live: "Live",
+  connecting: "Verbinde…",
+  polling: "Auto-Update",
+  offline: "Offline",
+};
+
+const LiveBadge = ({ status, lastLoadedAt, compact }: { status: LiveStatus; lastLoadedAt?: Date | null; compact: boolean }) => (
+  <div
+    className="flex h-full items-center gap-1.5 border-l border-adm-border px-3 text-xs text-adm-muted"
+    title={lastLoadedAt ? `Zuletzt aktualisiert ${format(lastLoadedAt, "HH:mm:ss")}` : undefined}
+  >
+    <span className="relative flex h-2 w-2">
+      {status === "live" && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-adm-success opacity-60" />}
+      <span className={cn("relative inline-flex h-2 w-2 rounded-full",
+        status === "live" ? "bg-adm-success" : status === "offline" ? "bg-adm-danger" : status === "polling" ? "bg-adm-info" : "bg-adm-warn")} />
+    </span>
+    {!compact && LIVE_LABEL[status]}
+  </div>
+);
 
 const IcoBtn = ({ children, onClick, active, label }: { children: React.ReactNode; onClick?: () => void; active?: boolean; label: string }) => (
   <button
@@ -44,7 +69,8 @@ const IcoBtn = ({ children, onClick, active, label }: { children: React.ReactNod
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenRecurring, onOpenDevices, onOpenStats, statsActive, theme, onToggleTheme, isMobile = false,
+  onOpenRecurring, onOpenDevices, onOpenStats, statsActive, theme, onToggleTheme,
+  onOpenPalette, liveStatus, lastLoadedAt, isMobile = false,
 }: Props) => {
   const [time, setTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -127,7 +153,22 @@ export const OperationalTopbar = ({
         <div className="flex h-full items-center border-r border-adm-border px-3 font-mono text-sm font-bold tabular-nums">{time}</div>
       )}
 
+      {onOpenPalette && !isMobile && (
+        <button
+          onClick={onOpenPalette}
+          className="ml-3 flex h-8 w-56 items-center gap-2 rounded-md border border-adm-border bg-adm-surface px-2.5 text-xs text-adm-muted transition-colors hover:text-adm-text"
+        >
+          <Search size={13} />
+          Suchen oder Befehl…
+          <kbd className="ml-auto rounded border border-adm-border bg-adm-surface-2 px-1.5 font-mono text-[10px]">
+            {/Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘K" : "Strg K"}
+          </kbd>
+        </button>
+      )}
+
       <div className="ml-auto flex h-full items-center">
+        {liveStatus && <LiveBadge status={liveStatus} lastLoadedAt={lastLoadedAt} compact={isMobile} />}
+        {onOpenPalette && isMobile && <IcoBtn label="Suchen" onClick={onOpenPalette}><Search size={16} /></IcoBtn>}
         {onOpenStats && <IcoBtn label="Statistiken" onClick={onOpenStats} active={statsActive}><BarChart3 size={16} /></IcoBtn>}
         <IcoBtn label="Serienreservierung" onClick={onOpenRecurring}><Repeat size={16} /></IcoBtn>
         {onOpenDevices && <IcoBtn label="Geräte" onClick={onOpenDevices}><MonitorSmartphone size={16} /></IcoBtn>}

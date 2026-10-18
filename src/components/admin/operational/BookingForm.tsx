@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Check, Timer } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
+import { announceChange } from "@/lib/adminSync";
 
 interface UnitOption {
   id: string;
@@ -259,7 +261,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
         const body = res.data;
         if (unitId && body?.reservation_id) {
           try {
-            await supabase.functions.invoke("admin-actions", {
+            await invokeAdmin({
               body: { action: "assign_unit", reservation_id: body.reservation_id, unit_id: unitId },
             });
           } catch { /* best-effort */ }
@@ -272,6 +274,7 @@ const BookingForm = ({ tableLabel, initialZone, initialUnitId, initialWalkIn = f
         setSaving(false);
         return;
       }
+      void announceChange();
       if (failures.length > 0) {
         toast.warning(`${createdCount} erstellt, ${failures.length} fehlgeschlagen: ${failures.join("; ")}`);
       } else {
