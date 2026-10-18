@@ -3,6 +3,9 @@
 // silently when ONESIGNAL_APP_ID / ONESIGNAL_API_KEY are not configured, so
 // bookings never fail because of notifications.
 
+// This server-only module is also imported by the shared regression tests.
+declare const Deno: { env: { get(name: string): string | undefined } };
+
 // deno-lint-ignore no-explicit-any
 type Supabase = any;
 
@@ -58,11 +61,21 @@ export function staffMessage(event: StaffEvent, r: StaffReservation, extra = "")
 async function sendPush(supabase: Supabase, title: string, message: string, reservationId: string) {
   const appId = Deno.env.get("ONESIGNAL_APP_ID");
   const apiKey = Deno.env.get("ONESIGNAL_API_KEY");
-  if (!appId || !apiKey) return;
+  if (!appId || !apiKey) {
+    console.warn("Staff push skipped: OneSignal secrets are not configured");
+    return;
+  }
 
-  const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+  const { data: admins, error } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+  if (error) {
+    console.error("Staff push failed: admin recipients could not be loaded");
+    return;
+  }
   const externalIds = (admins || []).map((a: { user_id: string }) => staffExternalId(a.user_id));
-  if (externalIds.length === 0) return;
+  if (externalIds.length === 0) {
+    console.warn("Staff push skipped: no admin recipients");
+    return;
+  }
 
   const appUrl = Deno.env.get("APP_URL") || "https://rondo-sportsbar-reservieren.de";
   const res = await fetch("https://api.onesignal.com/notifications?c=push", {
@@ -78,7 +91,16 @@ async function sendPush(supabase: Supabase, title: string, message: string, rese
       data: { reservation_id: reservationId },
     }),
   });
-  if (!res.ok) console.error("OneSignal push failed:", res.status, await res.text());
+  // A 2xx response can still mean no push was created (e.g. no subscribed
+  // devices). Never log the raw provider response, which may contain secrets.
+  const result = await res.json().catch(() => null);
+  if (!res.ok) {
+    console.error("OneSignal push rejected:", res.status);
+  } else if (!result?.id) {
+    console.warn("OneSignal push not created: no eligible subscribed devices or invalid recipients");
+  } else {
+    console.info("OneSignal push accepted:", JSON.stringify({ notification_id: result.id, reservation_id: reservationId }));
+  }
 }
 
 /** Never throws – notifications must not break the booking flow. */
@@ -86,13 +108,14 @@ export async function notifyStaff(supabase: Supabase, event: StaffEvent, r: Staf
   const title = TITLES[event];
   const message = staffMessage(event, r, extra);
   try {
-    await supabase.from("notifications").insert({ title, message, type: TYPES[event], reservation_id: r.id });
-  } catch (e) {
-    console.error("Notification insert failed:", e);
+    const { error } = await supabase.from("notifications").insert({ title, message, type: TYPES[event], reservation_id: r.id });
+    if (error) console.error("Notification insert failed");
+  } catch {
+    console.error("Notification insert failed");
   }
   try {
     await sendPush(supabase, title, message, r.id);
-  } catch (e) {
-    console.error("Staff push failed:", e);
+  } catch {
+    console.error("Staff push failed: network or response error");
   }
 }
