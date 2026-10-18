@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { unregisterStaffDevice } from "@/lib/medianPush";
 import type { User, Session } from "@supabase/supabase-js";
 
 const INACTIVITY_LIMIT = 2 * 60 * 60 * 1000; // 2 hours
@@ -205,6 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = useCallback(async () => {
+    unregisterStaffDevice();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

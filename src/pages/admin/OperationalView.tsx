@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { registerStaffDevice } from "@/lib/medianPush";
 import { adm } from "@/components/admin/theme";
 import { invokeAdmin } from "@/lib/adminApi";
 import { areaLabel } from "@/components/admin/areaLabels";
@@ -246,6 +247,10 @@ const OperationalViewInner = () => {
 
   const liveStatus = useAdminLiveSync(load);
 
+  // Median app: link this phone to the staff member for push notifications
+  const { user, signOut } = useAuth();
+  useEffect(() => { if (user?.id) registerStaffDevice(user.id); }, [user?.id]);
+
   // ⌘K / Ctrl+K opens the command palette
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -423,7 +428,6 @@ const OperationalViewInner = () => {
 
   const closePanel = () => { setPanelOpen(false); setSelectedRowId(null); };
 
-  const { signOut } = useAuth();
   const navigate = useNavigate();
   const showMap = () => { if (isMobile) setMobileTab("map"); };
   const paletteActions: PaletteAction[] = [

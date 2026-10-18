@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyStaff } from "../_shared/staffNotify.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -133,6 +134,8 @@ Deno.serve(async (req) => {
         } catch (emailErr) {
           console.error("Cancel email failed:", emailErr);
         }
+
+        await notifyStaff(supabase, "cancelled", reservation, "vom Gast storniert");
 
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders });
       }
