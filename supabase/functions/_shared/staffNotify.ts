@@ -3,6 +3,9 @@
 // silently when ONESIGNAL_APP_ID / ONESIGNAL_API_KEY are not configured, so
 // bookings never fail because of notifications.
 
+// This server-only module is also imported by the shared regression tests.
+declare const Deno: { env: { get(name: string): string | undefined } };
+
 // deno-lint-ignore no-explicit-any
 type Supabase = any;
 
