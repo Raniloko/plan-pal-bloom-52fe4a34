@@ -29,7 +29,7 @@ import type { MobileTab } from "@/components/admin/operational/MobileBottomNav";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
 import {
   X, Plus, UserPlus, CalendarDays, ChevronLeft, ChevronRight, BarChart3, Settings, Bell,
-  Repeat, MonitorSmartphone, LayoutGrid, List, MapPin, LogOut,
+  Repeat, MonitorSmartphone, MapPin, LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -253,9 +253,6 @@ const OperationalViewInner = () => {
 
   const liveStatus = useAdminLiveSync(load);
 
-  // The full floor plan is unreadable on phones; start with the table list there.
-  useEffect(() => { if (isMobile) setViewMode("list"); }, [isMobile]);
-
   // ⌘K / Ctrl+K opens the command palette
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -445,10 +442,8 @@ const OperationalViewInner = () => {
     { id: "next", group: "Datum", label: "Nächster Tag", icon: <ChevronRight />, keywords: ["morgen"], run: () => setSelectedDate(d => addDays(d, 1)) },
     ...AREA_TABS.map(a => ({
       id: `area-${a.id}`, group: "Bereich", label: a.label, icon: <MapPin />, keywords: ["bereich", "grundriss"],
-      run: () => { setActiveArea(a.id); setViewMode("floorplan"); showMap(); },
+      run: () => { setActiveArea(a.id); showMap(); },
     })),
-    { id: "view-map", group: "Ansicht", label: "Grundriss anzeigen", icon: <LayoutGrid />, run: () => { setViewMode("floorplan"); showMap(); } },
-    { id: "view-list", group: "Ansicht", label: "Tischliste anzeigen", icon: <List />, run: () => { setViewMode("list"); showMap(); } },
     { id: "stats", group: "Ansicht", label: "Statistiken", icon: <BarChart3 />, run: () => setStatsOpen(true) },
     { id: "notifications", group: "System", label: "Benachrichtigungen", icon: <Bell />, run: () => setNotificationsOpen(true) },
     { id: "settings", group: "System", label: "Einstellungen", icon: <Settings />, keywords: ["öffnungszeiten", "dauer"], run: () => setSettingsOpen(true) },
