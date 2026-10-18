@@ -1,26 +1,27 @@
 import { Link } from "react-router-dom";
 import RondoReservationSystem from "@/components/RondoReservationSystem";
 import { Clock, ArrowRight, Info, AlertTriangle } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const Reservierung = () => {
   return (
     <main className="pt-20 md:pt-24">
-      <section className="py-20">
+      <section className="py-8 md:py-20">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h1 className="font-display text-5xl md:text-7xl mb-4 text-center">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl mb-3 md:mb-4 text-center">
             Reserv<span className="text-primary">ierung</span> im <span className="text-primary">Rondo</span>
           </h1>
-          <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
+          <p className="text-center text-sm sm:text-base text-muted-foreground mb-6 md:mb-12 max-w-xl mx-auto">
             Du möchtest die Matches deiner Lieblingsmannschaft auf unserem 140-Zoll-LED-Screen genießen? Reserviere dir jetzt deinen Platz!
           </p>
 
-          <div className="bg-card border border-border rounded-lg p-6 md:p-8">
+          <div className="bg-card border border-border rounded-lg p-4 sm:p-6 md:p-8">
             <RondoReservationSystem />
           </div>
 
           {/* So funktioniert's */}
-          <div className="mt-16">
-            <h2 className="font-display text-3xl md:text-4xl mb-6 text-primary">So funktioniert's:</h2>
+          <div className="mt-10 md:mt-16">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl mb-4 md:mb-6 text-primary">So funktioniert's:</h2>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <ArrowRight size={18} className="text-primary mt-1 shrink-0" />
@@ -44,70 +45,72 @@ const Reservierung = () => {
             </ul>
           </div>
 
-          {/* Tipp */}
-          <div className="mt-10 bg-muted border border-border rounded-lg p-6">
-            <h3 className="font-display text-2xl text-primary mb-3">Tipp:</h3>
-            <p className="text-muted-foreground">
-              Wir empfehlen eine Vorlaufzeit von 24 Stunden, bei Reservierungen am Wochenende, teilweise bis zu drei Tage. Kurzfristige Reservierungen sind möglich, wenn entsprechende Verfügbarkeiten angezeigt werden.
-            </p>
-          </div>
-
-          {/* FAQ */}
-          <div className="mt-10 space-y-6">
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h3 className="font-display text-xl mb-3 flex items-center gap-2">
-                <Info size={18} className="text-primary" />
-                Wann ist meine Reservierung gültig?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Reservierungen sind nur dann gültig, wenn sie über unser Buchungssystem eingehen und Du im Anschluss eine Bestätigungsmail bekommen hast.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h3 className="font-display text-xl mb-3 flex items-center gap-2">
-                <Info size={18} className="text-primary" />
-                Wie kann ich stornieren?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                In der Bestätigungsmail findest Du einen Link zum Stornieren. Klicke diesen einfach an und bestätige mit „ja" – schon wird Deine Reservierung aus unserem System genommen. Stornierungen sind auch 10 Minuten vor Reservierungsbeginn möglich.
-              </p>
-            </div>
-          </div>
-
-          {/* Billard-Reservierungen */}
-          <div className="mt-10 bg-muted border border-primary/30 rounded-lg p-6">
-            <h2 className="font-display text-2xl md:text-3xl mb-4 text-primary">Billard-Reservierungen:</h2>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex items-start gap-3">
-                <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
-                <span>Billardreservierung gerade nicht möglich? Dann sind bereits alle Billardtische reserviert. Du kannst gerne trotzdem vorbeikommen – wir halten auch immer zwei bis drei Billardtische für spontane Gäste frei!</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
-                <span>Bitte reserviert nur so viele Billardtische, wie ihr wirklich benötigt. Ab zwei gleichzeitig reservierten Billardtischen gilt ein gesonderter Mindestumsatz.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
-                <span><strong className="text-foreground">Preise:</strong> 0,23€ pro Minute, minutengenaue Abrechnungsweise.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
-                <span>Billardtische können nur bis 20 Uhr reserviert werden. Um 20:01 Uhr beginnen wir mit der Warteliste.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
-                <span>Leider können wir Reservierungen nur bei einer Verspätung von maximal fünf Minuten gewährleisten.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
-                <span><strong className="text-foreground">Freitag bis Sonntag:</strong> Maximale Reservierungsdauer 2 Stunden. Automatische Stornierung nach 15 Minuten bei Nichterscheinen.</span>
-              </li>
-            </ul>
+          {/* Gut zu wissen: kompakt zum Aufklappen statt Textwand */}
+          <div className="mt-10">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl mb-4 text-primary">Gut zu wissen</h2>
+            <Accordion type="multiple" className="rounded-lg border border-border bg-card px-4 sm:px-6">
+              <AccordionItem value="billard">
+                <AccordionTrigger className="text-left">
+                  <span className="flex items-center gap-2"><AlertTriangle size={16} className="text-primary shrink-0" />Billard-Reservierungen</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span>Billardreservierung gerade nicht möglich? Dann sind bereits alle Billardtische reserviert. Du kannst gerne trotzdem vorbeikommen – wir halten auch immer zwei bis drei Billardtische für spontane Gäste frei!</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span>Bitte reserviert nur so viele Billardtische, wie ihr wirklich benötigt. Ab zwei gleichzeitig reservierten Billardtischen gilt ein gesonderter Mindestumsatz.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span><strong className="text-foreground">Preise:</strong> 0,23€ pro Minute, minutengenaue Abrechnungsweise.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span>Billardtische können nur bis 20 Uhr reserviert werden. Um 20:01 Uhr beginnen wir mit der Warteliste.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span>Leider können wir Reservierungen nur bei einer Verspätung von maximal fünf Minuten gewährleisten.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span><strong className="text-foreground">Freitag bis Sonntag:</strong> Maximale Reservierungsdauer 2 Stunden. Automatische Stornierung nach 15 Minuten bei Nichterscheinen.</span>
+                </li>
+              </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="gueltig">
+                <AccordionTrigger className="text-left">
+                  <span className="flex items-center gap-2"><Info size={16} className="text-primary shrink-0" />Wann ist meine Reservierung gültig?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Reservierungen sind nur dann gültig, wenn sie über unser Buchungssystem eingehen und Du im Anschluss eine Bestätigungsmail bekommen hast.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="storno">
+                <AccordionTrigger className="text-left">
+                  <span className="flex items-center gap-2"><Info size={16} className="text-primary shrink-0" />Wie kann ich stornieren?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  In der Bestätigungsmail findest Du einen Link zum Stornieren. Klicke diesen einfach an und bestätige mit „ja" – schon wird Deine Reservierung aus unserem System genommen. Stornierungen sind auch 10 Minuten vor Reservierungsbeginn möglich.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="tipp" className="border-b-0">
+                <AccordionTrigger className="text-left">
+                  <span className="flex items-center gap-2"><Clock size={16} className="text-primary shrink-0" />Tipp: Wie früh sollte ich reservieren?</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Wir empfehlen eine Vorlaufzeit von 24 Stunden, bei Reservierungen am Wochenende, teilweise bis zu drei Tage. Kurzfristige Reservierungen sind möglich, wenn entsprechende Verfügbarkeiten angezeigt werden.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
 
           {/* Info Cards */}
-          <div className="mt-12 grid md:grid-cols-2 gap-6">
+          <div className="mt-10 md:mt-12 grid md:grid-cols-2 gap-4 md:gap-6">
             <div className="bg-muted border border-border rounded-lg p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Clock size={20} className="text-primary" />

@@ -3,11 +3,14 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight,
-  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Search,
+  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Search, MoreVertical, Lock,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import type { LiveStatus } from "@/hooks/useAdminLiveSync";
@@ -26,6 +29,8 @@ interface Props {
   onOpenPalette?: () => void;
   liveStatus?: LiveStatus;
   lastLoadedAt?: Date | null;
+  /** Mobile only: opens the day/area block form */
+  onOpenBlocks?: () => void;
   isMobile?: boolean;
 }
 
@@ -67,7 +72,7 @@ const IcoBtn = ({ children, onClick, active, label }: { children: React.ReactNod
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
   onOpenRecurring, onOpenDevices, onOpenStats, statsActive,
-  onOpenPalette, liveStatus, lastLoadedAt, isMobile = false,
+  onOpenPalette, liveStatus, lastLoadedAt, onOpenBlocks, isMobile = false,
 }: Props) => {
   const [time, setTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -89,6 +94,65 @@ export const OperationalTopbar = ({
   }, []);
 
   const navBtn = "flex h-full w-7 items-center justify-center text-adm-muted hover:text-adm-text";
+  const logout = async () => { await signOut(); navigate("/backstage/login", { replace: true }); };
+
+  if (isMobile) {
+    const mobileNav = "flex h-10 w-10 items-center justify-center rounded-full text-adm-muted active:bg-adm-surface-2";
+    return (
+      <div className="flex h-14 min-h-14 items-center gap-1 border-b border-adm-border bg-adm-surface px-2 font-['DM_Sans',sans-serif] text-adm-text">
+        <img src="/images/rondo-logo.png" alt="Rondo" className="h-6 shrink-0" />
+
+        <div className="flex flex-1 items-center justify-center">
+          <button aria-label="Vorheriger Tag" onClick={() => onDateChange(subDays(selectedDate, 1))} className={mobileNav}><ChevronLeft size={18} /></button>
+          <Popover open={dateCalOpen} onOpenChange={setDateCalOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex min-w-[96px] flex-col items-center leading-tight" title="Datum wählen">
+                <span className={cn("text-[10px] font-semibold uppercase tracking-wide", today ? "text-adm-success" : "text-adm-muted")}>
+                  {today ? "Heute" : format(selectedDate, "EEEE", { locale: de })}
+                </span>
+                <span className="text-[15px] font-bold">{format(selectedDate, "d. MMM", { locale: de })}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center" style={{ zIndex: 9999 }}>
+              {!today && (
+                <button onClick={() => { onDateChange(new Date()); setDateCalOpen(false); }}
+                  className="w-full border-b px-3 py-2 text-left text-sm font-semibold text-adm-success">
+                  Zu heute springen
+                </button>
+              )}
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => { if (d) { onDateChange(d); setDateCalOpen(false); } }}
+                locale={de}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          <button aria-label="Nächster Tag" onClick={() => onDateChange(addDays(selectedDate, 1))} className={mobileNav}><ChevronRight size={18} /></button>
+        </div>
+
+        {liveStatus && (
+          <span title={LIVE_LABEL[liveStatus]} className={cn("mx-1 h-2 w-2 shrink-0 rounded-full",
+            liveStatus === "live" ? "bg-adm-success" : liveStatus === "offline" ? "bg-adm-danger" : liveStatus === "polling" ? "bg-adm-info" : "bg-adm-warn")} />
+        )}
+        {onOpenPalette && <button aria-label="Suchen" onClick={onOpenPalette} className={mobileNav}><Search size={19} /></button>}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button aria-label="Menü" className={mobileNav}><MoreVertical size={19} /></button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56" style={{ zIndex: 9999 }}>
+            {onOpenStats && <DropdownMenuItem onSelect={onOpenStats}><BarChart3 className="mr-2 h-4 w-4" />Statistiken</DropdownMenuItem>}
+            <DropdownMenuItem onSelect={onOpenRecurring}><Repeat className="mr-2 h-4 w-4" />Serienreservierung</DropdownMenuItem>
+            {onOpenBlocks && <DropdownMenuItem onSelect={onOpenBlocks}><Lock className="mr-2 h-4 w-4" />Tag / Bereich sperren</DropdownMenuItem>}
+            {onOpenDevices && <DropdownMenuItem onSelect={onOpenDevices}><MonitorSmartphone className="mr-2 h-4 w-4" />Geräte</DropdownMenuItem>}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={logout} className="text-adm-danger"><LogOut className="mr-2 h-4 w-4" />Abmelden</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -175,7 +239,7 @@ export const OperationalTopbar = ({
             <span><b className="text-adm-text">{totalReservations}</b>/{totalGuests}</span>
           </div>
         )}
-        <IcoBtn label="Abmelden" onClick={async () => { await signOut(); navigate("/backstage/login", { replace: true }); }}><LogOut size={16} /></IcoBtn>
+        <IcoBtn label="Abmelden" onClick={logout}><LogOut size={16} /></IcoBtn>
       </div>
     </div>
   );

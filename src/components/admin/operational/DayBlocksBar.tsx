@@ -18,9 +18,23 @@ const areaLabel = (a: string | null) => (a ? AREAS.find(x => x.value === a)?.lab
 
 interface Block { id: string; block_date: string; area: string | null; reason: string | null }
 
-export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: string }) => {
+interface Props {
+  date: string;
+  dateLabel: string;
+  /** Mobile: hide the bar when there are no blocks; the form is opened from outside. */
+  compact?: boolean;
+  formOpen?: boolean;
+  onFormOpenChange?: (open: boolean) => void;
+}
+
+export const DayBlocksBar = ({ date, dateLabel, compact = false, formOpen, onFormOpenChange }: Props) => {
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = formOpen ?? localOpen;
+  const setOpen = (v: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof v === "function" ? v(open) : v;
+    if (onFormOpenChange) onFormOpenChange(next); else setLocalOpen(next);
+  };
   const [area, setArea] = useState("");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -55,6 +69,7 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
   };
 
   const hasBlocks = blocks.length > 0;
+  if (compact && !hasBlocks && !open) return null;
   return (
     <div style={{
       display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "6px 12px",
@@ -73,14 +88,18 @@ export const DayBlocksBar = ({ date, dateLabel }: { date: string; dateLabel: str
             <X size={13} />
           </button>
         </span>
-      )) : <span style={{ color: adm.muted }}>Keine Sperren am {dateLabel}</span>}
-      <button onClick={() => setOpen(v => !v)} style={{
+      )) : !compact && <span style={{ color: adm.muted }}>Keine Sperren am {dateLabel}</span>}
+      {compact ? open && (
+        <button onClick={() => setOpen(false)} aria-label="Schließen" style={{ marginLeft: "auto", background: "none", border: "none", color: adm.muted, cursor: "pointer", display: "flex" }}>
+          <X size={16} />
+        </button>
+      ) : <button onClick={() => setOpen(v => !v)} style={{
         marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px",
         borderRadius: 6, border: "1px solid #c9a84c", background: "transparent", color: "#c9a84c",
         cursor: "pointer", fontWeight: 700, fontSize: 12,
       }}>
         <Plus size={13} /> Tag / Bereich sperren
-      </button>
+      </button>}
       {open && (
         <div style={{ width: "100%", display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 6 }}>
           <span style={{ alignSelf: "center", color: "#c9a84c", fontWeight: 700 }}>{dateLabel}:</span>
