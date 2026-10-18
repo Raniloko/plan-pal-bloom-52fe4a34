@@ -528,6 +528,8 @@ const OperationalViewInner = () => {
     <div style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
+      // Keep the UI out of the notch; the dark strip keeps the white status bar text readable.
+      paddingTop: "var(--sat)", paddingLeft: "var(--sal)", paddingRight: "var(--sar)", background: "#0d0d0d",
     }}>
       <OperationalTopbar
         totalReservations={rows.filter(r => r.status !== "cancelled").length}
@@ -658,7 +660,7 @@ const RebookBanner = () => {
   if (!session) return null;
   return (
     <div data-rebook-banner="1" style={{
-      position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)",
+      position: "fixed", top: "calc(12px + var(--sat))", left: "50%", transform: "translateX(-50%)",
       zIndex: 1000, display: "flex", alignItems: "center", gap: 12,
       padding: "10px 14px", borderRadius: 10,
       background: "rgba(12,12,14,0.95)", color: "#fff",

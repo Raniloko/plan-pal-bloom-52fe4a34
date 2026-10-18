@@ -76,14 +76,17 @@ const AppContent = () => {
     const manifestLink = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const appleTitle = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+    const appleIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
     if (isAdmin) {
       manifestLink?.setAttribute("href", "/admin-manifest.webmanifest");
       themeMeta?.setAttribute("content", "#0d0d0d");
       appleTitle?.setAttribute("content", "Rondo Admin");
+      appleIcon?.setAttribute("href", "/admin-apple-touch-icon.png");
     } else {
       manifestLink?.setAttribute("href", "/manifest.webmanifest");
       themeMeta?.setAttribute("content", "#ffda00");
       appleTitle?.setAttribute("content", "Rondo");
+      appleIcon?.setAttribute("href", "/icon-192.png");
     }
   }, [isAdmin]);
 

@@ -50,7 +50,9 @@ export const ActivityLogPanel = ({ open, onClose }: Props) => {
     <>
       {open && <div onClick={onClose} style={{ position: "fixed", inset: 0, background: adm.overlay, zIndex: 299 }} />}
       <div style={{
-        position: "fixed", top: 0, right: open ? 0 : -480, height: "100%", width: 440,
+        position: "fixed", top: 0, right: open ? 0 : -480, height: "100%", width: 440, maxWidth: "100%",
+        // Dark strip under the notch keeps the white status bar text readable
+        borderTop: "var(--sat) solid #0d0d0d", paddingBottom: "var(--sab)",
         background: adm.surface, borderLeft: `1px solid ${adm.border}`, zIndex: 300,
         transition: "right 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",
         display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif",

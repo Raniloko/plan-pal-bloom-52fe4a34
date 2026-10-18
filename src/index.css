@@ -111,6 +111,15 @@ body.table-dragging * {
   }
 }
 
+/* iPhone notch / home indicator. Non-zero only with viewport-fit=cover,
+   which index.html sets so the installed web app can use the full screen. */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
 /* Admin ("backstage") tokens. The admin is light only. */
 :root {
   --adm-bg: 0 0% 95%;
