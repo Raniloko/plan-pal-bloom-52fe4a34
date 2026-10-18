@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react";
 import type { FloorArea } from "@/components/admin/floorplan/types";
 import { adm } from "@/components/admin/theme";
 
@@ -28,8 +28,9 @@ interface Props {
 }
 
 export const OperationalAreaTabs = ({
-  activeArea, onAreaChange,
+  activeArea, onAreaChange, viewMode = "floorplan", onViewModeChange,
 }: Props) => {
+  const isList = viewMode === "list";
   const scrollRef = useRef<HTMLDivElement>(null);
   const scroll = (dir: number) => scrollRef.current?.scrollBy({ left: dir * 160, behavior: "smooth" });
 
@@ -43,6 +44,9 @@ export const OperationalAreaTabs = ({
       gap: 2,
       position: "relative",
     }}>
+      {isList ? (
+        <div style={{ flex: 1, padding: "0 12px", fontSize: 13, fontWeight: 600, color: adm.text2 }}>Alle Bereiche</div>
+      ) : <>
       <button onClick={() => scroll(-1)} style={{
         width: 28, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
         color: adm.muted, background: "transparent", border: "none", cursor: "pointer",
@@ -82,6 +86,26 @@ export const OperationalAreaTabs = ({
         color: adm.muted, background: "transparent", border: "none", cursor: "pointer",
         flexShrink: 0,
       }}><ChevronRight size={14} /></button>
+      </>}
+
+      {onViewModeChange && (
+        <div role="group" aria-label="Ansicht" style={{
+          display: "flex", flexShrink: 0, marginRight: 4, padding: 3, gap: 2,
+          borderRadius: 9, background: adm.surface2, border: `1px solid ${adm.border}`,
+        }}>
+          {([["list", List, "Liste"], ["floorplan", LayoutGrid, "Grundriss"]] as const).map(([mode, Icon, label]) => (
+            <button key={mode} onClick={() => onViewModeChange(mode)} aria-label={label} title={label} style={{
+              width: 34, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 7, border: "none", cursor: "pointer",
+              background: viewMode === mode ? adm.surface : "transparent",
+              color: viewMode === mode ? adm.text : adm.muted,
+              boxShadow: viewMode === mode ? "0 1px 2px rgba(0,0,0,0.12)" : "none",
+            }}>
+              <Icon size={15} />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

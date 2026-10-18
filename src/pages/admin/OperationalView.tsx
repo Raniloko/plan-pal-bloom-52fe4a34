@@ -18,12 +18,14 @@ import {
   RecurringBookingDialog,
   StatsPanel,
   CommandPalette,
+  MobileBottomNav,
 } from "@/components/admin/operational";
 import { WaitlistConvertDialog } from "@/components/admin/operational/WaitlistConvertDialog";
 import { DayBlocksBar } from "@/components/admin/operational/DayBlocksBar";
 import { AREA_TABS, type ColorMode, type ViewMode } from "@/components/admin/operational/OperationalAreaTabs";
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import type { PaletteAction } from "@/components/admin/operational/CommandPalette";
+import type { MobileTab } from "@/components/admin/operational/MobileBottomNav";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
 import {
   X, Plus, UserPlus, CalendarDays, ChevronLeft, ChevronRight, BarChart3, Settings, Bell,
@@ -76,7 +78,8 @@ interface WaitlistEntry {
 const OperationalViewInner = () => {
   const isMobile = useIsMobile();
   const rebook = useRebook();
-  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("list");
+  const [blockFormOpen, setBlockFormOpen] = useState(false);
   const [activeArea, setActiveArea] = useState<FloorArea>("hauptbereich");
   const [showLabels, setShowLabels] = useState(true);
   const [zoom, setZoom] = useState(1);
@@ -249,6 +252,9 @@ const OperationalViewInner = () => {
   }, [load]);
 
   const liveStatus = useAdminLiveSync(load);
+
+  // The full floor plan is unreadable on phones; start with the table list there.
+  useEffect(() => { if (isMobile) setViewMode("list"); }, [isMobile]);
 
   // ⌘K / Ctrl+K opens the command palette
   useEffect(() => {
@@ -549,6 +555,7 @@ const OperationalViewInner = () => {
         onOpenPalette={() => setPaletteOpen(true)}
         liveStatus={liveStatus}
         lastLoadedAt={lastLoadedAt}
+        onOpenBlocks={() => setBlockFormOpen(true)}
         isMobile={isMobile}
       />
       <CommandPalette
@@ -561,32 +568,18 @@ const OperationalViewInner = () => {
         onSelectWaitlist={handleWaitlistClick}
       />
       <StatsPanel open={statsOpen} onClose={() => setStatsOpen(false)} date={dateStr} units={units} />
-      <DayBlocksBar date={dateStr} dateLabel={format(selectedDate, "dd.MM.yyyy")} />
+      <DayBlocksBar
+        date={dateStr}
+        dateLabel={format(selectedDate, "dd.MM.yyyy")}
+        compact={isMobile}
+        formOpen={isMobile ? blockFormOpen : undefined}
+        onFormOpenChange={isMobile ? setBlockFormOpen : undefined}
+      />
 
-
-      {/* Mobile tab bar */}
-      {isMobile && (
-        <div style={{
-          display: "flex", height: 40, background: adm.surface, borderBottom: `1px solid ${adm.border}`,
-        }}>
-          <button onClick={() => setMobileTab("list")} style={{
-            flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: mobileTab === "list" ? adm.surface2 : "transparent",
-            color: mobileTab === "list" ? adm.text : adm.muted,
-            borderBottom: mobileTab === "list" ? "2px solid #c9a84c" : "2px solid transparent",
-          }}>Reservierungen</button>
-          <button onClick={() => setMobileTab("map")} style={{
-            flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: mobileTab === "map" ? adm.surface2 : "transparent",
-            color: mobileTab === "map" ? adm.text : adm.muted,
-            borderBottom: mobileTab === "map" ? "2px solid #c9a84c" : "2px solid transparent",
-          }}>Grundriss</button>
-        </div>
-      )}
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* On mobile show only the active tab */}
-        {(!isMobile || mobileTab === "list") && (
+        {(!isMobile || mobileTab !== "map") && (
           <ReservationPanel
             rows={rows} totalGuests={totalGuests}
             selectedRowId={selectedRowId}
@@ -600,6 +593,7 @@ const OperationalViewInner = () => {
             durationMin={durationMin}
             billardAvailable={billardAvailable}
             isMobile={isMobile}
+            tab={isMobile ? (mobileTab === "wait" ? "wait" : "res") : undefined}
           />
         )}
 
@@ -622,6 +616,18 @@ const OperationalViewInner = () => {
           </div>
         )}
       </div>
+
+      {isMobile && (
+        <MobileBottomNav
+          tab={mobileTab}
+          onTabChange={setMobileTab}
+          reservationCount={rows.filter(r => r.status !== "cancelled").length}
+          waitlistCount={waitlist.length}
+          onNew={handleNewReservation}
+          onWalkIn={handleNewWalkIn}
+          hideFab={panelOpen}
+        />
+      )}
 
       <OperationalSlidePanel
         open={panelOpen} data={panelData}

@@ -46,12 +46,20 @@ interface Props {
   durationMin?: number;
   billardAvailable?: { free: number; total: number };
   isMobile?: boolean;
+  /** Controlled list/waitlist tab (mobile bottom nav) */
+  tab?: "res" | "wait";
 }
+
+const mobileCard: React.CSSProperties = {
+  display: "grid", columnGap: 10, minHeight: 64, padding: "10px 12px 10px 10px", alignItems: "center",
+  borderRadius: 12, border: `1px solid ${adm.border}`, boxShadow: "0 1px 2px rgba(0,0,0,0.04)", cursor: "pointer",
+};
 
 type SubTab = "platziert" | "bevorstehend" | "achtung";
 
-export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, onWaitlistClick, onWaitlistConvert, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false }: Props) => {
-  const [resTab, setResTab] = useState<"res" | "wait">("res");
+export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick, onNewClick, onWalkInClick, onWaitlistClick, onWaitlistConvert, waitlist = [], onRefreshWaitlist, durationMin: propDuration, billardAvailable, isMobile = false, tab }: Props) => {
+  const [localTab, setResTab] = useState<"res" | "wait">("res");
+  const resTab = tab ?? localTab;
   const [subTab, setSubTab] = useState<SubTab>("bevorstehend");
   const [notifying, setNotifying] = useState<string | null>(null);
 
@@ -107,8 +115,8 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
       borderRight: isMobile ? "none" : `1px solid ${adm.border}`,
       display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif",
     }}>
-      {/* Header tabs */}
-      <div style={{ display: "flex", alignItems: "center", height: 42, background: adm.surface, borderBottom: `1px solid ${adm.border}`, padding: "0 10px", gap: 4 }}>
+      {/* Header tabs (mobile: bottom navigation + add button instead) */}
+      {!isMobile && <div style={{ display: "flex", alignItems: "center", height: 42, background: adm.surface, borderBottom: `1px solid ${adm.border}`, padding: "0 10px", gap: 4 }}>
         <button onClick={() => setResTab("res")} style={{
           padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 6,
@@ -137,17 +145,18 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
             background: "#4ade80", color: "#111", border: "none", cursor: "pointer",
           }}>+ Walk-in</button>
         )}
-      </div>
+      </div>}
 
 
       {resTab === "res" ? (
         <>
           {/* Sub-tabs */}
-          <div style={{ display: "flex", alignItems: "center", background: adm.bg, borderBottom: `2px solid ${adm.border}`, padding: "0 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", background: isMobile ? adm.surface : adm.bg, borderBottom: `2px solid ${adm.border}`, padding: isMobile ? 0 : "0 12px" }}>
             {subTabs.map(t => (
               <button key={t.key} onClick={() => setSubTab(t.key)} style={{
-                display: "flex", alignItems: "center", gap: 4, padding: "10px 12px",
-                fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 6 : 4,
+                padding: isMobile ? "13px 4px" : "10px 12px", flex: isMobile ? 1 : undefined,
+                fontSize: isMobile ? 13 : 11, fontWeight: 600, border: "none", cursor: "pointer",
                 background: "transparent",
                 color: subTab === t.key ? adm.text : adm.muted,
                 borderBottom: subTab === t.key ? `2px solid ${adm.text}` : "2px solid transparent",
@@ -160,13 +169,13 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                 }}>
                   {t.icon} {t.count}
                 </span>
-                {t.label}
+                {isMobile && t.key === "bevorstehend" ? "Kommend" : t.label}
               </button>
             ))}
           </div>
 
           {/* Column header */}
-          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg, gap: 8 }}>
+          {!isMobile && <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg, gap: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text2 }}>Uhrzeit ↕ Gast</span>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text2 }}>Name</span>
             <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
@@ -174,17 +183,17 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
               <LegendDialog />
               <Bell size={12} color={adm.muted} />
             </span>
-          </div>
+          </div>}
 
           {/* Summary */}
-          <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, gap: 8 }}>
+          {!isMobile && <div style={{ display: "flex", alignItems: "center", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, gap: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>ÜBERSICHT</span>
             <span style={{ fontSize: 10, color: adm.text2 }}>Gesamt {filtered.length}</span>
             <span style={{ fontSize: 10, color: adm.text2, display: "flex", alignItems: "center", gap: 3 }}><Users size={9} /> {filtered.reduce((s, r) => s + r.guests, 0)}</span>
-          </div>
+          </div>}
 
           {/* Rows */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "10px 12px 96px" : undefined, display: isMobile ? "flex" : undefined, flexDirection: "column", gap: isMobile ? 8 : undefined }}>
             {filtered.map(r => {
               const sel = r.id === selectedRowId;
               const isCancelled = r.status === "cancelled";
@@ -197,7 +206,13 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                     e.dataTransfer.setData("reservationId", r.id);
                     e.dataTransfer.effectAllowed = "move";
                   }}
-                  style={{
+                  style={isMobile ? {
+                  ...mobileCard,
+                  gridTemplateColumns: "62px 1fr 28px",
+                  background: bg,
+                  borderLeft: `4px solid ${borderL === "transparent" ? adm.border : borderL}`,
+                  opacity: isCancelled ? 0.6 : 1,
+                } : {
                   display: "grid", gridTemplateColumns: "70px 28px 1fr 36px",
                   minHeight: 58, borderBottom: `1px solid ${adm.border}`,
                   borderLeft: `3px solid ${borderL}`, background: bg,
@@ -205,7 +220,7 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                   opacity: isCancelled ? 0.6 : 1,
                 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isCancelled ? adm.danger : r.overdue ? adm.danger : adm.text }}>{r.time}</div>
+                    <div style={{ fontSize: isMobile ? 16 : 13, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: isCancelled ? adm.danger : r.overdue ? adm.danger : adm.text }}>{r.time}</div>
                     <div style={{ fontSize: 10, color: isCancelled ? adm.danger : r.overdue ? adm.danger : adm.muted, fontWeight: r.overdue ? 700 : 400 }}>
                       {isCancelled ? "Storniert" : r.overdue ? r.offset : r.status === "checked_in" ? (() => {
                         const [h, m] = r.time.split(":").map(Number);
@@ -226,10 +241,13 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                       })() : r.offset}
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: adm.text, textAlign: "center" }}>{r.guests}</div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: isCancelled ? adm.muted : adm.text, textDecoration: isCancelled ? "line-through" : "none" }}>{r.name}</div>
-                    <div style={{ fontSize: 10, color: adm.muted }}>{r.tableRef}</div>
+                  {!isMobile && <div style={{ fontSize: 13, fontWeight: 700, color: adm.text, textAlign: "center" }}>{r.guests}</div>}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: isMobile ? 15 : 12, fontWeight: isMobile ? 600 : 500, color: isCancelled ? adm.muted : adm.text, textDecoration: isCancelled ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                    <div style={{ fontSize: isMobile ? 12 : 10, color: adm.muted, display: "flex", alignItems: "center", gap: 6, marginTop: isMobile ? 2 : 0 }}>
+                      {isMobile && <><span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: adm.text2, fontWeight: 600 }}><Users size={12} />{r.guests}</span><span>·</span></>}
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.tableRef}</span>
+                    </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {isCancelled ? <Ban size={15} color={adm.danger} /> : r.overdue ? <AlertTriangle size={15} color={adm.danger} /> : renderIcon(r.icon, r.status)}
@@ -257,15 +275,15 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
           </div>
 
           {/* Column header */}
-          <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 60px 36px", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg }}>
+          {!isMobile && <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 60px 36px", padding: "6px 14px", borderBottom: `1px solid ${adm.border}`, background: adm.bg }}>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>ZEIT</span>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>NAME / BEREICH</span>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: adm.text }}>STATUS</span>
             <span />
-          </div>
+          </div>}
 
           {/* Waitlist rows */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "10px 12px 96px" : undefined, display: isMobile ? "flex" : undefined, flexDirection: "column", gap: isMobile ? 8 : undefined }}>
             {waitlist.length === 0 ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", color: adm.muted }}>
                 <Clock size={32} color={adm.border} style={{ marginBottom: 8 }} />
@@ -278,7 +296,12 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
                 return (
                   <div key={w.id}
                     onClick={() => onWaitlistClick?.(w)}
-                    style={{
+                    style={isMobile ? {
+                    ...mobileCard,
+                    gridTemplateColumns: "56px 1fr auto auto",
+                    borderLeft: `4px solid ${isNotified ? adm.success : "#e07820"}`,
+                    background: isNotified ? adm.successSoft : adm.surface,
+                  } : {
                     display: "grid", gridTemplateColumns: "70px 1fr 60px 36px",
                     minHeight: 58, borderBottom: `1px solid ${adm.border}`,
                     borderLeft: `3px solid ${isNotified ? adm.success : "#e07820"}`,
