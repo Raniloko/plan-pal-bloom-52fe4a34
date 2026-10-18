@@ -23,6 +23,7 @@ import type { ColorMode, ViewMode } from "@/components/admin/operational/Operati
 import type { ResRow, PanelData } from "@/components/admin/operational";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
 import { X } from "lucide-react";
+import { adm } from "@/components/admin/theme";
 
 interface Reservation {
   id: string;
@@ -473,7 +474,7 @@ const OperationalViewInner = () => {
     return (
       <div style={{
         position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'DM Sans', sans-serif", background: "#f2f2f2", color: "#666", fontSize: 14,
+        fontFamily: "'DM Sans', sans-serif", background: adm.bg, color: adm.muted, fontSize: 14,
       }}>
         Dashboard wird geladen...
       </div>
@@ -481,7 +482,7 @@ const OperationalViewInner = () => {
   }
 
   return (
-    <div className="admin-theme" data-theme={theme} style={{
+    <div style={{
       position: "fixed", inset: 0, display: "flex", flexDirection: "column",
       overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
     }}>
@@ -507,18 +508,18 @@ const OperationalViewInner = () => {
       {/* Mobile tab bar */}
       {isMobile && (
         <div style={{
-          display: "flex", height: 40, background: "#1e1e1e", borderBottom: "1px solid #2a2a2a",
+          display: "flex", height: 40, background: adm.surface, borderBottom: `1px solid ${adm.border}`,
         }}>
           <button onClick={() => setMobileTab("list")} style={{
             flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: mobileTab === "list" ? "rgba(255,255,255,0.1)" : "transparent",
-            color: mobileTab === "list" ? "#fff" : "#666",
+            background: mobileTab === "list" ? adm.surface2 : "transparent",
+            color: mobileTab === "list" ? adm.text : adm.muted,
             borderBottom: mobileTab === "list" ? "2px solid #c9a84c" : "2px solid transparent",
           }}>Reservierungen</button>
           <button onClick={() => setMobileTab("map")} style={{
             flex: 1, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: mobileTab === "map" ? "rgba(255,255,255,0.1)" : "transparent",
-            color: mobileTab === "map" ? "#fff" : "#666",
+            background: mobileTab === "map" ? adm.surface2 : "transparent",
+            color: mobileTab === "map" ? adm.text : adm.muted,
             borderBottom: mobileTab === "map" ? "2px solid #c9a84c" : "2px solid transparent",
           }}>Grundriss</button>
         </div>

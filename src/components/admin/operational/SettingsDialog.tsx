@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Clock, Users, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { adm } from "@/components/admin/theme";
 
 interface Props {
   open: boolean;
@@ -23,8 +24,8 @@ const DEFAULT_DURATION = 120;
 const DEFAULT_AUTO_CANCEL = 15;
 
 const inputStyle: React.CSSProperties = {
-  background: "#1a1a1a", border: "1px solid #333", borderRadius: 6, padding: "6px 10px",
-  color: "#fff", fontSize: 13, width: 90, fontFamily: "'DM Sans', sans-serif",
+  background: adm.surface, border: `1px solid ${adm.border}`, borderRadius: 6, padding: "6px 10px",
+  color: adm.text, fontSize: 13, width: 90, fontFamily: "'DM Sans', sans-serif",
 };
 
 export const SettingsDialog = ({ open, onClose }: Props) => {
@@ -74,24 +75,24 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9998 }} />
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: adm.overlay, zIndex: 9998 }} />
       <div style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-        width: 560, maxHeight: "80vh", background: "#141414", border: "1px solid #2a2a2a",
+        width: 560, maxHeight: "80vh", background: adm.bg, border: `1px solid ${adm.border}`,
         borderRadius: 12, zIndex: 9999, display: "flex", flexDirection: "column",
         fontFamily: "'DM Sans', sans-serif", overflow: "hidden",
       }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #2a2a2a" }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Einstellungen</span>
-          <button onClick={onClose} style={{ color: "#666", background: "none", border: "none", cursor: "pointer" }}><X size={18} /></button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${adm.border}` }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: adm.text }}>Einstellungen</span>
+          <button onClick={onClose} style={{ color: adm.muted, background: "none", border: "none", cursor: "pointer" }}><X size={18} /></button>
         </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid #2a2a2a" }}>
+        <div style={{ display: "flex", borderBottom: `1px solid ${adm.border}` }}>
           {tabs.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} style={{
               flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               padding: "10px 0", fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
-              color: tab === t.key ? "#fff" : "#666", background: tab === t.key ? "#1e1e1e" : "transparent",
+              color: tab === t.key ? adm.text : adm.muted, background: tab === t.key ? adm.surface2 : "transparent",
               border: "none", borderBottom: tab === t.key ? "2px solid #4ade80" : "2px solid transparent",
               cursor: "pointer",
             }}>
@@ -105,15 +106,15 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {DAY_KEYS.map((dk, i) => (
                 <div key={dk} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ width: 100, fontSize: 13, color: hours[dk]?.closed ? "#555" : "#ccc", fontWeight: 500 }}>{DAYS[i]}</span>
-                  <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#888", cursor: "pointer" }}>
+                  <span style={{ width: 100, fontSize: 13, color: hours[dk]?.closed ? adm.muted : adm.text2, fontWeight: 500 }}>{DAYS[i]}</span>
+                  <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: adm.muted, cursor: "pointer" }}>
                     <input type="checkbox" checked={hours[dk]?.closed || false} onChange={e => setHours(h => ({ ...h, [dk]: { ...h[dk], closed: e.target.checked } }))} />
                     Ruhetag
                   </label>
                   {!hours[dk]?.closed && (
                     <>
                       <input type="time" value={hours[dk]?.open || "17:00"} onChange={e => setHours(h => ({ ...h, [dk]: { ...h[dk], open: e.target.value } }))} style={inputStyle} />
-                      <span style={{ color: "#555" }}>–</span>
+                      <span style={{ color: adm.muted }}>–</span>
                       <input type="time" value={hours[dk]?.close || "02:00"} onChange={e => setHours(h => ({ ...h, [dk]: { ...h[dk], close: e.target.value } }))} style={inputStyle} />
                     </>
                   )}
@@ -125,33 +126,33 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
           {tab === "capacity" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Standard-Reservierungsdauer</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: adm.text2, marginBottom: 8 }}>Standard-Reservierungsdauer</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <select value={duration} onChange={e => setDuration(Number(e.target.value))} style={{ ...inputStyle, width: 160 }}>
                     {[60, 90, 120, 150, 180, 240].map(m => (
                       <option key={m} value={m}>{m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}min` : ""}` : `${m} Min`}</option>
                     ))}
                   </select>
-                  <span style={{ fontSize: 11, color: "#777" }}>Gilt für alle Bereiche außer Billard</span>
+                  <span style={{ fontSize: 11, color: adm.muted }}>Gilt für alle Bereiche außer Billard</span>
                 </div>
               </div>
               <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 8 }}>Automatische Stornierung</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: adm.text2, marginBottom: 8 }}>Automatische Stornierung</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <select value={autoCancelMin} onChange={e => setAutoCancelMin(Number(e.target.value))} style={{ ...inputStyle, width: 160 }}>
                     {[0, 5, 10, 15, 20, 30, 45, 60].map(m => (
                       <option key={m} value={m}>{m === 0 ? "Deaktiviert" : `${m} Minuten`}</option>
                     ))}
                   </select>
-                  <span style={{ fontSize: 11, color: "#777" }}>Reservierungen werden automatisch storniert wenn nicht eingecheckt</span>
+                  <span style={{ fontSize: 11, color: adm.muted }}>Reservierungen werden automatisch storniert wenn nicht eingecheckt</span>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "12px 20px", borderTop: "1px solid #2a2a2a" }}>
-          <button onClick={onClose} style={{ padding: "8px 20px", fontSize: 13, color: "#888", background: "transparent", border: "1px solid #333", borderRadius: 8, cursor: "pointer" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "12px 20px", borderTop: `1px solid ${adm.border}` }}>
+          <button onClick={onClose} style={{ padding: "8px 20px", fontSize: 13, color: adm.muted, background: "transparent", border: `1px solid ${adm.border}`, borderRadius: 8, cursor: "pointer" }}>
             Abbrechen
           </button>
           <button onClick={save} disabled={saving} style={{

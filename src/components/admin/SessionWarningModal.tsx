@@ -1,5 +1,6 @@
 import { useAuthOptional } from "@/contexts/AuthContext";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { adm } from "@/components/admin/theme";
 
 export const SessionWarningModal = () => {
   const auth = useAuthOptional();
@@ -9,10 +10,10 @@ export const SessionWarningModal = () => {
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 99999 }} />
+      <div style={{ position: "fixed", inset: 0, background: adm.overlay, zIndex: 99999 }} />
       <div style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-        width: 420, background: "#141414", border: "1px solid #2a2a2a", borderRadius: 12,
+        width: 420, background: adm.bg, border: `1px solid ${adm.border}`, borderRadius: 12,
         padding: "32px", zIndex: 100000, fontFamily: "'DM Sans', sans-serif", textAlign: "center",
       }}>
         <div style={{
@@ -20,20 +21,20 @@ export const SessionWarningModal = () => {
           display: "flex", alignItems: "center", justifyContent: "center",
           margin: "0 auto 20px",
         }}>
-          <AlertTriangle size={28} style={{ color: "#fbbf24" }} />
+          <AlertTriangle size={28} style={{ color: adm.warn }} />
         </div>
 
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: adm.text, margin: "0 0 8px" }}>
           Sitzung läuft ab
         </h3>
-        <p style={{ fontSize: 14, color: "#888", lineHeight: 1.5, margin: "0 0 24px" }}>
+        <p style={{ fontSize: 14, color: adm.muted, lineHeight: 1.5, margin: "0 0 24px" }}>
           Ihre Sitzung wird in wenigen Minuten wegen Inaktivität beendet. Klicken Sie auf "Aktiv bleiben", um angemeldet zu bleiben.
         </p>
 
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
           <button onClick={() => signOut()} style={{
-            padding: "10px 20px", fontSize: 13, color: "#888", background: "transparent",
-            border: "1px solid #333", borderRadius: 8, cursor: "pointer",
+            padding: "10px 20px", fontSize: 13, color: adm.muted, background: "transparent",
+            border: `1px solid ${adm.border}`, borderRadius: 8, cursor: "pointer",
           }}>
             Abmelden
           </button>

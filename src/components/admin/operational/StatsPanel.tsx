@@ -106,7 +106,7 @@ export const StatsPanel = ({ open, onClose, date, units }: Props) => {
   return (
     <>
       <div onClick={onClose} className="fixed inset-0 z-[9998] bg-black/50" />
-      <aside className="admin-theme-portal fixed right-0 top-[52px] z-[9999] flex h-[calc(100vh-52px)] w-full max-w-[460px] animate-slide-in-right flex-col border-l border-adm-border bg-adm-bg font-['DM_Sans',sans-serif] text-adm-text">
+      <aside className="fixed right-0 top-[52px] z-[9999] flex h-[calc(100vh-52px)] w-full max-w-[460px] animate-slide-in-right flex-col border-l border-adm-border bg-adm-bg font-['DM_Sans',sans-serif] text-adm-text">
         <header className="flex items-center justify-between border-b border-adm-border px-5 py-4">
           <div>
             <div className="text-[15px] font-bold">Statistiken</div>

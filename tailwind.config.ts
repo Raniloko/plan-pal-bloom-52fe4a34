@@ -39,6 +39,7 @@ export default {
           "surface-2": "hsl(var(--adm-surface-2))",
           border: "hsl(var(--adm-border))",
           text: "hsl(var(--adm-text))",
+          "text-2": "hsl(var(--adm-text-2))",
           muted: "hsl(var(--adm-muted))",
           gold: "hsl(var(--adm-gold))",
           success: "hsl(var(--adm-success))",
