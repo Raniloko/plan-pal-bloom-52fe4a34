@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { isTimeInPast, toMin, useZoneAvailability, type ZoneKey } from "@/hooks/useZoneAvailability";
 import { announceChange } from "@/lib/adminSync";
 
 const CONTACT_STORAGE_KEY = "rondo_guest_contact";
@@ -48,34 +49,6 @@ const ANLAESSE = [
 ];
 
 // TIMES are now dynamic from settings via useOpeningHours hook
-
-type ActiveReservation = {
-  reservation_time: string;
-  zone: Exclude<ReservationZone, "">;
-};
-
-type ZoneKey = Exclude<ReservationZone, "">;
-// Per-zone list of booked start times (in minutes) for the selected date.
-type AvailabilityMap = Partial<Record<ZoneKey, number[]>>;
-
-const ZONE_CAPACITY: Record<ZoneKey, number> = {
-  hauptbereich: 7,
-  fenster: 3,
-  billard: 8,
-  vip: 6,
-  podest: 4,
-  salitos: 15,
-};
-
-// Reservation duration used for overlap calculations on the booking form.
-// Backend caps Billard at 120 min and uses settings.reservation_duration for others.
-// We use 120 min as a safe shared default — matches the backend default.
-const SLOT_DURATION_MIN = 120;
-
-const toMin = (t: string) => {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-};
 
 const STEPS = [
   { icon: <CalendarDays size={20} />, label: "Datum & Uhrzeit" },
@@ -155,152 +128,14 @@ const RondoReservationSystem = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const [availability, setAvailability] = useState<AvailabilityMap>({});
-  const [availabilityLoading, setAvailabilityLoading] = useState(false);
-
   type BillardTable = { id: string; name: string; available: boolean; blocked: boolean };
   const [billardTables, setBillardTables] = useState<BillardTable[]>([]);
   const [billardLoading, setBillardLoading] = useState(false);
 
-  const zoneKeys = useMemo(() => Object.keys(ZONE_CAPACITY) as ZoneKey[], []);
-
-  // Effective capacity per zone = number of non-blocked units in that area.
-  // Loaded once from `units`; fallback to ZONE_CAPACITY constant if empty.
-  const [unitCapacity, setUnitCapacity] = useState<Partial<Record<ZoneKey, number>>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: units, error } = await supabase
-        .from("units")
-        .select("area, status");
-      if (cancelled || error || !units) return;
-      const counts: Partial<Record<ZoneKey, number>> = {};
-      for (const u of units as { area: string; status: string | null }[]) {
-        if (!zoneKeys.includes(u.area as ZoneKey)) continue;
-        if (u.status === "blocked") continue;
-        const k = u.area as ZoneKey;
-        counts[k] = (counts[k] ?? 0) + 1;
-      }
-      setUnitCapacity(counts);
-    })();
-    return () => { cancelled = true; };
-  }, [zoneKeys]);
-
-  const effectiveCapacity = useCallback((zone: ZoneKey): number => {
-    const fromUnits = unitCapacity[zone];
-    if (fromUnits === undefined) return ZONE_CAPACITY[zone];
-    return fromUnits;
-  }, [unitCapacity]);
-
-  const fetchAvailability = useCallback(async (date: string) => {
-    if (!date) {
-      setAvailability({});
-      return;
-    }
-
-    setAvailabilityLoading(true);
-    const { data: activeReservations, error } = await supabase
-      .from("reservations")
-      .select("reservation_time, zone")
-      .eq("reservation_date", date)
-      .not("status", "in", '("cancelled","checked_out")')
-      .in("zone", zoneKeys);
-
-    if (error) {
-      setAvailabilityLoading(false);
-      return;
-    }
-
-    const grouped: AvailabilityMap = {};
-    (activeReservations as ActiveReservation[]).forEach(r => {
-      const arr = grouped[r.zone] || [];
-      arr.push(toMin(r.reservation_time));
-      grouped[r.zone] = arr;
-    });
-    setAvailability(grouped);
-    setAvailabilityLoading(false);
-  }, [zoneKeys]);
-
-  useEffect(() => {
-    void fetchAvailability(data.date);
-  }, [data.date, fetchAvailability]);
-
-  // Gesperrte Tage / Bereiche für das gewählte Datum
-  const [dayBlocks, setDayBlocks] = useState<{ area: string | null; reason: string | null }[]>([]);
-  useEffect(() => {
-    if (!data.date) { setDayBlocks([]); return; }
-    let cancelled = false;
-    (async () => {
-      const { data: rows } = await supabase
-        .from("blocked_days")
-        .select("area, reason")
-        .eq("block_date", data.date);
-      if (!cancelled) setDayBlocks(rows || []);
-    })();
-    return () => { cancelled = true; };
-  }, [data.date]);
-  const dayFullyBlocked = dayBlocks.find(b => b.area === null) || null;
-  const isAreaBlocked = (zone: string) => dayBlocks.some(b => b.area === zone);
-
-  useEffect(() => {
-    if (!data.date) return;
-
-    const channel = supabase
-      .channel(`availability-${data.date}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations", filter: `reservation_date=eq.${data.date}` }, () => {
-        void fetchAvailability(data.date);
-      })
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [data.date, fetchAvailability]);
-
-  // Count reservations in a zone whose [start, start+dur) overlaps [time, time+dur).
-  const getCountForZoneAtTime = useCallback((time: string, zone: ZoneKey) => {
-    const list = availability[zone] || [];
-    const start = toMin(time);
-    const end = start + SLOT_DURATION_MIN;
-    return list.filter(s => start < s + SLOT_DURATION_MIN && end > s).length;
-  }, [availability]);
-
-  const isZoneFullyBooked = useCallback((zone: ZoneKey, time: string) => {
-    const cap = effectiveCapacity(zone);
-    if (cap <= 0) return true;
-    return getCountForZoneAtTime(time, zone) >= cap;
-  }, [getCountForZoneAtTime, effectiveCapacity]);
-
-  const isTimeInPast = useCallback((date: string, time: string) => {
-    if (!date) return true;
-    const today = new Date().toISOString().split("T")[0];
-    if (date !== today) return false;
-
-    const [hour, minute] = time.split(":").map(Number);
-    const selectedDateTime = new Date();
-    selectedDateTime.setHours(hour, minute, 0, 0);
-    // Slots nach Mitternacht (z.B. 00:00–05:45) gehören zum nächsten Kalendertag
-    // (Öffnungszeiten reichen über Mitternacht hinaus). Sonst würden sie
-    // fälschlich als „Vergangenheit" markiert.
-    if (hour < 6) {
-      selectedDateTime.setDate(selectedDateTime.getDate() + 1);
-    }
-    return selectedDateTime.getTime() <= Date.now();
-  }, []);
-
-  const isTimeFullyBooked = useCallback((time: string) => {
-    return zoneKeys.every((zone) => isZoneFullyBooked(zone, time));
-  }, [isZoneFullyBooked, zoneKeys]);
-
-  // Ampel: wie viele Tische sind zu dieser Uhrzeit insgesamt noch frei?
-  const freeSlotsAtTime = useCallback((time: string) => {
-    return zoneKeys.reduce((sum, zone) => {
-      if (dayBlocks.some(b => b.area === zone)) return sum;
-      const free = effectiveCapacity(zone) - getCountForZoneAtTime(time, zone);
-      return sum + Math.max(0, free);
-    }, 0);
-  }, [zoneKeys, dayBlocks, effectiveCapacity, getCountForZoneAtTime]);
+  const {
+    availability, refresh: refreshAvailability, loading: availabilityLoading, dayFullyBlocked, isAreaBlocked, effectiveCapacity,
+    getCountForZoneAtTime, isZoneFullyBooked, isTimeFullyBooked, freeSlotsAtTime,
+  } = useZoneAvailability(data.date);
 
   // Find the earliest later time slot where the given zone has free capacity.
   const findNextFreeTimeForZone = useCallback((zone: ZoneKey, fromTime: string): string | null => {
@@ -313,7 +148,7 @@ const RondoReservationSystem = () => {
       if (!isZoneFullyBooked(zone, t)) return t;
     }
     return null;
-  }, [data.date, getTimesForDate, isTimeInPast, isZoneFullyBooked]);
+  }, [data.date, getTimesForDate, isZoneFullyBooked]);
 
   const canNext = () => {
     switch (step) {
@@ -375,7 +210,7 @@ const RondoReservationSystem = () => {
     setSubmitError("");
 
     try {
-      await fetchAvailability(data.date);
+      await refreshAvailability();
 
       if (isTimeInPast(data.date, data.time)) {
         setSubmitError("Diese Uhrzeit liegt bereits in der Vergangenheit.");

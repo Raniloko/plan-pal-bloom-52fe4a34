@@ -1,320 +1,341 @@
-import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-
-const ZONE_LABELS: Record<string, string> = {
-  hauptbereich: "Restaurant (140-Zoll Screen)",
-  fenster: "Restaurant (75-Zoll Screen)",
-  billard: "Billard",
-  vip: "VIP-Raum",
-  podest: "Podest",
-  salitos: "Salitos Lounge / Outdoor",
-};
-
-const VALID_ZONES = ["hauptbereich", "fenster", "billard", "vip", "podest", "salitos"];
-const VALID_OCCASIONS = ["sport", "feier", "essen", "billard", "sonstiges"];
-const OCCASION_LABELS: Record<string, string> = {
-  sport: "Live-Sport schauen",
-  feier: "Private Feier",
-  essen: "Essen & Trinken",
-  billard: "Billard spielen",
-  sonstiges: "Sonstiges",
-};
-
-const VALID_TIMES = [
-  "14:00","14:15","14:30","14:45","15:00","15:15","15:30","15:45",
-  "16:00","16:15","16:30","16:45","17:00","17:15","17:30","17:45",
-  "18:00","18:15","18:30","18:45","19:00","19:15","19:30","19:45",
-  "20:00","20:15","20:30","20:45","21:00","21:15","21:30","21:45",
-  "22:00","22:15","22:30","22:45","23:00",
-];
-
-function formatDate(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-");
-  return `${d}.${m}.${y}`;
-}
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { CalendarPlus, Check, Loader2, Minus, Plus, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { LoadingState, ManageShell, ReservationTicket, StatusHeader } from "@/components/reservation/ManageShell";
+import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { isTimeInPast, useZoneAvailability, type ZoneKey } from "@/hooks/useZoneAvailability";
+import {
+  callGuestFunction, downloadIcs, OCCASION_OPTIONS, parseOccasion, serializeOccasion, toIsoDate,
+  ZONE_OPTIONS, type GuestReservation,
+} from "@/lib/guestReservation";
 
 type ViewState = "loading" | "form" | "success" | "error" | "handled";
 
+const QUICK_DAYS = 14;
+const TIME_PERIODS = [
+  { key: "day", label: "Bis 17 Uhr", match: (h: number) => h >= 6 && h < 17 },
+  { key: "evening", label: "17 – 21 Uhr", match: (h: number) => h >= 17 && h < 21 },
+  { key: "late", label: "Ab 21 Uhr", match: (h: number) => h >= 21 || h < 6 },
+] as const;
+type PeriodKey = (typeof TIME_PERIODS)[number]["key"];
+const periodOf = (t: string): PeriodKey => TIME_PERIODS.find(p => p.match(Number(t.slice(0, 2))))!.key;
+
+const Section = ({ title, hint, children }: { title: string; hint?: ReactNode; children: ReactNode }) => (
+  <section className="border-t border-border pt-5">
+    <div className="mb-3 flex items-baseline justify-between gap-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wider">{title}</h2>
+      {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+    </div>
+    {children}
+  </section>
+);
+
+const chip = (selected: boolean) => cn(
+  "rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+  selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted hover:border-primary/50",
+);
+
 const ReservierungAendern = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const id = searchParams.get("id");
   const token = searchParams.get("token");
 
   const [view, setView] = useState<ViewState>("loading");
   const [errorMsg, setErrorMsg] = useState("");
-  const [reservation, setReservation] = useState<any>(null);
+  const [original, setOriginal] = useState<GuestReservation | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [guests, setGuests] = useState(2);
   const [zone, setZone] = useState("");
-  const [occasion, setOccasion] = useState("");
+  const [occasionKeys, setOccasionKeys] = useState<string[]>([]);
+  const [occasionOther, setOccasionOther] = useState("");
   const [message, setMessage] = useState("");
+  const [period, setPeriod] = useState<PeriodKey | null>(null);
+
+  const { getTimesForDate } = useOpeningHours();
+  const ignore = useMemo(() => original
+    ? { date: original.reservation_date, time: original.reservation_time, zone: original.zone }
+    : null, [original]);
+  const { dayFullyBlocked, isAreaBlocked, isZoneFullyBooked, loading: availabilityLoading } = useZoneAvailability(date, ignore);
 
   useEffect(() => {
     if (!id || !token) {
-      setErrorMsg("Ungültiger Link.");
+      setErrorMsg("Dieser Link ist unvollständig. Bitte öffne ihn direkt aus deiner Bestätigungs-E-Mail.");
       setView("error");
       return;
     }
-    loadReservation();
+    (async () => {
+      const res = await callGuestFunction<{ reservation: GuestReservation; status?: string }>("modify-reservation", { action: "get", id, token });
+      if (res.status === 200 && res.data?.reservation) {
+        const r = { ...res.data.reservation, reservation_time: res.data.reservation.reservation_time.slice(0, 5) };
+        setOriginal(r);
+        setDate(r.reservation_date);
+        setTime(r.reservation_time);
+        setGuests(r.guest_count);
+        setZone(r.zone);
+        const occ = parseOccasion(r.occasion);
+        setOccasionKeys(occ.keys);
+        setOccasionOther(occ.other);
+        setMessage(r.message || "");
+        setView("form");
+      } else if (res.status === 403 || res.status === 410 || res.data?.status === "cancelled") {
+        setView("handled");
+      } else {
+        setErrorMsg(res.error || "Reservierung nicht gefunden.");
+        setView("error");
+      }
+    })();
   }, [id, token]);
 
-  const loadReservation = async () => {
-    try {
-      const jsonRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/modify-reservation`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ action: "get", id, token }),
-        }
-      );
+  const occasion = serializeOccasion(occasionKeys, occasionOther);
+  const changed = !!original && (
+    date !== original.reservation_date || time !== original.reservation_time || guests !== original.guest_count
+    || zone !== original.zone || occasion !== serializeOccasion(parseOccasion(original.occasion).keys, parseOccasion(original.occasion).other)
+    || message !== (original.message || "")
+  );
 
-      if (!jsonRes.ok) {
-        const err = await jsonRes.json().catch(() => null);
-        // 403 = token vom Rondo Team invalidiert; 410 = bereits storniert
-        if (jsonRes.status === 403 || jsonRes.status === 410 || err?.status === "cancelled") {
-          setView("handled");
-          return;
-        }
-        setErrorMsg(err?.error || "Reservierung nicht gefunden.");
-        setView("error");
-        return;
-      }
+  // Times that are still bookable in the chosen area
+  const times = date ? getTimesForDate(date) : [];
+  const timeBlocked = (t: string) => {
+    if (isTimeInPast(date, t)) return true;
+    if (zone === "billard" && Number(t.slice(0, 2)) >= 20) return true;
+    return zone ? isZoneFullyBooked(zone as ZoneKey, t) : false;
+  };
+  const periods = TIME_PERIODS.filter(p => times.some(t => p.match(Number(t.slice(0, 2)))));
+  const activePeriod = (period && periods.some(p => p.key === period) ? period : undefined)
+    ?? (time ? periodOf(time) : undefined) ?? periods[0]?.key;
 
-      const data = await jsonRes.json();
-      setReservation(data.reservation);
-      setDate(data.reservation.reservation_date);
-      setTime(data.reservation.reservation_time);
-      setGuests(data.reservation.guest_count);
-      setZone(data.reservation.zone);
-      setOccasion(data.reservation.occasion);
-      setMessage(data.reservation.message || "");
-      setView("form");
-    } catch {
-      setErrorMsg("Verbindungsfehler. Bitte versuche es erneut.");
-      setView("error");
-    }
+  const zoneUnavailable = (z: string) => {
+    if (isAreaBlocked(z)) return "An diesem Tag gesperrt";
+    if (z === "billard" && time && Number(time.slice(0, 2)) >= 20) return "Ab 20 Uhr nicht reservierbar";
+    if (time && isZoneFullyBooked(z as ZoneKey, time)) return `Um ${time} Uhr belegt`;
+    return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const timeValid = !!time && times.includes(time) && !timeBlocked(time);
+  const occasionValid = occasionKeys.length > 0 && (!occasionKeys.includes("sonstiges") || occasionOther.trim().length > 0);
+  const canSave = changed && !!date && !dayFullyBlocked && timeValid && !!zone && !zoneUnavailable(zone) && occasionValid && !saving;
+
+  const pickDate = (iso: string) => { setDate(iso); setPeriod(null); };
+
+  const handleSubmit = async () => {
+    if (!canSave) return;
     setSaving(true);
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/modify-reservation`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            action: "update",
-            id,
-            token,
-            date,
-            time,
-            guests,
-            zone,
-            occasion,
-            message,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        if (res.status === 403 || res.status === 410 || err?.status === "cancelled") {
-          setView("handled");
-          return;
-        }
-        setErrorMsg(err?.error || "Änderung fehlgeschlagen.");
-        setView("error");
-        return;
-      }
-
+    setSaveError("");
+    const res = await callGuestFunction<{ status?: string }>("modify-reservation", {
+      action: "update", id, token, date, time, guests, zone, occasion, message,
+    });
+    setSaving(false);
+    if (res.status === 200) {
       setView("success");
-    } catch {
-      setErrorMsg("Verbindungsfehler.");
-      setView("error");
-    } finally {
-      setSaving(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (res.status === 403 || res.data?.status === "cancelled") {
+      setView("handled");
+    } else {
+      // Keep the form so the guest can pick something else (e.g. slot just got booked)
+      setSaveError(res.error || "Die Änderung hat leider nicht geklappt. Bitte versuche es erneut.");
     }
   };
 
-  const handleCancel = () => {
-    navigate("/");
-  };
+  const updated = original ? { ...original, reservation_date: date, reservation_time: time, guest_count: guests, zone } : null;
+  const cancelUrl = `/reservierung/stornieren?id=${encodeURIComponent(id || "")}&token=${encodeURIComponent(token || "")}`;
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#f5f5f5",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "16px",
-      fontFamily: "-apple-system, 'Helvetica Neue', Arial, sans-serif",
-      boxSizing: "border-box" as const,
-    }}>
-      <div style={{
-        background: "#fff",
-        border: "1px solid #e5e5e5",
-        borderRadius: "16px",
-        padding: "24px 20px",
-        maxWidth: "420px",
-        width: "100%",
-        boxSizing: "border-box" as const,
-      }}>
-        <div style={{ textAlign: "center", fontSize: 13, fontWeight: 800, color: "#1a1a1a", letterSpacing: "1px", marginBottom: 20 }}>
-          RONDO SPORTSBAR
-        </div>
+    <ManageShell reference={id}>
+      {view === "loading" && <LoadingState />}
 
-        {view === "loading" && (
-          <div style={{ textAlign: "center", padding: "32px 0" }}>
-            <p style={{ color: "#888", fontSize: 14 }}>Lade Reservierung...</p>
+      {view === "form" && original && (
+        <>
+          <h1 className="font-display text-3xl sm:text-4xl">Reservierung ändern</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Hallo {original.customer_name.split(" ")[0]}, passe einfach an, was sich geändert hat.
+          </p>
+
+          <div className="mt-5">
+            <ReservationTicket r={original} label="Aktuelle Reservierung" />
           </div>
-        )}
 
-        {view === "error" && (
-          <div style={{ textAlign: "center" }}>
-            <div style={iconCircle("#fef2f2", "#fecaca", "#dc2626")}>✕</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Fehler</h2>
-            <p style={{ color: "#666", fontSize: 13, lineHeight: 1.5 }}>{errorMsg}</p>
-            <button onClick={handleCancel} style={secondaryBtnStyle}>Zurück zur Startseite</button>
-          </div>
-        )}
-
-        {view === "handled" && (
-          <div style={{ textAlign: "center" }}>
-            <div style={iconCircle("#eff6ff", "#bfdbfe", "#2563eb")}>i</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Bereits vom Team bearbeitet</h2>
-            <p style={{ color: "#666", fontSize: 13, lineHeight: 1.5 }}>
-              Diese Reservierung wurde bereits vom Rondo Team bearbeitet und kann hier nicht mehr geändert oder storniert werden.
-              <br /><br />
-              Bitte kontaktiere uns telefonisch, falls du noch Änderungen vornehmen möchtest.
-            </p>
-            <button onClick={handleCancel} style={secondaryBtnStyle}>Zurück zur Startseite</button>
-          </div>
-        )}
-
-        {view === "success" && (
-          <div style={{ textAlign: "center" }}>
-            <div style={iconCircle("#f0fdf4", "#bbf7d0", "#22c55e")}>✓</div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Reservierung geändert</h2>
-            <p style={{ color: "#666", fontSize: 13, lineHeight: 1.5 }}>Deine Reservierung wurde aktualisiert. Eine Bestätigung wurde per E-Mail gesendet.</p>
-            <div style={{ marginTop: 12, background: "#fafafa", border: "1px solid #eee", borderRadius: 8, padding: "10px 14px" }}>
-              <p style={{ color: "#1a1a1a", fontSize: 13, fontWeight: 600 }}>
-                {formatDate(date)} · {time} Uhr · {guests} Pers.
-              </p>
-              <p style={{ color: "#888", fontSize: 12, marginTop: 2 }}>{ZONE_LABELS[zone] || zone}</p>
-            </div>
-            <button onClick={handleCancel} style={{ ...secondaryBtnStyle, marginTop: 16 }}>Zurück zur Startseite</button>
-          </div>
-        )}
-
-        {view === "form" && reservation && (
-          <>
-            <h2 style={{ fontSize: 18, fontWeight: 700, textAlign: "center", marginBottom: 14 }}>Reservierung ändern</h2>
-            <div style={{ background: "#fafafa", border: "1px solid #eee", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
-              <span style={{ color: "#888", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Aktuelle Reservierung</span>
-              <p style={{ color: "#1a1a1a", fontSize: 13, fontWeight: 600, marginTop: 2 }}>
-                {formatDate(reservation.reservation_date)} · {reservation.reservation_time} Uhr · {reservation.guest_count} Pers.
-              </p>
-              <p style={{ color: "#888", fontSize: 12, marginTop: 1 }}>{ZONE_LABELS[reservation.zone] || reservation.zone}</p>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={labelStyle}>Datum</label>
-                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split("T")[0]} required style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Uhrzeit</label>
-                  <select value={time} onChange={(e) => setTime(e.target.value)} required style={inputStyle}>
-                    {VALID_TIMES.map(t => <option key={t} value={t}>{t} Uhr</option>)}
-                  </select>
-                </div>
+          <div className="mt-6 flex flex-col gap-6">
+            <Section title="Datum">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+                {Array.from({ length: QUICK_DAYS }, (_, i) => {
+                  const d = new Date(); d.setDate(d.getDate() + i);
+                  const iso = toIsoDate(d);
+                  const closed = getTimesForDate(iso).length === 0;
+                  return (
+                    <button key={iso} type="button" disabled={closed} onClick={() => pickDate(iso)}
+                      className={cn(chip(date === iso), "flex w-[58px] shrink-0 flex-col items-center py-2")}>
+                      <span className="text-[11px] font-medium opacity-80">
+                        {i === 0 ? "Heute" : i === 1 ? "Morgen" : d.toLocaleDateString("de-DE", { weekday: "short" })}
+                      </span>
+                      <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
+                      <span className="text-[10px] opacity-70">{closed ? "zu" : d.toLocaleDateString("de-DE", { month: "short" })}</span>
+                    </button>
+                  );
+                })}
               </div>
+              <input
+                type="date"
+                value={date}
+                min={toIsoDate(new Date())}
+                onChange={(e) => e.target.value && pickDate(e.target.value)}
+                className="mt-3 w-full rounded-md border border-border bg-muted px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {dayFullyBlocked && (
+                <p className="mt-2 text-sm text-primary">
+                  An diesem Tag sind keine Reservierungen möglich{dayFullyBlocked.reason ? `: ${dayFullyBlocked.reason}` : "."}
+                </p>
+              )}
+            </Section>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={labelStyle}>Personen</label>
-                  <input type="number" value={guests} onChange={(e) => setGuests(Number(e.target.value))} min={1} max={50} required style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Bereich</label>
-                  <select value={zone} onChange={(e) => setZone(e.target.value)} required style={inputStyle}>
-                    {VALID_ZONES.map(z => <option key={z} value={z}>{ZONE_LABELS[z]}</option>)}
-                  </select>
-                </div>
+            <Section title="Uhrzeit" hint={availabilityLoading ? <span className="inline-flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Verfügbarkeit…</span> : undefined}>
+              {times.length === 0 ? (
+                <p className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">An diesem Tag haben wir geschlossen.</p>
+              ) : (
+                <>
+                  {periods.length > 1 && (
+                    <div className="mb-3 grid gap-1 rounded-lg bg-muted p-1" style={{ gridTemplateColumns: `repeat(${periods.length}, minmax(0, 1fr))` }}>
+                      {periods.map(p => (
+                        <button key={p.key} type="button" onClick={() => setPeriod(p.key)}
+                          className={cn("rounded-md px-2 py-2 text-xs font-semibold transition-colors",
+                            activePeriod === p.key ? "bg-card text-foreground shadow" : "text-muted-foreground")}>
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-2">
+                    {times.filter(t => periodOf(t) === activePeriod).map(t => (
+                      <button key={t} type="button" disabled={timeBlocked(t)} onClick={() => setTime(t)}
+                        className={cn(chip(time === t), "px-2 py-2 text-sm")}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  {time && !timeValid && (
+                    <p className="mt-2 text-sm text-primary">Die bisherige Uhrzeit {time} Uhr ist so nicht mehr verfügbar – bitte wähle eine neue.</p>
+                  )}
+                </>
+              )}
+            </Section>
+
+            <Section title="Personen" hint={guests >= 11 ? "Ab 11 Personen empfehlen wir den VIP-Raum" : undefined}>
+              <div className="flex items-center justify-center gap-6 rounded-lg border border-border bg-muted py-3">
+                <button type="button" aria-label="Weniger" onClick={() => setGuests(g => Math.max(1, g - 1))}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border hover:border-primary"><Minus size={18} /></button>
+                <span className="w-16 text-center font-display text-4xl text-primary">{guests}</span>
+                <button type="button" aria-label="Mehr" onClick={() => setGuests(g => Math.min(50, g + 1))}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border hover:border-primary"><Plus size={18} /></button>
               </div>
+            </Section>
 
-              <label style={labelStyle}>Anlass</label>
-              <select value={occasion} onChange={(e) => setOccasion(e.target.value)} required style={inputStyle}>
-                {VALID_OCCASIONS.map(o => <option key={o} value={o}>{OCCASION_LABELS[o]}</option>)}
-              </select>
-
-              <label style={labelStyle}>Nachricht (optional)</label>
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} style={{ ...inputStyle, minHeight: 48, resize: "vertical" as const }} />
-
-              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                <button type="button" onClick={handleCancel} style={cancelBtnStyle}>
-                  Abbrechen
-                </button>
-                <button type="submit" disabled={saving} style={{
-                  flex: 2, padding: "11px", borderRadius: 8, fontSize: 13, fontWeight: 700,
-                  cursor: saving ? "wait" : "pointer", border: "none",
-                  background: "#1a1a1a", color: "#fff", opacity: saving ? 0.6 : 1,
-                }}>
-                  {saving ? "Wird gespeichert..." : "Änderungen speichern"}
-                </button>
+            <Section title="Bereich">
+              <div className="flex flex-col gap-2">
+                {ZONE_OPTIONS.map(z => {
+                  const reason = zoneUnavailable(z.value);
+                  const selected = zone === z.value;
+                  return (
+                    <button key={z.value} type="button" disabled={!!reason && !selected} onClick={() => setZone(z.value)}
+                      className={cn("flex items-center gap-3 rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+                        selected ? "border-primary bg-primary/10" : "border-border bg-muted hover:border-primary/50")}>
+                      <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                        selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40")}>
+                        {selected && <Check size={12} strokeWidth={3} />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-semibold">{z.label}</span>
+                        <span className={cn("block text-xs", reason ? "text-primary" : "text-muted-foreground")}>{reason ?? z.desc}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            </form>
-          </>
-        )}
+              {zone === "billard" && original.zone !== "billard" && (
+                <p className="mt-2 text-xs text-muted-foreground">Den Billard-Tisch teilt dir unser Team vor Ort zu.</p>
+              )}
+            </Section>
 
-        <div style={{ textAlign: "center", marginTop: 16, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
-          <p style={{ color: "#bbb", fontSize: 10 }}>Rondo Sportsbar{id ? ` · ${id.slice(0, 8).toUpperCase()}` : ""}</p>
-        </div>
-      </div>
-    </div>
+            <Section title="Anlass" hint="Mehrfachauswahl möglich">
+              <div className="flex flex-wrap gap-2">
+                {OCCASION_OPTIONS.map(o => {
+                  const selected = occasionKeys.includes(o.value);
+                  return (
+                    <button key={o.value} type="button"
+                      onClick={() => setOccasionKeys(keys => selected ? keys.filter(k => k !== o.value) : [...keys, o.value])}
+                      className={cn(chip(selected), "px-3 py-2 text-sm font-medium")}>
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {occasionKeys.includes("sonstiges") && (
+                <input value={occasionOther} onChange={e => setOccasionOther(e.target.value)} placeholder="Was genau? z. B. Geburtstag"
+                  className="mt-3 w-full rounded-md border border-border bg-muted px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+              )}
+            </Section>
+
+            <Section title="Nachricht" hint="optional">
+              <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3} maxLength={1000}
+                placeholder="z. B. welches Spiel ihr sehen wollt"
+                className="w-full resize-none rounded-md border border-border bg-muted px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
+            </Section>
+          </div>
+
+          {/* Save bar – pinned to the bottom on phones */}
+          <div className="sticky bottom-0 z-10 -mx-5 mt-6 border-t border-border bg-card/95 px-5 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+            {saveError && <p className="mb-2 text-sm text-destructive">{saveError}</p>}
+            <button type="button" onClick={handleSubmit} disabled={!canSave}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40">
+              {saving && <Loader2 size={16} className="animate-spin" />}
+              {saving ? "Wird gespeichert…" : changed ? "Änderungen speichern" : "Noch nichts geändert"}
+            </button>
+          </div>
+          <Link to={cancelUrl} className="mt-4 flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-destructive">
+            <XCircle size={15} /> Reservierung stattdessen stornieren
+          </Link>
+        </>
+      )}
+
+      {view === "success" && updated && (
+        <>
+          <StatusHeader tone="success" title="Reservierung geändert">
+            Alles gespeichert! Die neue Bestätigung ist per E-Mail unterwegs.
+          </StatusHeader>
+          <div className="mt-6"><ReservationTicket r={updated} label="Neue Reservierung" /></div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => downloadIcs(updated)}
+              className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 font-semibold text-primary-foreground hover:bg-primary/90">
+              <CalendarPlus size={16} /> In Kalender eintragen
+            </button>
+            <button type="button" onClick={() => { setOriginal(updated); setView("form"); }}
+              className="flex items-center justify-center rounded-md border border-border px-4 py-3 font-semibold hover:border-primary/60">
+              Nochmal ändern
+            </button>
+          </div>
+        </>
+      )}
+
+      {view === "handled" && (
+        <StatusHeader tone="info" title="Nicht mehr änderbar">
+          Diese Reservierung wurde bereits storniert oder von unserem Team bearbeitet und kann hier nicht mehr geändert werden.
+          Bitte melde dich direkt bei uns im Rondo, wenn du etwas ändern möchtest.
+        </StatusHeader>
+      )}
+
+      {view === "error" && (
+        <>
+          <StatusHeader tone="danger" title="Das hat nicht geklappt">{errorMsg}</StatusHeader>
+          <Link to="/reservierung" className="mt-6 flex items-center justify-center rounded-md border border-border px-6 py-3 font-semibold hover:border-primary/60">
+            Zur Reservierung
+          </Link>
+        </>
+      )}
+    </ManageShell>
   );
-};
-
-const iconCircle = (bg: string, border: string, color: string): React.CSSProperties => ({
-  width: 48, height: 48, borderRadius: "50%", background: bg,
-  border: `2px solid ${border}`, display: "inline-flex", alignItems: "center",
-  justifyContent: "center", fontSize: 24, color, marginBottom: 12,
-});
-
-const labelStyle: React.CSSProperties = {
-  display: "block", color: "#888", fontSize: 11, fontWeight: 600,
-  marginBottom: 3, marginTop: 10, textTransform: "uppercase", letterSpacing: "0.5px",
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", background: "#fafafa", border: "1px solid #e5e5e5",
-  color: "#1a1a1a", borderRadius: 8, padding: "9px 12px", fontSize: 13,
-  outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const,
-};
-
-const cancelBtnStyle: React.CSSProperties = {
-  flex: 1, padding: "11px", borderRadius: 8, fontSize: 13, fontWeight: 700,
-  cursor: "pointer", border: "1px solid #e5e5e5", background: "#fff", color: "#1a1a1a",
-};
-
-const secondaryBtnStyle: React.CSSProperties = {
-  marginTop: 12, padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-  cursor: "pointer", border: "1px solid #e5e5e5", background: "#fff", color: "#1a1a1a",
 };
 
 export default ReservierungAendern;
