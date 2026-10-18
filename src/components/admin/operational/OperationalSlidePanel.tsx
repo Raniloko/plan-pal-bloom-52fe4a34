@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingForm from "./BookingForm";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 const BILLARD_PRICE_PER_MIN = 0.23;
 
@@ -140,7 +141,7 @@ const STATUS_LABEL: Record<string, { text: string; color: string }> = {
 };
 
 const adminAction = async (body: Record<string, unknown>) => {
-  const res = await supabase.functions.invoke("admin-actions", { body });
+  const res = await invokeAdmin({ body });
   if (res.error) throw res.error;
   if (res.data?.error) throw new Error(res.data.error);
   return res.data;
@@ -222,7 +223,7 @@ export const OperationalSlidePanel = ({ open, data, onClose, onBookNew, onRefres
       return;
     }
     setLoadingBrowse(true);
-    supabase.functions.invoke("admin-actions", {
+    invokeAdmin({
       body: { action: "fetch_dashboard", date: dateStr },
     }).then(res => {
       if (res.data?.reservations) {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Users, MapPin, Utensils, User, CheckCircle, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useOpeningHours } from "@/hooks/useOpeningHours";
+import { announceChange } from "@/lib/adminSync";
 
 const CONTACT_STORAGE_KEY = "rondo_guest_contact";
 
@@ -411,6 +412,7 @@ const RondoReservationSystem = () => {
         );
       } catch { /* noop */ }
 
+      void announceChange();
       setSubmitted(true);
     } catch {
       setSubmitError("Verbindungsfehler. Bitte versuche es erneut.");

@@ -111,29 +111,8 @@ body.table-dragging * {
   }
 }
 
-/* Admin ("backstage") tokens. Dark by default; useAdminTheme sets
-   data-admin-theme on <html> so portaled dialogs and popovers follow too. */
+/* Admin ("backstage") tokens. The admin is light only. */
 :root {
-  --adm-bg: 0 0% 7%;
-  --adm-surface: 0 0% 10%;
-  --adm-surface-2: 0 0% 13%;
-  --adm-border: 0 0% 19%;
-  --adm-text: 0 0% 100%;
-  --adm-text-2: 0 0% 78%;
-  --adm-muted: 0 0% 55%;
-  --adm-gold: 43 54% 54%;
-  --adm-success: 142 69% 58%;
-  --adm-info: 213 94% 68%;
-  --adm-warn: 33 90% 58%;
-  --adm-danger: 0 91% 71%;
-  --adm-violet: 255 92% 76%;
-  --adm-success-soft: 142 35% 13%;
-  --adm-danger-soft: 0 40% 14%;
-  --adm-warn-soft: 32 50% 13%;
-  --adm-info-soft: 217 45% 15%;
-  --adm-gold-soft: 43 40% 14%;
-}
-:root[data-admin-theme="light"] {
   --adm-bg: 0 0% 95%;
   --adm-surface: 0 0% 100%;
   --adm-surface-2: 0 0% 93%;
@@ -152,7 +131,10 @@ body.table-dragging * {
   --adm-warn-soft: 35 100% 94%;
   --adm-info-soft: 220 100% 96%;
   --adm-gold-soft: 48 100% 94%;
-  /* shadcn components (dialogs, popovers, calendar) */
+}
+/* While the admin is mounted, useAdminTheme sets this on <html> so shadcn
+   dialogs, popovers and the calendar are light there too. */
+:root[data-admin-theme="light"] {
   --background: 0 0% 100%;
   --foreground: 0 0% 9%;
   --card: 0 0% 100%;

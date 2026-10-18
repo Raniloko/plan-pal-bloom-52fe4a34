@@ -10,3 +10,4 @@ export { NotificationsPanel } from "./NotificationsPanel";
 export { LegendDialog } from "./LegendDialog";
 export { default as RecurringBookingDialog } from "./RecurringBookingDialog";
 export { StatsPanel } from "./StatsPanel";
+export { CommandPalette } from "./CommandPalette";

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addDays, format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ArrowDownRight, ArrowUpRight, CalendarCheck, Minus, UserCheck, Users, X, XCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeAdmin } from "@/lib/adminApi";
+import { ADMIN_SYNC_WINDOW_EVENT } from "@/lib/adminSync";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +26,32 @@ const dailyConfig = {
   guests: { label: "Gäste", color: "hsl(var(--adm-gold))" },
   reservations: { label: "Reservierungen", color: "hsl(var(--adm-info))" },
 } satisfies ChartConfig;
+
+interface StatsData {
+  reservations: StatReservation[];
+  units: StatUnit[];
+  /** false when loaded through the fallback, which has no cancelled bookings */
+  hasCancelled: boolean;
+}
+
+/**
+ * Uses the range action when the edge function has it; older deployments
+ * only know fetch_dashboard, so fall back to one call per day.
+ */
+const fetchStats = async (from: string, to: string): Promise<StatsData> => {
+  const res = await invokeAdmin({ body: { action: "fetch_stats_range", from, to } });
+  if (!res.error && !res.data?.error) return { ...res.data, hasCancelled: true };
+
+  const days = Array.from({ length: 8 }, (_, i) => format(addDays(parseISO(from), i), "yyyy-MM-dd"));
+  const results = await Promise.all(days.map(d => invokeAdmin({ body: { action: "fetch_dashboard", date: d } })));
+  const failed = results.find(r => r.error || r.data?.error);
+  if (failed) throw failed.error ?? new Error(String(failed.data.error));
+  return {
+    reservations: results.flatMap(r => (r.data.reservations || []) as StatReservation[]),
+    units: (results[results.length - 1].data.units || []) as StatUnit[],
+    hasCancelled: false,
+  };
+};
 
 const Trend = ({ value, label }: { value: number | null; label: string }) => {
   if (value === null) return <span className="text-[11px] text-adm-muted">{label}: –</span>;
@@ -65,20 +92,20 @@ const Empty = ({ children }: { children: React.ReactNode }) => (
 export const StatsPanel = ({ open, onClose, date, units }: Props) => {
   const from = format(addDays(parseISO(date), -7), "yyyy-MM-dd");
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-stats", from, date],
     enabled: open,
     staleTime: 30_000,
     refetchInterval: open ? 60_000 : false,
-    queryFn: async () => {
-      const res = await supabase.functions.invoke("admin-actions", {
-        body: { action: "fetch_stats_range", from, to: date },
-      });
-      if (res.error) throw res.error;
-      if (res.data?.error) throw new Error(String(res.data.error));
-      return res.data as { reservations: StatReservation[]; units: StatUnit[] };
-    },
+    queryFn: () => fetchStats(from, date),
   });
+
+  useEffect(() => {
+    if (!open) return;
+    const onChange = () => { void refetch(); };
+    window.addEventListener(ADMIN_SYNC_WINDOW_EVENT, onChange);
+    return () => window.removeEventListener(ADMIN_SYNC_WINDOW_EVENT, onChange);
+  }, [open, refetch]);
 
   const stats = useMemo(() => {
     if (!data) return null;
@@ -130,8 +157,10 @@ export const StatsPanel = ({ open, onClose, date, units }: Props) => {
                 <Kpi icon={<UserCheck size={15} />} color="text-adm-success" label="Eingecheckt"
                   value={<>{stats.sum.checkedIn}<span className="text-sm font-normal text-adm-muted"> / {stats.sum.reservations}</span></>} />
                 <Kpi icon={<XCircle size={15} />} color="text-adm-danger" label="Stornoquote"
-                  value={`${Math.round(stats.sum.cancelRate * 100)}%`}
-                  trends={<span className="text-[11px] text-adm-muted">{stats.sum.cancelled} storniert</span>} />
+                  value={data?.hasCancelled ? `${Math.round(stats.sum.cancelRate * 100)}%` : "–"}
+                  trends={<span className="text-[11px] text-adm-muted">
+                    {data?.hasCancelled ? `${stats.sum.cancelled} storniert` : "Edge Function aktualisieren"}
+                  </span>} />
               </div>
 
               <Section title="Status heute">

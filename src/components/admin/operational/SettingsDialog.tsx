@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { X, Clock, Users, Save } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { adm } from "@/components/admin/theme";
+import { invokeAdmin } from "@/lib/adminApi";
 
 interface Props {
   open: boolean;
@@ -39,7 +39,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
     if (!open) return;
     (async () => {
       try {
-        const res = await supabase.functions.invoke("admin-actions", {
+        const res = await invokeAdmin({
           body: { action: "get_settings" },
         });
         if (res.data?.settings) {
@@ -55,7 +55,7 @@ export const SettingsDialog = ({ open, onClose }: Props) => {
   const save = async () => {
     setSaving(true);
     try {
-      await supabase.functions.invoke("admin-actions", {
+      await invokeAdmin({
         body: { action: "save_settings", settings: { opening_hours: hours, reservation_duration: duration, auto_cancel_minutes: autoCancelMin } },
       });
       toast.success("Einstellungen gespeichert");
