@@ -3,14 +3,13 @@ import { format, addDays, subDays, isToday } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   CalendarDays, ChevronLeft, ChevronRight,
-  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Sun, Moon, Search,
+  Users, LogOut, Repeat, MonitorSmartphone, BarChart3, Search,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import type { AdminTheme } from "@/hooks/useAdminTheme";
 import type { LiveStatus } from "@/hooks/useAdminLiveSync";
 
 interface Props {
@@ -24,8 +23,6 @@ interface Props {
   onOpenDevices?: () => void;
   onOpenStats?: () => void;
   statsActive?: boolean;
-  theme?: AdminTheme;
-  onToggleTheme?: () => void;
   onOpenPalette?: () => void;
   liveStatus?: LiveStatus;
   lastLoadedAt?: Date | null;
@@ -69,7 +66,7 @@ const IcoBtn = ({ children, onClick, active, label }: { children: React.ReactNod
 
 export const OperationalTopbar = ({
   totalReservations, totalGuests, selectedDate, onDateChange,
-  onOpenRecurring, onOpenDevices, onOpenStats, statsActive, theme, onToggleTheme,
+  onOpenRecurring, onOpenDevices, onOpenStats, statsActive,
   onOpenPalette, liveStatus, lastLoadedAt, isMobile = false,
 }: Props) => {
   const [time, setTime] = useState("");
@@ -172,11 +169,6 @@ export const OperationalTopbar = ({
         {onOpenStats && <IcoBtn label="Statistiken" onClick={onOpenStats} active={statsActive}><BarChart3 size={16} /></IcoBtn>}
         <IcoBtn label="Serienreservierung" onClick={onOpenRecurring}><Repeat size={16} /></IcoBtn>
         {onOpenDevices && <IcoBtn label="Geräte" onClick={onOpenDevices}><MonitorSmartphone size={16} /></IcoBtn>}
-        {onToggleTheme && (
-          <IcoBtn label={theme === "light" ? "Dunkles Design" : "Helles Design"} onClick={onToggleTheme}>
-            {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-          </IcoBtn>
-        )}
         {!isMobile && (
           <div className="flex h-full items-center gap-1.5 border-l border-adm-border px-3 text-[13px] text-adm-muted">
             <Users size={14} />

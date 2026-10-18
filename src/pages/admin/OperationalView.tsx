@@ -26,7 +26,7 @@ import type { ResRow, PanelData } from "@/components/admin/operational";
 import type { PaletteAction } from "@/components/admin/operational/CommandPalette";
 import { RebookProvider, useRebook } from "@/contexts/RebookContext";
 import {
-  X, Plus, UserPlus, CalendarDays, ChevronLeft, ChevronRight, BarChart3, SunMoon, Settings, Bell,
+  X, Plus, UserPlus, CalendarDays, ChevronLeft, ChevronRight, BarChart3, Settings, Bell,
   Repeat, MonitorSmartphone, LayoutGrid, List, MapPin, LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -99,7 +99,7 @@ const OperationalViewInner = () => {
   const [statsOpen, setStatsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null);
-  const { theme, toggle: toggleTheme } = useAdminTheme();
+  useAdminTheme();
   const [convertEntry, setConvertEntry] = useState<WaitlistEntry | null>(null);
 
   const [durationMin, setDurationMin] = useState(120);
@@ -444,7 +444,6 @@ const OperationalViewInner = () => {
     { id: "view-map", group: "Ansicht", label: "Grundriss anzeigen", icon: <LayoutGrid />, run: () => { setViewMode("floorplan"); showMap(); } },
     { id: "view-list", group: "Ansicht", label: "Tischliste anzeigen", icon: <List />, run: () => { setViewMode("list"); showMap(); } },
     { id: "stats", group: "Ansicht", label: "Statistiken", icon: <BarChart3 />, run: () => setStatsOpen(true) },
-    { id: "theme", group: "Ansicht", label: theme === "dark" ? "Helles Design" : "Dunkles Design", icon: <SunMoon />, keywords: ["theme", "dark", "light"], run: toggleTheme },
     { id: "notifications", group: "System", label: "Benachrichtigungen", icon: <Bell />, run: () => setNotificationsOpen(true) },
     { id: "settings", group: "System", label: "Einstellungen", icon: <Settings />, keywords: ["öffnungszeiten", "dauer"], run: () => setSettingsOpen(true) },
     { id: "devices", group: "System", label: "Geräte", icon: <MonitorSmartphone />, keywords: ["sitzungen"], run: () => setDevicesOpen(true) },
@@ -547,8 +546,6 @@ const OperationalViewInner = () => {
         onOpenDevices={() => setDevicesOpen(true)}
         onOpenStats={() => setStatsOpen(v => !v)}
         statsActive={statsOpen}
-        theme={theme}
-        onToggleTheme={toggleTheme}
         onOpenPalette={() => setPaletteOpen(true)}
         liveStatus={liveStatus}
         lastLoadedAt={lastLoadedAt}
