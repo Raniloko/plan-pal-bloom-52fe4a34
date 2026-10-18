@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { escapeHtml, renderEmail, VENUE, ZONE_LABELS } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -427,21 +428,28 @@ Deno.serve(async (req) => {
         try {
           const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
           if (RESEND_API_KEY) {
-            const escapeHtml = (s: unknown) =>
-              String(s ?? "")
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;");
+            const APP_URL = Deno.env.get("APP_URL") || "https://rondo-sportsbar-reservieren.de";
+            const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Rondo Sportsbar <reservierung@rondo-sportsbar-reservieren.de>";
+            const time = String(wEntry.desired_time || "").slice(0, 5);
+            const html = renderEmail({
+              appUrl: APP_URL,
+              preheader: `Gute Nachricht: Für deinen Wunschtermin ist ein Platz frei geworden.`,
+              badge: { text: "Platz frei", tone: "brand" },
+              title: "Für dich ist ein Platz frei geworden",
+              intro: `Hallo ${escapeHtml(wEntry.guest_name)}, du standest auf unserer Warteliste – jetzt ist ein Platz frei. Melde dich bitte zeitnah bei uns, damit wir ihn für dich festhalten können.`,
+              when: wEntry.desired_date && time ? { date: wEntry.desired_date, time } : undefined,
+              details: [{ label: "Bereich", value: escapeHtml(ZONE_LABELS[wEntry.area] || wEntry.area) }],
+              actions: [{ label: "Jetzt reservieren", url: `${APP_URL}/reservierung`, style: "primary" }],
+              links: [{ label: "Route planen", url: VENUE.mapsUrl }],
+            });
             await fetch("https://api.resend.com/emails", {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
               body: JSON.stringify({
-                from: "Rondo <info@dev-lab24.de>",
+                from: EMAIL_FROM,
                 to: [wEntry.guest_email],
-                subject: "Platz verfügbar – Rondo",
-                html: `<p>Hallo ${escapeHtml(wEntry.guest_name)},</p><p>Es ist ein Platz für Sie verfügbar geworden! Bitte melden Sie sich zeitnah bei uns, um Ihre Reservierung zu bestätigen.</p><p>Gewünschtes Datum: ${escapeHtml(wEntry.desired_date)}<br>Gewünschte Uhrzeit: ${escapeHtml(wEntry.desired_time)}<br>Bereich: ${escapeHtml(wEntry.area)}</p><p>Mit freundlichen Grüßen,<br>Ihr Rondo Team</p>`,
+                subject: "Ein Platz ist frei geworden – Rondo Sportsbar",
+                html,
               }),
             });
           }
