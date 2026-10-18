@@ -86,6 +86,26 @@ const STEPS = [
   { icon: <CheckCircle size={20} />, label: "Bestätigung" },
 ];
 
+const toIsoDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** "2026-10-18" -> "Sa., 18.10.2026" */
+const formatDateDe = (iso: string) => {
+  if (!iso) return "";
+  return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
+const QUICK_DAYS = 14;
+
+// Time slots are grouped so phones don't show 40 buttons at once.
+const TIME_PERIODS = [
+  { key: "day", label: "Bis 17 Uhr", match: (h: number) => h >= 6 && h < 17 },
+  { key: "evening", label: "17 – 21 Uhr", match: (h: number) => h >= 17 && h < 21 },
+  { key: "late", label: "Ab 21 Uhr", match: (h: number) => h >= 21 || h < 6 },
+] as const;
+type TimePeriod = (typeof TIME_PERIODS)[number]["key"];
+const periodOf = (t: string): TimePeriod => TIME_PERIODS.find(p => p.match(Number(t.slice(0, 2))))!.key;
+
 const RondoReservationSystem = () => {
   const { getTimesForDate } = useOpeningHours();
   const [step, setStep] = useState(0);
@@ -421,6 +441,15 @@ const RondoReservationSystem = () => {
     }
   };
 
+  const [timePeriod, setTimePeriod] = useState<TimePeriod | null>(null);
+  const timesForDate = data.date ? getTimesForDate(data.date) : [];
+  const periodsForDate = TIME_PERIODS.filter(p => timesForDate.some(t => p.match(Number(t.slice(0, 2)))));
+  const activePeriod: TimePeriod | undefined =
+    (timePeriod && periodsForDate.some(p => p.key === timePeriod) ? timePeriod : undefined)
+    ?? (data.time ? periodOf(data.time) : undefined)
+    ?? periodsForDate.find(p => timesForDate.some(t => p.match(Number(t.slice(0, 2))) && !isTimeInPast(data.date, t) && !isTimeFullyBooked(t)))?.key
+    ?? periodsForDate[0]?.key;
+
   const selectedTimeDisabled = Boolean(data.time) && (!data.date || isTimeInPast(data.date, data.time) || isTimeFullyBooked(data.time));
 
   useEffect(() => {
@@ -457,7 +486,7 @@ const RondoReservationSystem = () => {
         <h3 className="font-display text-3xl mb-4">Reservierung eingegangen!</h3>
         <p className="text-muted-foreground mb-2">Vielen Dank, <strong>{data.name}</strong>!</p>
         <p className="text-muted-foreground mb-6">
-          Wir haben deine Reservierung für <strong>{data.guests} Personen</strong> am <strong>{data.date}</strong> um <strong>{data.time} Uhr</strong> erhalten.
+          Wir haben deine Reservierung für <strong>{data.guests} Personen</strong> am <strong>{formatDateDe(data.date)}</strong> um <strong>{data.time} Uhr</strong> erhalten.
         </p>
         <div className="bg-card border border-border rounded-lg p-6 inline-block text-left max-w-sm">
           <p className="text-sm"><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
@@ -490,8 +519,17 @@ const RondoReservationSystem = () => {
 
   return (
     <div ref={containerRef}>
-      {/* Step indicator */}
-      <div className="flex items-center justify-between mb-8 overflow-x-auto gap-1">
+      {/* Step indicator: compact progress on phones, icon row from sm up */}
+      <div className="mb-6 sm:hidden">
+        <div className="flex items-baseline justify-between text-xs">
+          <span className="font-semibold text-primary">{STEPS[step].label}</span>
+          <span className="text-muted-foreground">Schritt {step + 1} von {STEPS.length}</span>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+        </div>
+      </div>
+      <div className="mb-8 hidden items-center justify-between gap-1 overflow-x-auto sm:flex">
         {STEPS.map((s, i) => (
           <div
             key={i}
@@ -506,13 +544,40 @@ const RondoReservationSystem = () => {
       </div>
 
       {/* Step content */}
-      <div className="min-h-[420px] sm:min-h-[360px]">
+      <div className="sm:min-h-[360px]">
         {step === 0 && (
           <div>
             <h3 className="font-display text-2xl mb-4">Wann möchtest du kommen?</h3>
             <div className="grid md:grid-cols-2 gap-6">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-sm font-medium mb-2">Datum</label>
+                <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+                  {Array.from({ length: QUICK_DAYS }, (_, i) => {
+                    const d = new Date(); d.setDate(d.getDate() + i);
+                    const iso = toIsoDate(d);
+                    const closed = getTimesForDate(iso).length === 0;
+                    const selected = data.date === iso;
+                    return (
+                      <button
+                        key={iso}
+                        type="button"
+                        disabled={closed}
+                        onClick={() => setData({ ...data, date: iso, time: "", zone: "" })}
+                        className={`flex w-[58px] shrink-0 flex-col items-center rounded-lg border py-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                          selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted hover:border-primary/50"
+                        }`}
+                      >
+                        <span className={`text-[11px] font-medium ${selected ? "" : "text-muted-foreground"}`}>
+                          {i === 0 ? "Heute" : i === 1 ? "Morgen" : d.toLocaleDateString("de-DE", { weekday: "short" })}
+                        </span>
+                        <span className="text-lg font-bold leading-tight">{d.getDate()}</span>
+                        <span className={`text-[10px] ${selected ? "" : "text-muted-foreground"}`}>
+                          {closed ? "zu" : d.toLocaleDateString("de-DE", { month: "short" })}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
                 <input
                   type="date"
                   value={data.date}
@@ -520,7 +585,7 @@ const RondoReservationSystem = () => {
                   onChange={(e) => setData({ ...data, date: e.target.value, time: "", zone: "" })}
                   className="w-full bg-muted border border-border rounded-md px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <p className="text-xs text-muted-foreground mt-2">Bitte wähle ein Datum für deine Reservierung.</p>
+                <p className="text-xs text-muted-foreground mt-2">Oder wähle oben direkt einen der nächsten Tage.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Uhrzeit</label>
@@ -541,8 +606,29 @@ const RondoReservationSystem = () => {
                         <Loader2 size={14} className="animate-spin" /> Lädt...
                       </p>
                     )}
-                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                      {getTimesForDate(data.date).map((t) => {
+                    {getTimesForDate(data.date).length === 0 && (
+                      <p className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                        An diesem Tag haben wir geschlossen. Bitte wähle ein anderes Datum.
+                      </p>
+                    )}
+                    {periodsForDate.length > 1 && (
+                      <div className="mb-3 grid gap-1 rounded-lg bg-muted p-1" style={{ gridTemplateColumns: `repeat(${periodsForDate.length}, minmax(0, 1fr))` }}>
+                        {periodsForDate.map(p => (
+                          <button
+                            key={p.key}
+                            type="button"
+                            onClick={() => setTimePeriod(p.key)}
+                            className={`rounded-md px-2 py-2 text-xs font-semibold transition-colors ${
+                              activePeriod === p.key ? "bg-card text-foreground shadow" : "text-muted-foreground"
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-4 gap-2 sm:max-h-48 sm:overflow-y-auto">
+                      {timesForDate.filter(t => !activePeriod || periodOf(t) === activePeriod).map((t) => {
                         const disabled = isTimeInPast(data.date, t) || isTimeFullyBooked(t);
                         const free = freeSlotsAtTime(t);
                         const scarce = !disabled && free > 0 && free <= 3;
@@ -623,7 +709,7 @@ const RondoReservationSystem = () => {
 
             {data.time && (
               <div className="mb-4 bg-muted border border-border rounded-lg px-4 py-3 text-sm text-muted-foreground">
-                Reservierung für <span className="text-foreground font-semibold">{data.date}</span> um <span className="text-foreground font-semibold">{data.time} Uhr</span>
+                Reservierung für <span className="text-foreground font-semibold">{formatDateDe(data.date)}</span> um <span className="text-foreground font-semibold">{data.time} Uhr</span>
               </div>
             )}
 
@@ -875,8 +961,8 @@ const RondoReservationSystem = () => {
               </div>
             )}
 
-            <div className="bg-card border border-border rounded-lg p-6 space-y-3 max-w-md">
-              <p><strong>Datum:</strong> {data.date}</p>
+            <div className="bg-card border border-border rounded-lg p-4 sm:p-6 space-y-3 max-w-md text-sm sm:text-base">
+              <p><strong>Datum:</strong> {formatDateDe(data.date)}</p>
               <p><strong>Uhrzeit:</strong> {data.time} Uhr</p>
               <p><strong>Personen:</strong> {data.guests}</p>
               <p><strong>Bereich:</strong> {ZONES.find(z => z.value === data.zone)?.label}</p>
@@ -901,30 +987,31 @@ const RondoReservationSystem = () => {
         )}
       </div>
 
-      {/* Navigation buttons */}
-      <div className="flex justify-between mt-8">
+      {/* Navigation buttons – pinned to the bottom of the screen on phones */}
+      <div className="sticky bottom-0 z-10 -mx-4 mt-6 flex items-center gap-3 border-t border-border bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:mt-8 sm:justify-between sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
         <button
           onClick={() => setStep(Math.max(0, step - 1))}
           disabled={step === 0}
-          className="flex items-center gap-2 px-6 py-2.5 border border-border text-foreground rounded-md disabled:opacity-30 hover:border-primary/50 transition-colors"
+          aria-label="Zurück"
+          className="flex items-center justify-center gap-2 rounded-md border border-border px-4 py-3 text-foreground transition-colors hover:border-primary/50 disabled:opacity-30 sm:px-6 sm:py-2.5"
         >
-          <ArrowLeft size={16} /> Zurück
+          <ArrowLeft size={16} /> <span className="hidden sm:inline">Zurück</span>
         </button>
         {step < 5 ? (
           <button
             onClick={() => setStep(step + 1)}
             disabled={!canNext()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-md disabled:opacity-30 hover:bg-primary/90 transition-colors font-semibold"
+            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-30 sm:flex-none sm:py-2.5"
           >
             Weiter <ArrowRight size={16} />
           </button>
         ) : (
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-end">
             {submitError && <p className="text-destructive text-sm">{submitError}</p>}
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex items-center gap-2 px-8 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-md bg-primary px-8 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 sm:py-2.5"
             >
               {submitting ? "Wird gesendet..." : "Reservierung absenden"} <CheckCircle size={16} />
             </button>
