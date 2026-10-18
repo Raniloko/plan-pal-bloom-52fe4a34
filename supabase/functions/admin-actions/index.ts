@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { escapeHtml, renderEmail, VENUE, ZONE_LABELS } from "../_shared/email.ts";
+import { escapeHtml, renderEmail, ZONE_LABELS } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -433,14 +433,13 @@ Deno.serve(async (req) => {
             const time = String(wEntry.desired_time || "").slice(0, 5);
             const html = renderEmail({
               appUrl: APP_URL,
-              preheader: `Gute Nachricht: Für deinen Wunschtermin ist ein Platz frei geworden.`,
-              badge: { text: "Platz frei", tone: "brand" },
-              title: "Für dich ist ein Platz frei geworden",
-              intro: `Hallo ${escapeHtml(wEntry.guest_name)}, du standest auf unserer Warteliste – jetzt ist ein Platz frei. Melde dich bitte zeitnah bei uns, damit wir ihn für dich festhalten können.`,
+              preheader: "Für deinen Wunschtermin ist ein Platz frei geworden.",
+              status: { text: "Platz frei", tone: "brand" },
+              title: "Ein Platz ist frei geworden",
+              intro: `Hallo ${escapeHtml(wEntry.guest_name)}, für deinen Wunschtermin ist jetzt ein Platz frei. Reserviere am besten gleich.`,
               when: wEntry.desired_date && time ? { date: wEntry.desired_date, time } : undefined,
-              details: [{ label: "Bereich", value: escapeHtml(ZONE_LABELS[wEntry.area] || wEntry.area) }],
-              actions: [{ label: "Jetzt reservieren", url: `${APP_URL}/reservierung`, style: "primary" }],
-              links: [{ label: "Route planen", url: VENUE.mapsUrl }],
+              summary: escapeHtml(ZONE_LABELS[wEntry.area] || wEntry.area),
+              actions: [{ label: "Jetzt reservieren", url: `${APP_URL}/reservierung`, primary: true }],
             });
             await fetch("https://api.resend.com/emails", {
               method: "POST",

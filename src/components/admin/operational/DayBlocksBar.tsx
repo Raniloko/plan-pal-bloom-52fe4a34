@@ -4,15 +4,11 @@ import { toast } from "sonner";
 import { Lock, X, Plus } from "lucide-react";
 import { adm } from "@/components/admin/theme";
 import { ADMIN_SYNC_WINDOW_EVENT, announceChange } from "@/lib/adminSync";
+import { AREA_LABELS } from "@/components/admin/areaLabels";
 
 const AREAS: { value: string; label: string }[] = [
   { value: "", label: "Ganzer Tag (alle Bereiche)" },
-  { value: "hauptbereich", label: "Hauptbereich" },
-  { value: "fenster", label: "Fenster" },
-  { value: "podest", label: "Podest" },
-  { value: "vip", label: "VIP-Raum" },
-  { value: "salitos", label: "Salitos Lounge" },
-  { value: "billard", label: "Billard" },
+  ...["hauptbereich", "fenster", "salitos", "billard", "vip", "podest"].map(value => ({ value, label: AREA_LABELS[value] })),
 ];
 const areaLabel = (a: string | null) => (a ? AREAS.find(x => x.value === a)?.label || a : "Ganzer Tag");
 

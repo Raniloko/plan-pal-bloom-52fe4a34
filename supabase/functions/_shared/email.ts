@@ -20,23 +20,6 @@ export const ZONE_LABELS: Record<string, string> = {
   salitos: "Salitos Lounge / Outdoor",
 };
 
-const OCCASION_LABELS: Record<string, string> = {
-  sport: "Live-Sport schauen",
-  feier: "Private Feier",
-  essen: "Essen & Trinken",
-  billard: "Billard / Kicker / Dart",
-  sonstiges: "Sonstiges",
-};
-
-export function occasionLabel(occasion: string | null | undefined): string {
-  return String(occasion || "")
-    .split(",")
-    .map(p => p.trim())
-    .filter(Boolean)
-    .map(p => p.startsWith("sonstiges:") ? p.slice("sonstiges:".length).trim() : (OCCASION_LABELS[p] || p))
-    .join(", ");
-}
-
 export function escapeHtml(input: unknown): string {
   return String(input ?? "")
     .replace(/&/g, "&amp;")
@@ -60,201 +43,107 @@ export function formatDateShort(dateStr: string): string {
   return `${WEEKDAYS[parseDate(dateStr).getDay()].slice(0, 2)}, ${d}.${m}.${y}`;
 }
 
-/** Google Calendar "add event" link for a 2-hour visit. */
-export function calendarUrl(dateStr: string, time: string, title: string, details: string): string {
-  const start = parseDate(dateStr);
-  const [h, min] = time.split(":").map(Number);
-  start.setHours(h, min, 0, 0);
-  if (h < 6) start.setDate(start.getDate() + 1); // after midnight = next calendar day
-  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}00`;
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: title,
-    dates: `${fmt(start)}/${fmt(end)}`,
-    ctz: "Europe/Berlin",
-    location: `${VENUE.name}, ${VENUE.street}, ${VENUE.city}`,
-    details,
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
-}
-
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-const C = {
-  page: "#f2f1ee",
-  card: "#ffffff",
-  ink: "#111111",
-  text: "#2b2b2b",
-  muted: "#777777",
-  line: "#ececec",
-  brand: "#ffda00",
-};
+const INK = "#111111";
+const MUTED = "#6b6b6b";
+const LINE = "#e8e8e8";
+const BRAND = "#ffda00";
 
 export type Tone = "success" | "info" | "danger" | "brand";
-const TONES: Record<Tone, { bg: string; fg: string }> = {
-  success: { bg: "#e7f6ec", fg: "#17803d" },
-  info: { bg: "#e8f0fe", fg: "#1d5fd1" },
-  danger: { bg: "#fdecec", fg: "#c62828" },
-  brand: { bg: "#fff6bf", fg: "#7a6200" },
+const TONE_COLORS: Record<Tone, string> = {
+  success: "#17803d",
+  info: "#1d5fd1",
+  danger: "#c62828",
+  brand: "#8a6d00",
 };
 
-export interface EmailDetail { label: string; value: string; highlight?: boolean }
-export interface EmailAction { label: string; url: string; style: "primary" | "secondary" | "link" }
+export interface EmailAction { label: string; url: string; primary?: boolean }
 
 export interface EmailContent {
   /** Hidden preview line shown in the inbox list */
   preheader: string;
-  badge: { text: string; tone: Tone };
+  status: { text: string; tone: Tone };
   title: string;
-  /** Already escaped HTML */
+  /** Already escaped HTML, one or two sentences */
   intro: string;
-  /** Big date/time ticket; struck through for cancellations */
+  /** Date/time block; struck through for cancellations */
   when?: { date: string; time: string; struck?: boolean };
-  details?: EmailDetail[];
-  /** Quoted block, e.g. guest message or cancellation reason (escaped) */
-  quote?: { label: string; text: string };
+  /** One line under the time, e.g. "4 Personen · Billard (Tisch 3)" – escaped */
+  summary?: string;
   actions?: EmailAction[];
-  /** Small helper links under the buttons (calendar, route) */
-  links?: { label: string; url: string }[];
-  /** "Gut zu wissen" bullet list (escaped) */
-  notes?: string[];
   reference?: string;
   appUrl: string;
 }
 
-const button = (a: EmailAction) => {
-  const primary = a.style === "primary";
-  return `<a href="${a.url}" style="display:block;padding:15px 12px;border-radius:10px;text-align:center;text-decoration:none;font-family:${FONT};font-size:15px;font-weight:700;${
-    primary ? `background:${C.brand};color:${C.ink};border:1px solid ${C.brand};` : `background:${C.card};color:${C.ink};border:1px solid #d6d6d6;`
-  }">${a.label}</a>`;
-};
-
+/**
+ * Deliberately small: one card, no nested layout tables beyond what Outlook
+ * needs, a 5 KB logo and a single media query for phones.
+ */
 export function renderEmail(c: EmailContent): string {
-  const tone = TONES[c.badge.tone];
-  const logo = `${c.appUrl}/images/rondo-logo.png`;
+  const strike = c.when?.struck ? "text-decoration:line-through;opacity:.5;" : "";
+  const d = c.when ? parseDate(c.when.date) : null;
 
-  const when = c.when ? (() => {
-    const d = parseDate(c.when.date);
-    const strike = c.when.struck ? "text-decoration:line-through;opacity:.55;" : "";
-    return `
-    <tr><td class="px" style="padding:8px 32px 0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${C.line};border-radius:14px;">
-        <tr>
-          <td width="96" align="center" valign="middle" style="background:${C.ink};border-radius:13px 0 0 13px;padding:16px 8px;${strike}">
-            <div style="font-family:${FONT};font-size:12px;font-weight:700;letter-spacing:1.5px;color:${C.brand};text-transform:uppercase;">${WEEKDAYS[d.getDay()].slice(0, 2)}</div>
-            <div style="font-family:${FONT};font-size:34px;line-height:1.1;font-weight:800;color:#ffffff;">${d.getDate()}</div>
-            <div style="font-family:${FONT};font-size:12px;font-weight:600;color:#bdbdbd;text-transform:uppercase;letter-spacing:1px;">${MONTHS[d.getMonth()]}</div>
-          </td>
-          <td valign="middle" style="padding:16px 20px;${strike}">
-            <div style="font-family:${FONT};font-size:13px;color:${C.muted};">${WEEKDAYS[d.getDay()]}, ${formatDateShort(c.when.date).slice(4)}</div>
-            <div style="font-family:${FONT};font-size:28px;font-weight:800;color:${C.ink};margin-top:2px;">${escapeHtml(c.when.time)} Uhr</div>
-          </td>
-        </tr>
-      </table>
-    </td></tr>`;
-  })() : "";
+  const when = c.when && d ? `
+          <tr><td class="px" style="padding:20px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${LINE};border-radius:12px;">
+              <tr>
+                <td width="72" align="center" style="background:${INK};border-radius:11px 0 0 11px;padding:12px 6px;font-family:${FONT};${strike}">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:${BRAND};">${WEEKDAYS[d.getDay()].slice(0, 2).toUpperCase()}</div>
+                  <div style="font-size:26px;line-height:1.1;font-weight:800;color:#ffffff;">${d.getDate()}</div>
+                  <div style="font-size:11px;color:#bdbdbd;">${MONTHS[d.getMonth()]}</div>
+                </td>
+                <td style="padding:12px 16px;font-family:${FONT};${strike}">
+                  <div style="font-size:22px;font-weight:800;color:${INK};">${escapeHtml(c.when.time)} Uhr</div>
+                  ${c.summary ? `<div style="font-size:14px;color:${MUTED};margin-top:2px;">${c.summary}</div>` : ""}
+                </td>
+              </tr>
+            </table>
+          </td></tr>` : "";
 
-  const details = c.details?.length ? `
-    <tr><td class="px" style="padding:20px 32px 0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-        ${c.details.map((r, i) => `
-        <tr>
-          <td style="padding:12px 0;${i < c.details!.length - 1 ? `border-bottom:1px solid ${C.line};` : ""}font-family:${FONT};font-size:14px;color:${C.muted};white-space:nowrap;padding-right:12px;">${r.label}</td>
-          <td align="right" style="padding:12px 0;${i < c.details!.length - 1 ? `border-bottom:1px solid ${C.line};` : ""}font-family:${FONT};font-size:15px;font-weight:600;color:${C.ink};">${r.highlight ? `<span style="background:${C.brand};padding:2px 8px;border-radius:6px;">${r.value}</span>` : r.value}</td>
-        </tr>`).join("")}
-      </table>
-    </td></tr>` : "";
-
-  const quote = c.quote ? `
-    <tr><td class="px" style="padding:16px 32px 0;">
-      <div style="background:#f7f7f5;border-left:3px solid ${C.brand};border-radius:0 10px 10px 0;padding:12px 16px;">
-        <div style="font-family:${FONT};font-size:12px;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;">${c.quote.label}</div>
-        <div style="font-family:${FONT};font-size:14px;color:${C.text};line-height:1.55;margin-top:4px;">${c.quote.text}</div>
-      </div>
-    </td></tr>` : "";
-
-  const buttons = (c.actions || []).filter(a => a.style !== "link");
-  const actions = buttons.length ? `
-    <tr><td class="px" style="padding:28px 32px 0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        ${buttons.map((a, i) => `<td width="${Math.floor(100 / buttons.length)}%" style="${i > 0 ? "padding-left:6px;" : ""}${i < buttons.length - 1 ? "padding-right:6px;" : ""}">${button(a)}</td>`).join("")}
-      </tr></table>
-    </td></tr>` : "";
-
-  const links = c.links?.length ? `
-    <tr><td class="px" align="center" style="padding:16px 32px 0;font-family:${FONT};font-size:14px;">
-      ${c.links.map(l => `<a href="${l.url}" style="color:${C.ink};font-weight:600;text-decoration:underline;text-decoration-color:${C.brand};text-underline-offset:3px;">${l.label}</a>`).join(`<span style="color:#c4c4c4;padding:0 10px;">·</span>`)}
-    </td></tr>` : "";
-
-  const notes = c.notes?.length ? `
-    <tr><td class="px" style="padding:28px 32px 0;">
-      <div style="background:#fafaf8;border:1px solid ${C.line};border-radius:12px;padding:16px 18px;">
-        <div style="font-family:${FONT};font-size:13px;font-weight:700;color:${C.ink};margin-bottom:6px;">Gut zu wissen</div>
-        ${c.notes.map(n => `<div style="font-family:${FONT};font-size:13px;line-height:1.55;color:${C.text};padding:3px 0 3px 14px;position:relative;">• ${n}</div>`).join("")}
-      </div>
-    </td></tr>` : "";
+  const actions = c.actions?.length ? `
+          <tr><td class="px" style="padding:24px 32px 0;">
+            ${c.actions.map((a, i) => `<a class="btn" href="${a.url}" style="display:inline-block;margin:0 ${i < c.actions!.length - 1 ? "8px" : "0"} 8px 0;padding:13px 22px;border-radius:8px;font-family:${FONT};font-size:15px;font-weight:700;text-decoration:none;${
+              a.primary ? `background:${BRAND};color:${INK};` : `background:#ffffff;color:${INK};border:1px solid #d0d0d0;`
+            }">${a.label}</a>`).join("")}
+          </td></tr>` : "";
 
   return `<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light only">
-  <meta name="supported-color-schemes" content="light">
-  <title>${c.title}</title>
-  <style>
-    @media (max-width: 480px) {
-      .px { padding-left: 20px !important; padding-right: 20px !important; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<title>${c.title}</title>
+<style>
+@media (max-width:480px){
+  .px{padding-left:20px!important;padding-right:20px!important}
+  .btn{display:block!important;margin:0 0 8px 0!important;text-align:center}
+  h1{font-size:22px!important}
+}
+</style>
 </head>
-<body style="margin:0;padding:0;background:${C.page};-webkit-text-size-adjust:100%;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${c.preheader}&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page};">
-    <tr><td align="center" style="padding:24px 12px 32px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
-        <!-- Header -->
-        <tr><td class="px" style="background:${C.ink};border-radius:16px 16px 0 0;padding:20px 32px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td><img src="${logo}" alt="Rondo Sportsbar" height="40" style="display:block;height:40px;width:auto;border:0;"></td>
-            <td align="right" style="font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2px;color:${C.brand};">SPORTSBAR · HANAU</td>
-          </tr></table>
-        </td></tr>
-        <tr><td style="height:4px;background:${C.brand};font-size:0;line-height:0;">&nbsp;</td></tr>
-
-        <!-- Card -->
-        <tr><td style="background:${C.card};border-radius:0 0 16px 16px;padding-bottom:32px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr><td class="px" style="padding:32px 32px 0;">
-              <span style="display:inline-block;background:${tone.bg};color:${tone.fg};font-family:${FONT};font-size:12px;font-weight:700;letter-spacing:.5px;padding:6px 12px;border-radius:999px;">${c.badge.text}</span>
-              <h1 style="margin:16px 0 0;font-family:${FONT};font-size:28px;line-height:1.2;font-weight:800;color:${C.ink};">${c.title}</h1>
-              <p style="margin:10px 0 0;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.text};">${c.intro}</p>
-            </td></tr>
-            <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
-            ${when}
-            ${details}
-            ${quote}
-            ${actions}
-            ${links}
-            ${notes}
-          </table>
-        </td></tr>
-
-        <!-- Footer -->
-        <tr><td align="center" style="padding:24px 24px 0;font-family:${FONT};font-size:12px;line-height:1.7;color:${C.muted};">
-          <strong style="color:${C.text};">${VENUE.name}</strong><br>
-          <a href="${VENUE.mapsUrl}" style="color:${C.muted};text-decoration:none;">${VENUE.street} · ${VENUE.city}</a><br>
-          <a href="${VENUE.website}" style="color:${C.muted};">rondo-sportsbar.de</a>
-          <span style="padding:0 6px;">·</span>
-          <a href="${c.appUrl}/impressum" style="color:${C.muted};">Impressum</a>
-          ${c.reference ? `<br><span style="font-size:11px;color:#a5a5a5;letter-spacing:1px;">Buchungsnummer ${c.reference}</span>` : ""}
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
+<body style="margin:0;padding:0;background:#f2f1ee;">
+<div style="display:none;max-height:0;overflow:hidden;">${c.preheader}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f1ee;">
+  <tr><td align="center" style="padding:20px 10px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;">
+      <tr><td align="center" style="background:${INK};border-bottom:3px solid ${BRAND};padding:16px;">
+        <img src="${c.appUrl}/images/email-logo.png" alt="Rondo Sportsbar" width="120" height="40" style="display:block;border:0;">
+      </td></tr>
+      <tr><td class="px" style="padding:28px 32px 0;font-family:${FONT};">
+        <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${TONE_COLORS[c.status.tone]};">${c.status.text}</div>
+        <h1 style="margin:6px 0 0;font-size:24px;line-height:1.25;font-weight:800;color:${INK};">${c.title}</h1>
+        <p style="margin:8px 0 0;font-size:15px;line-height:1.55;color:#333333;">${c.intro}</p>
+      </td></tr>
+      ${when}
+      ${actions}
+      <tr><td class="px" style="padding:24px 32px 24px;font-family:${FONT};font-size:12px;line-height:1.6;color:${MUTED};">
+        <a href="${VENUE.mapsUrl}" style="color:${MUTED};">${VENUE.name} · ${VENUE.street} · ${VENUE.city}</a><br>
+        ${c.reference ? `Buchungsnummer ${c.reference} · ` : ""}<a href="${c.appUrl}/impressum" style="color:${MUTED};">Impressum</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`;
 }

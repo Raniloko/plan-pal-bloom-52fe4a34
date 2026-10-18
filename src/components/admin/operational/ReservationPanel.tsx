@@ -4,6 +4,7 @@ import { LegendDialog } from "./LegendDialog";
 import { toast } from "sonner";
 import { adm } from "@/components/admin/theme";
 import { invokeAdmin } from "@/lib/adminApi";
+import { areaLabel } from "@/components/admin/areaLabels";
 
 export interface ResRow {
   id: string;
@@ -104,10 +105,6 @@ export const ReservationPanel = ({ rows, totalGuests, selectedRowId, onRowClick,
     }
   };
 
-  const areaLabel = (area: string) => {
-    const map: Record<string, string> = { billard: "Billard", restaurant: "Restaurant", vip: "VIP", hauptbereich: "Restaurant 140 Zoll", podest: "Podest", fenster: "Restaurant 75 Zoll" };
-    return map[area] || area;
-  };
 
   return (
     <div style={{

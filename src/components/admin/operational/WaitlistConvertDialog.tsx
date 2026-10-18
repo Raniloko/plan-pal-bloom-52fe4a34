@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { invokeAdmin } from "@/lib/adminApi";
+import { areaLabel } from "@/components/admin/areaLabels";
 
 interface WaitlistEntry {
   id: string;
@@ -32,14 +33,6 @@ interface Props {
   onClose: () => void;
   onConverted: () => void;
 }
-
-const areaLabel = (area: string) => {
-  const map: Record<string, string> = {
-    billard: "Billard", restaurant: "Restaurant", vip: "VIP",
-    hauptbereich: "Restaurant 140 Zoll", podest: "Podest", fenster: "Restaurant 75 Zoll",
-  };
-  return map[area] || area;
-};
 
 export const WaitlistConvertDialog = ({ entry, open, onClose, onConverted }: Props) => {
   const [loading, setLoading] = useState(false);
